@@ -1,0 +1,12 @@
+services:
+  db:
+    env_file:
+      - .env.dev
+    volumes:
+      - ./the_one-dev-db-data:/var/lib/mysql
+    ports:
+      - "${DEV_DB_PORT}:3306"
+
+  redis:
+    ports:
+      - "${DEV_REDIS_PORT}:6379"

@@ -1,0 +1,20 @@
+services:
+  db:
+    image: mysql:8.4.8
+    container_name: mysql-the_one
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 7
+    networks:
+      the_one-network:
+
+  redis:
+    image: redis:8.6.1
+    container_name: redis-the_one
+    networks:
+      the_one-network:
+
+networks:
+  the_one-network:

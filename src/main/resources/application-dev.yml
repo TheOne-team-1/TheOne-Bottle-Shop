@@ -1,0 +1,36 @@
+spring:
+  # DB
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DEV_DB_HOST}:${DEV_DB_PORT}/${DEV_DB}?serverTimezone=Asia/Seoul
+    username: ${DEV_DB_USER}
+    password: ${DEV_DB_PASSWORD}
+
+  # Redis
+  data:
+    redis:
+      host: ${DEV_REDIS_HOST}
+      port: ${DEV_REDIS_PORT}
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# JWT
+jwt:
+  secret:
+    key: ${DEV_JWT_KEY}
+    accessExpire: 1800000
+    refreshExpire: 60480000
+
+logging:
+  level:
+    root: info
+
+server:
+  port: 8080
