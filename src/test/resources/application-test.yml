@@ -1,0 +1,22 @@
+# 별도 테스트 환경
+# DB는 MYSQL 의존성을 없애기 위해 H2 활용
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+jwt:
+  secret:
+    key: 27Wug/NdWwgE9OjNbLTyIQmjVBYbAmvfyBKaCHn3qqE=
+    accessExpire: 1800000
+    refreshExpire: 60480000
