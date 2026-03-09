@@ -14,3 +14,5 @@ public @interface RedisLock {
     long leaseTime() default 10L;
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 }
+
+// waitTime 을 0 으로 설정해 사용하면 즉시 실패
