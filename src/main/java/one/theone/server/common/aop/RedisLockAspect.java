@@ -20,7 +20,7 @@ import static one.theone.server.common.exception.domain.CommonExceptionEnum.ERR_
 @Component
 @Order(1) // 항상 첫 실행 필요
 @RequiredArgsConstructor
-public class RedisLettuceLockAspect {
+public class RedisLockAspect {
     private final RedisLockService redisLockService;
     private final AopInTransaction aopInTransaction;
 
