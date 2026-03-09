@@ -35,6 +35,17 @@ public class EventLog extends BaseEntity {
     @Column(nullable = false)
     private EventLogStatus status;
 
+    public static EventLog register(Long eventId, Long eventRewardId, Long memberId, Long orderId, LocalDateTime eventAt) {
+        EventLog eventLog = new EventLog();
+        eventLog.eventId = eventId;
+        eventLog.eventRewardId = eventRewardId;
+        eventLog.memberId = memberId;
+        eventLog.orderId = orderId;
+        eventLog.eventAt = eventAt;
+        eventLog.status = EventLogStatus.PENDING;
+        return eventLog;
+    }
+
     public enum EventLogStatus {
         PENDING, COMPLETE, FAIL
     }
