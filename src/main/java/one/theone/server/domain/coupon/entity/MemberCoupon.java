@@ -32,6 +32,25 @@ public class MemberCoupon extends BaseEntity {
     @Column(nullable = false)
     private MemberCouponStatus status;
 
+    public static MemberCoupon issuedByEvent(Long memberId, Long couponId, Long eventId) {
+        MemberCoupon memberCoupon = new MemberCoupon();
+        memberCoupon.memberId = memberId;
+        memberCoupon.couponId = couponId;
+        memberCoupon.eventId = eventId;
+        memberCoupon.issueWay = MemberCouponIssueWay.EVENT;
+        memberCoupon.status = MemberCouponStatus.AVAILABLE;
+        return memberCoupon;
+    }
+
+    public static MemberCoupon issuedByAdmin(Long memberId, Long couponId) {
+        MemberCoupon memberCoupon = new MemberCoupon();
+        memberCoupon.memberId = memberId;
+        memberCoupon.couponId = couponId;
+        memberCoupon.issueWay = MemberCouponIssueWay.ADMIN;
+        memberCoupon.status = MemberCouponStatus.AVAILABLE;
+        return memberCoupon;
+    }
+
     public enum MemberCouponIssueWay {
         EVENT, ADMIN
     }
