@@ -22,4 +22,24 @@ public class EventDetail extends BaseEntity {
     private Long minPrice;
 
     private Long eventProductId;
+
+    public static EventDetail amountBuyEvent(Long eventId, Long minPrice) {
+        EventDetail eventDetail = new EventDetail();
+        eventDetail.eventId = eventId;
+        eventDetail.minPrice = minPrice;
+        return eventDetail;
+    }
+
+    public static EventDetail productBuyEvent(Long eventId, Long eventProductId) {
+        EventDetail eventDetail = new EventDetail();
+        eventDetail.eventId = eventId;
+        eventDetail.eventProductId = eventProductId;
+        return eventDetail;
+    }
+
+    public static EventDetail noBuyEvent(Long eventId) {
+        EventDetail eventDetail = new EventDetail();
+        eventDetail.eventId = eventId;
+        return eventDetail;
+    }
 }
