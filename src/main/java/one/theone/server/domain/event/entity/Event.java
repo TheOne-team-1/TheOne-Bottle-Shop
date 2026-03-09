@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.EventExceptionEnum;
 
 import java.time.LocalDateTime;
 
@@ -33,6 +35,20 @@ public class Event extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventStatus status;
+
+    public static Event register(String name, LocalDateTime startAt, LocalDateTime endAt, EventType type) {
+        if (endAt != null && !endAt.isAfter(startAt)) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
+        }
+
+        Event event = new Event();
+        event.name = name;
+        event.startAt = startAt;
+        event.endAt = endAt;
+        event.type = type;
+        event.status = LocalDateTime.now().isBefore(startAt) ? EventStatus.PENDING : EventStatus.OPEN;
+        return event;
+    }
 
     public enum EventType {
         ALWAYS, PRODUCT_BUY, AMOUNT_BUY, FIRST
