@@ -1,7 +1,7 @@
-package one.theone.server.order.dto.response;
+package one.theone.server.domain.order.dto.response;
 
-import one.theone.server.order.entity.Order;
-import one.theone.server.order.entity.OrderStatus;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.entity.OrderStatus;
 
 import java.math.BigDecimal;
 

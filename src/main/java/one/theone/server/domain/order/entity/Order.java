@@ -1,4 +1,4 @@
-package one.theone.server.order.entity;
+package one.theone.server.domain.order.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package one.theone.server.order.dto.request;
+package one.theone.server.domain.order.dto.request;
 
 import java.math.BigDecimal;
 import java.util.List;
