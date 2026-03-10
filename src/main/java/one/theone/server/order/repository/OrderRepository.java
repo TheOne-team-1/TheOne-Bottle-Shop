@@ -1,7 +1,10 @@
 package one.theone.server.order.repository;
 
-import one.theone.server.order.entity.OrderDetail;
+import one.theone.server.order.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OrderRepository extends JpaRepository<OrderDetail, Long> {
+import java.util.Optional;
+
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    Optional<Order> findByOrderNum(String orderNum);
 }
