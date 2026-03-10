@@ -41,7 +41,7 @@ public class SearchRankingService {
             String dedupKey = DEDUP_PREFIX + keyword.trim().toLowerCase();
             Boolean isFirstSearch = redisTemplate.opsForValue().setIfAbsent(dedupKey, "locked", DEDUP_TTL, TimeUnit.SECONDS);
 
-            if (isFirstSearch) {
+            if (Boolean.TRUE.equals(isFirstSearch)) {
                 redisTemplate.opsForZSet().incrementScore(RANKING_KEY, keyword.trim().toLowerCase(), 1);
             }
         } catch (InterruptedException e) {
