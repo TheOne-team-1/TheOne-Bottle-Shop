@@ -5,7 +5,6 @@ import one.theone.server.common.config.redis.RedisLockService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +22,7 @@ public class SearchRankingService {
     private static final long LOCK_LEASE = 3L;
 
     private static final String DEDUP_PREFIX = "search:dedup:";
-    private static final long DEDUP_TTL = 60*10;
+    private static final long DEDUP_TTL = 60*30;
 
     private static final String RANKING_KEY = "search:ranking";
     private static final int RANKING_LIMIT = 5;
@@ -58,7 +57,7 @@ public class SearchRankingService {
         if (keywords == null) return Collections.emptyList();
 
         return keywords.stream()
-                .map(k -> (String) k)
+                .map(k -> k instanceof String s ? s : k.toString())
                 .toList();
     }
 }
