@@ -1,4 +1,4 @@
-package one.theone.server.domain.product.entity;
+package one.theone.server.domain.category.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,9 +8,11 @@ import one.theone.server.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "product_categories")
+@Table(name = "categories", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "name")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProductCategory extends BaseEntity {
+public class Category extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,15 +22,15 @@ public class ProductCategory extends BaseEntity {
 
     private Integer sortNum;
 
-    public static ProductCategory register(
+    public static Category register(
             String name,
             Integer sortNum
     ) {
-        ProductCategory productCategory = new ProductCategory();
+        Category category = new Category();
 
-        productCategory.name = name;
-        productCategory.sortNum = sortNum;
+        category.name = name;
+        category.sortNum = sortNum;
 
-        return productCategory;
+        return category;
     }
 }
