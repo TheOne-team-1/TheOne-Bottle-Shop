@@ -12,6 +12,7 @@ import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.entity.ProductCategoryDetail;
 import one.theone.server.domain.product.repository.ProductCategoryDetailRepository;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,11 @@ public class ProductService {
         return ProductCreateResponse.of(product, productCategoryDetail.getName());
     }
 
+    @Cacheable(
+            value = "productCache",
+            key = "'list:' + #request.sortType + ':' + #request.categoryIds + ':' + #request.abvMin + ':' + #request.abvMax + ':' + " +
+                    "#request.priceMin + ':' + #request.priceMax + ':' + #request.volumeMl + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+    )
     @Transactional(readOnly = true)
     public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
         Page<ProductsGetResponse> page = productRepository.findAllWithConditions(pageable, request);
