@@ -3,6 +3,27 @@ package one.theone.server.common;
 // 테스트 코드 -> 현재는 미작동
 // 스프링 컨텍스트가 있어야 테스트가 가능한 AOP를 사용 했으므로 SpringBootTest 사용해야함
 
+import com.redis.testcontainers.RedisContainer;
+import one.theone.server.domain.product.entity.Product;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 /*
 @SpringBootTest
 @Testcontainers
@@ -98,3 +119,4 @@ public class RedisLockTest {
     }
 }
 */
+
