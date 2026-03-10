@@ -8,6 +8,8 @@ import one.theone.server.common.entity.BaseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
@@ -50,15 +52,41 @@ public class Order extends BaseEntity {
     @Column(name = "member_address_detail_snap", nullable = false, length = 500)
     private String memberAddressDetailSnap;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderDetail> orderDetails = new ArrayList<>();
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    public static Order create(
+            Long memberId, Long memberCouponId, String orderNum, BigDecimal usedPoint,
+            BigDecimal totalAmount, BigDecimal discountAmount, BigDecimal finalAmount,
+            String memberAddressSnap, String memberAddressDetailSnap) {
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+        Order order = new Order();
 
-    @Column(name = "deleted", nullable = false)
-    private Boolean deleted;
+        order.memberId = memberId;
+        order.memberCouponId = memberCouponId;
+        order.orderNum = orderNum;
+        order.usedPoint = usedPoint;
+        order.totalAmount = totalAmount;
+        order.discountAmount = discountAmount;
+        order.finalAmount = finalAmount;
+        order.memberAddressSnap = memberAddressSnap;
+        order.memberAddressDetailSnap = memberAddressDetailSnap;
+
+        order.status = OrderStatus.PENDING_PAYMENT;
+
+        return order;
+    }
+
+    public void addOrderDetail(OrderDetail detail) {
+        this.orderDetails.add(detail);
+        detail.assignOrder(this);
+    }
+
+    public void markCancelled() {
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    public void markCompleted() {
+        this.status = OrderStatus.COMPLETED;
+    }
 }
