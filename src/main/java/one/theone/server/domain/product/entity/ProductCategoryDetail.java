@@ -8,7 +8,12 @@ import one.theone.server.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "product_category_details")
+@Table(name = "product_category_details", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_category_detail_category_name",
+                columnNames = {"product_category_id", "name"}
+        )
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductCategoryDetail extends BaseEntity {
     @Id
