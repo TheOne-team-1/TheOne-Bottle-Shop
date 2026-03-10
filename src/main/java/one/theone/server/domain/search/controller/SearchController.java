@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.search.dto.ProductSearchResponse;
+import one.theone.server.domain.search.service.SearchRankingService;
 import one.theone.server.domain.search.service.SearchService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,12 +15,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class SearchController {
 
     private final SearchService searchService;
+    private final SearchRankingService searchRankingService;
 
     @GetMapping("/search/v1")
     public ResponseEntity<BaseResponse<PageResponse<ProductSearchResponse>>> searchProductV1(
@@ -31,6 +35,16 @@ public class SearchController {
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "검색어에 해당하는 상품을 검색했습니다",
-                searchService.searchByKeywordV1(keyword, pageable)));
+                searchService.searchByKeywordV1(keyword, pageable)
+        ));
+    }
+
+    @GetMapping("/best/search")
+    public ResponseEntity<BaseResponse<List<String>>> getBestKeyword() {
+        return ResponseEntity.ok(BaseResponse.success(
+                HttpStatus.OK.getReasonPhrase(),
+                "인기 검색어를 조회했습니다",
+                searchRankingService.getKeywordRanking()
+        ));
     }
 }
