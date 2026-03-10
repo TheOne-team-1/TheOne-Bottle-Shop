@@ -1,14 +1,19 @@
 package one.theone.server.domain.product.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.product.dto.ProductCreateRequest;
 import one.theone.server.domain.product.dto.ProductCreateResponse;
+import one.theone.server.domain.product.dto.ProductsGetRequest;
+import one.theone.server.domain.product.dto.ProductsGetResponse;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.entity.ProductCategoryDetail;
 import one.theone.server.domain.product.repository.ProductCategoryDetailRepository;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,5 +40,11 @@ public class ProductService {
 
         productRepository.save(product);
         return ProductCreateResponse.of(product, productCategoryDetail.getName());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
+        Page<ProductsGetResponse> page = productRepository.findAllWithConditions(pageable, request);
+        return PageResponse.register(page);
     }
 }
