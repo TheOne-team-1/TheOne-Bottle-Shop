@@ -5,6 +5,10 @@ import one.theone.server.common.config.redis.RedisLockService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -22,6 +26,7 @@ public class SearchRankingService {
     private static final long DEDUP_TTL = 60*10;
 
     private static final String RANKING_KEY = "search:ranking";
+    private static final int RANKING_LIMIT = 5;
 
     public void record(String keyword) {
         String lockKey = LOCK_PREFIX + keyword.trim().toLowerCase();
@@ -46,5 +51,14 @@ public class SearchRankingService {
                 redisLockService.unLock(lockKey, lockValue);
             }
         }
+    }
+
+    public List<String> getKeywordRanking() {
+        Set<Object> keywords = redisTemplate.opsForZSet().reverseRange(RANKING_KEY, 0, RANKING_LIMIT-1);
+        if (keywords == null) return Collections.emptyList();
+
+        return keywords.stream()
+                .map(k -> (String) k)
+                .toList();
     }
 }
