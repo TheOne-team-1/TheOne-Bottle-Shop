@@ -160,7 +160,7 @@ gradle-app.setting
 
 ### env ###
 .env
-.env.*
+.env.dev
 
 ### claude ###
 /.claude/
