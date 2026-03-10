@@ -1,4 +1,28 @@
 package one.theone.server.order.dto.response;
 
-public record OrderCreateResponse() {
+import one.theone.server.order.entity.Order;
+import one.theone.server.order.entity.OrderStatus;
+
+import java.math.BigDecimal;
+
+public record OrderCreateResponse(
+        Long orderId,
+        String orderNum,
+        OrderStatus status,
+        BigDecimal usedPoint,
+        BigDecimal totalAmount,
+        BigDecimal discountAmount,
+        BigDecimal finalAmount
+) {
+    public static OrderCreateResponse from(Order order) {
+        return new OrderCreateResponse(
+                order.getId(),
+                order.getOrderNum(),
+                order.getStatus(),
+                order.getUsedPoint(),
+                order.getTotalAmount(),
+                order.getDiscountAmount(),
+                order.getFinalAmount()
+        );
+    }
 }
