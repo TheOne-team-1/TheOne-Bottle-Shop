@@ -19,12 +19,12 @@ public class CacheConfig {
     public static final String SEARCH_RANKING = "searchRanking";
 
     @Bean
-    public CacheManager cacheManager() {
+    public CacheManager localCacheManager() {
 
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 buildCache(PRODUCT_SEARCH, 5, TimeUnit.MINUTES, 100),
-                buildCache(SEARCH_RANKING, 1, TimeUnit.MINUTES, 1)
+                buildCache(SEARCH_RANKING, 10, TimeUnit.MINUTES, 1)
         ));
         return manager;
     }
