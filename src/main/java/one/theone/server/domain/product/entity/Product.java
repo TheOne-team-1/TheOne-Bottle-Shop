@@ -34,7 +34,7 @@ public class Product extends BaseEntity {
     private int volumeMl;
 
     @Column(nullable = false)
-    private Long productCategoryDetailId;
+    private Long categoryDetailId;
 
     @Column(nullable = false)
     private Long quantity;
@@ -47,7 +47,7 @@ public class Product extends BaseEntity {
             Long price,
             BigDecimal abv,
             int volumeMl,
-            Long productCategoryDetailId,
+            Long categoryDetailId,
             Long quantity
     ) {
         Product product = new Product();
@@ -57,7 +57,7 @@ public class Product extends BaseEntity {
         product.status = quantity == 0 ? ProductStatus.SOLD_OUT : ProductStatus.SALES;
         product.abv = abv;
         product.volumeMl = volumeMl;
-        product.productCategoryDetailId = productCategoryDetailId;
+        product.categoryDetailId = categoryDetailId;
         product.quantity = quantity;
 
         return product;
