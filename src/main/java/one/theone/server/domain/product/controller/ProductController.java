@@ -4,10 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
-import one.theone.server.domain.product.dto.ProductCreateRequest;
-import one.theone.server.domain.product.dto.ProductCreateResponse;
-import one.theone.server.domain.product.dto.ProductsGetRequest;
-import one.theone.server.domain.product.dto.ProductsGetResponse;
+import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.service.ProductService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -35,5 +32,12 @@ public class ProductController {
             @PageableDefault(page = 0, size = 10) Pageable pageable
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 목록 조회 성공", productService.getProducts(request, pageable)));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<ProductGetResponse>> getProduct(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id)));
     }
 }

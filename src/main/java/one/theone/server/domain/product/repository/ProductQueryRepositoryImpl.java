@@ -7,6 +7,7 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
+import one.theone.server.domain.product.dto.ProductGetResponse;
 import one.theone.server.domain.product.dto.ProductsGetRequest;
 import one.theone.server.domain.product.dto.ProductsGetResponse;
 import one.theone.server.domain.product.entity.Product;
@@ -109,6 +110,29 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
         }
 
         return new PageImpl<>(result, pageable, total);
+    }
+
+    @Override
+    public ProductGetResponse findProductById(Long id) {
+        return queryFactory
+                .select(Projections.constructor(ProductGetResponse.class,
+                        product.id,
+                        product.name,
+                        product.price,
+                        product.status,
+                        product.abv,
+                        product.volumeMl,
+                        category.name,
+                        categoryDetail.name,
+                        product.quantity,
+                        product.rating))
+                .from(product)
+                .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
+                .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))
+                .where(
+                        product.id.eq(id),
+                        product.deleted.isFalse())
+                .fetchOne();
     }
 
     private BooleanExpression categoryIn(List<Long> categoryIds) {

@@ -3,13 +3,11 @@ package one.theone.server.domain.product.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.CategoryExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
-import one.theone.server.domain.product.dto.ProductCreateRequest;
-import one.theone.server.domain.product.dto.ProductCreateResponse;
-import one.theone.server.domain.product.dto.ProductsGetRequest;
-import one.theone.server.domain.product.dto.ProductsGetResponse;
+import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,7 +26,7 @@ public class ProductService {
     @Transactional
     public ProductCreateResponse createProduct(ProductCreateRequest request) {
         CategoryDetail productCategoryDetail = categoryDetailRepository.findById(request.productCategoryDetailId())
-                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_CATEGORY_NOT_FOUND));
+                .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
 
         Product product = Product.register(
                 request.name(),
@@ -52,5 +50,14 @@ public class ProductService {
     public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
         Page<ProductsGetResponse> page = productRepository.findProductWithConditions(pageable, request);
         return PageResponse.register(page);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductGetResponse getProduct(Long id) {
+        ProductGetResponse response = productRepository.findProductById(id);
+        if (response == null) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
+        }
+        return response;
     }
 }
