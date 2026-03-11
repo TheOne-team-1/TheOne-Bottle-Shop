@@ -79,4 +79,14 @@ public class ProductService {
 
         return ProductUpdateResponse.from(product);
     }
+
+    @Transactional
+    public ProductStatusUpdateResponse updateProductStatus(Long id, ProductStatusUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.updateStatus(request);
+
+        return ProductStatusUpdateResponse.from(product);
+    }
 }

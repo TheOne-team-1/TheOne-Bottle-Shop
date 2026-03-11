@@ -54,4 +54,12 @@ public class ProductController {
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 수정 성공", productService.updateProduct(id, request)));
     }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<BaseResponse<ProductStatusUpdateResponse>> updateProductStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductStatusUpdateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상태 변경 성공", productService.updateProductStatus(id, request)));
+    }
 }

@@ -5,6 +5,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.ProductExceptionEnum;
+import one.theone.server.domain.product.dto.ProductStatusUpdateRequest;
 import one.theone.server.domain.product.dto.ProductUpdateRequest;
 
 import java.math.BigDecimal;
@@ -88,5 +91,18 @@ public class Product extends BaseEntity {
             this.quantity = request.quantity();
             this.status = request.quantity() == 0 ? ProductStatus.SOLD_OUT : ProductStatus.SALES;
         }
+    }
+
+    public void updateStatus(ProductStatusUpdateRequest request) {
+        if (this.getDeleted()) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DELETED);
+        }
+        if (this.status == ProductStatus.DISCONTINUE) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DISCONTINUED);
+        }
+        if (this.quantity == 0 && request.status() == ProductStatus.SALES) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_OUT_OF_STOCK);
+        }
+        this.status = request.status();
     }
 }
