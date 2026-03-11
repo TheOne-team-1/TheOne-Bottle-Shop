@@ -5,6 +5,7 @@ import one.theone.server.common.config.redis.RedisLockService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -31,6 +32,7 @@ public class SearchRankingService {
     private static final String RANKING_KEY = "search:ranking";
     private static final int RANKING_LIMIT = 5;
 
+    @Async("asyncExecutor")
     @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "localCacheManager")
     public void record(String keyword) {
         String lockKey = LOCK_PREFIX + keyword.trim().toLowerCase();
