@@ -22,6 +22,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryDetailRepository categoryDetailRepository;
+    private final ProductViewService productViewService;
 
     @Transactional
     public ProductCreateResponse createProduct(ProductCreateRequest request) {
@@ -53,11 +54,14 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductGetResponse getProduct(Long id) {
+    public ProductGetResponse getProduct(Long id, String clientIp) {
         ProductGetResponse response = productRepository.findProductById(id);
         if (response == null) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
         }
-        return response;
+
+        productViewService.record(id, clientIp);
+
+        return response.withViewCount(productViewService.getViewCount(id));
     }
 }

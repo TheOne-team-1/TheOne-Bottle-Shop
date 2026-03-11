@@ -3,6 +3,7 @@ package one.theone.server.domain.product.repository;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -125,7 +126,8 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         category.name,
                         categoryDetail.name,
                         product.quantity,
-                        product.rating))
+                        product.rating,
+                        Expressions.constant(0L)))
                 .from(product)
                 .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
                 .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))

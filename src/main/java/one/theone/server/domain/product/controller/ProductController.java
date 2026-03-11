@@ -1,5 +1,6 @@
 package one.theone.server.domain.product.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
@@ -36,8 +37,13 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<ProductGetResponse>> getProduct(
-            @PathVariable Long id
+            @PathVariable Long id,
+            HttpServletRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id)));
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+            clientIp = request.getRemoteAddr();
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id, clientIp)));
     }
 }

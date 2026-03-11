@@ -14,5 +14,10 @@ public record ProductGetResponse(
         String categoryName,
         String categoryDetailName,
         Long quantity,
-        BigDecimal rating
-) {}
+        BigDecimal rating,
+        Long viewCount
+) {
+    public ProductGetResponse withViewCount(Long viewCount) {
+        return new ProductGetResponse(id, name,price, status, abv, volumeMl, categoryName, categoryDetailName, quantity, rating, viewCount);
+    }
+}
