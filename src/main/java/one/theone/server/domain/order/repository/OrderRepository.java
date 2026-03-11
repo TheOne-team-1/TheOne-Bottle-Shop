@@ -1,6 +1,6 @@
-package one.theone.server.order.repository;
+package one.theone.server.domain.order.repository;
 
-import one.theone.server.order.entity.Order;
+import one.theone.server.domain.order.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
