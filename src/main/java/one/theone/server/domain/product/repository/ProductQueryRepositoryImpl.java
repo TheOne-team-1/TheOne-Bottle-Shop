@@ -15,8 +15,8 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 
 import static one.theone.server.domain.product.entity.QProduct.product;
-import static one.theone.server.domain.product.entity.QProductCategory.productCategory;
-import static one.theone.server.domain.product.entity.QProductCategoryDetail.productCategoryDetail;
+import static one.theone.server.domain.category.entity.QCategory.category;
+import static one.theone.server.domain.category.entity.QCategoryDetail.categoryDetail;
 
 @RequiredArgsConstructor
 public class ProductQueryRepositoryImpl implements ProductQueryRepository{
@@ -27,8 +27,8 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
         if (!StringUtils.hasText(keyword)) return null;
 
         return product.name.containsIgnoreCase(keyword)
-                .or(productCategory.name.containsIgnoreCase(keyword))
-                .or(productCategoryDetail.name.containsIgnoreCase(keyword));
+                .or(category.name.containsIgnoreCase(keyword))
+                .or(categoryDetail.name.containsIgnoreCase(keyword));
     }
 
     @Override
@@ -39,11 +39,11 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                 .select(Projections.constructor(ProductSearchResponse.class,
                         product.name,
                         product.price,
-                        productCategoryDetail.name,
-                        productCategory.name))
+                        categoryDetail.name,
+                        category.name))
                 .from(product)
-                .leftJoin(productCategoryDetail).on(product.productCategoryDetailId.eq(productCategoryDetail.id))
-                .leftJoin(productCategory).on(productCategoryDetail.productCategoryId.eq(productCategory.id))
+                .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
+                .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))
                 .where(condition)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -52,8 +52,8 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
         JPAQuery<Long> countQuery = queryFactory
                 .select(product.count())
                 .from(product)
-                .leftJoin(productCategoryDetail).on(product.productCategoryDetailId.eq(productCategoryDetail.id))
-                .leftJoin(productCategory).on(productCategoryDetail.productCategoryId.eq(productCategory.id))
+                .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
+                .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))
                 .where(condition);
 
         Page<ProductSearchResponse> page =
