@@ -14,6 +14,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RedisConfig {
@@ -39,12 +41,12 @@ public class RedisConfig {
                 );
 
         // 캐시별 TTL 개별 설정
-        //Map<String, RedisCacheConfiguration> configs = new HashMap<>();
-        //configs.put("products", defaultConfig.entryTtl(Duration.ofHours(1)));
+        Map<String, RedisCacheConfiguration> configs = new HashMap<>();
+        configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)
-                //.withInitialCacheConfigurations(configs)
+                .withInitialCacheConfigurations(configs)
                 .build();
     }
 
