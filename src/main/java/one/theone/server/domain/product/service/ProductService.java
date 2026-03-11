@@ -64,4 +64,19 @@ public class ProductService {
 
         return response.withViewCount(productViewService.getViewCount(id));
     }
+
+    @Transactional
+    public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        if (request.categoryDetailId() != null) {
+            categoryDetailRepository.findById(request.categoryDetailId())
+                    .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
+        }
+
+        product.update(request);
+
+        return ProductUpdateResponse.from(product);
+    }
 }

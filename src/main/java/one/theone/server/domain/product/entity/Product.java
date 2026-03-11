@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.domain.product.dto.ProductUpdateRequest;
 
 import java.math.BigDecimal;
 
@@ -65,5 +66,27 @@ public class Product extends BaseEntity {
 
     public enum ProductStatus {
         SALES, SOLD_OUT, DISCONTINUE
+    }
+
+    public void update(ProductUpdateRequest request) {
+        if (request.name() != null && !request.name().isBlank()) {
+            this.name = request.name();
+        }
+        if (request.price() != null) {
+            this.price = request.price();
+        }
+        if (request.abv() != null) {
+            this.abv = request.abv();
+        }
+        if (request.volumeMl() != 0) {
+            this.volumeMl = request.volumeMl();
+        }
+        if (request.categoryDetailId() != null) {
+            this.categoryDetailId = request.categoryDetailId();
+        }
+        if (request.quantity() != null) {
+            this.quantity = request.quantity();
+            this.status = request.quantity() == 0 ? ProductStatus.SOLD_OUT : ProductStatus.SALES;
+        }
     }
 }
