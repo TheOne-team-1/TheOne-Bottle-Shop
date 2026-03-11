@@ -50,7 +50,7 @@ public class ProductService {
     )
     @Transactional(readOnly = true)
     public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
-        Page<ProductsGetResponse> page = productRepository.findAllWithConditions(pageable, request);
+        Page<ProductsGetResponse> page = productRepository.findProductWithConditions(pageable, request);
         return PageResponse.register(page);
     }
 }

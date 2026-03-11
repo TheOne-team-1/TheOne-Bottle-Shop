@@ -11,5 +11,5 @@ public interface ProductQueryRepository {
 
     PageResponse<ProductSearchResponse> findProductByKeyword(String keyword, Pageable pageable);
 
-    Page<ProductsGetResponse> findAllWithConditions(Pageable pageable, ProductsGetRequest request);
+    Page<ProductsGetResponse> findProductWithConditions(Pageable pageable, ProductsGetRequest request);
 }

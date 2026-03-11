@@ -69,7 +69,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
     }
 
     @Override
-    public Page<ProductsGetResponse> findAllWithConditions(Pageable pageable, ProductsGetRequest request) {
+    public Page<ProductsGetResponse> findProductWithConditions(Pageable pageable, ProductsGetRequest request) {
         List<ProductsGetResponse> result = queryFactory
                 .select(Projections.constructor(ProductsGetResponse.class,
                         product.id,
@@ -79,6 +79,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         product.rating))
                 .from(product)
                 .where(
+                        product.deleted.isFalse(),
                         product.status.in(Product.ProductStatus.SALES, Product.ProductStatus.SOLD_OUT),
                         categoryIn(request.categoryIds()),
                         abvBetween(request.abvMin(), request.abvMax()),
@@ -94,6 +95,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                 .select(product.count())
                 .from(product)
                 .where(
+                        product.deleted.isFalse(),
                         product.status.in(Product.ProductStatus.SALES, Product.ProductStatus.SOLD_OUT),
                         categoryIn(request.categoryIds()),
                         abvBetween(request.abvMin(), request.abvMax()),
