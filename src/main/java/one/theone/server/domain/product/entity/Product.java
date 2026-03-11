@@ -72,6 +72,12 @@ public class Product extends BaseEntity {
     }
 
     public void update(ProductUpdateRequest request) {
+        if (this.getDeleted()) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DELETED);
+        }
+        if (this.status == ProductStatus.DISCONTINUE) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DISCONTINUED);
+        }
         if (request.name() != null && !request.name().isBlank()) {
             this.name = request.name();
         }
