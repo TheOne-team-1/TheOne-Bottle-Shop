@@ -14,10 +14,20 @@ public class SearchService {
 
     private final ProductRepository productRepository;
     private final SearchRankingService searchRankingService;
+    private final SearchCacheService searchCacheService;
 
     @Transactional(readOnly = true)
     public PageResponse<ProductSearchResponse> searchByKeywordV1(String keyword, Pageable pageable) {
         PageResponse<ProductSearchResponse> page = productRepository.findProductByKeyword(keyword, pageable);
+
+        if (!page.content().isEmpty()) {
+            searchRankingService.record(keyword);
+        }
+        return page;
+    }
+
+    public PageResponse<ProductSearchResponse> searchByKeywordV2(String keyword, Pageable pageable) {
+        PageResponse<ProductSearchResponse> page = searchCacheService.getOrCache(keyword, pageable);
 
         if (!page.content().isEmpty()) {
             searchRankingService.record(keyword);

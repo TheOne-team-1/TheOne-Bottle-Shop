@@ -39,6 +39,20 @@ public class SearchController {
         ));
     }
 
+    @GetMapping("/search/v2")
+    public ResponseEntity<BaseResponse<PageResponse<ProductSearchResponse>>> searchProductV2(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        // TODO jwt를 통해 userId 가져오기
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(BaseResponse.success(
+                HttpStatus.OK.name(),
+                "검색어에 해당하는 상품을 검색했습니다",
+                searchService.searchByKeywordV2(keyword, pageable)
+        ));
+    }
+
     @GetMapping("/best/search")
     public ResponseEntity<BaseResponse<List<String>>> getBestKeyword() {
         return ResponseEntity.ok(BaseResponse.success(
