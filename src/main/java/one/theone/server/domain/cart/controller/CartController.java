@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
 import one.theone.server.domain.cart.dto.response.CartAddResponse;
+import one.theone.server.domain.cart.dto.response.CartResponse;
 import one.theone.server.domain.cart.service.CartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,5 +23,13 @@ public class CartController {
         CartAddResponse response = cartService.addItem(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "장바구니 상품 등록 성공", response));
+    }
+
+    @GetMapping
+    public ResponseEntity<BaseResponse<CartResponse>> getCart(
+            @RequestParam Long memberId) {
+        CartResponse response = cartService.getCart(memberId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 조회 성공", response));
     }
 }
