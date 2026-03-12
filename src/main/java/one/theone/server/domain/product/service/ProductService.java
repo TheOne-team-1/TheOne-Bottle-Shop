@@ -26,7 +26,7 @@ public class ProductService {
 
     @Transactional
     public ProductCreateResponse createProduct(ProductCreateRequest request) {
-        CategoryDetail productCategoryDetail = categoryDetailRepository.findById(request.productCategoryDetailId())
+        categoryDetailRepository.findById(request.productCategoryDetailId())
                 .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
 
         Product product = Product.register(
@@ -39,7 +39,7 @@ public class ProductService {
         );
 
         productRepository.save(product);
-        return ProductCreateResponse.of(product, productCategoryDetail.getName());
+        return ProductCreateResponse.from(product);
     }
 
     @Cacheable(

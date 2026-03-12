@@ -11,10 +11,10 @@ public record ProductCreateResponse(
         Product.ProductStatus status,
         BigDecimal abv,
         int volumeMl,
-        String productCategoryDetailName,
+        Long productCategoryDetailId,
         Long quantity
 ) {
-    public static ProductCreateResponse of(Product product, String productCategoryDetailName) {
+    public static ProductCreateResponse from(Product product) {
         return new ProductCreateResponse(
                 product.getId(),
                 product.getName(),
@@ -22,7 +22,7 @@ public record ProductCreateResponse(
                 product.getStatus(),
                 product.getAbv(),
                 product.getVolumeMl(),
-                productCategoryDetailName,
+                product.getCategoryDetailId(),
                 product.getQuantity()
         );
     }

@@ -123,14 +123,13 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         product.status,
                         product.abv,
                         product.volumeMl,
-                        category.name,
-                        categoryDetail.name,
+                        categoryDetail.categoryId,
+                        product.categoryDetailId,
                         product.quantity,
                         product.rating,
                         Expressions.constant(0L)))
                 .from(product)
                 .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
-                .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))
                 .where(
                         product.id.eq(id),
                         product.deleted.isFalse())
