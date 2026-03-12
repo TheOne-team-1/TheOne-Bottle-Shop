@@ -5,7 +5,7 @@ import one.theone.server.domain.category.entity.Category;
 public record CategoryCreateResponse(
         Long id,
         String name,
-        int sortNum
+        Integer sortNum
 ) {
     public static CategoryCreateResponse from(Category category) {
         return new CategoryCreateResponse(
