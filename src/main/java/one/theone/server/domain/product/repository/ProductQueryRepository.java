@@ -8,9 +8,11 @@ import one.theone.server.domain.search.dto.ProductSearchResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface ProductQueryRepository {
 
-    PageResponse<ProductSearchResponse> findProductByKeyword(String keyword, Pageable pageable);
+    PageResponse<ProductSearchResponse> findProductByKeyword(List<String> keywordMorphemes, String keyword, Pageable pageable);
 
     Page<ProductsGetResponse> findProductWithConditions(Pageable pageable, ProductsGetRequest request);
 

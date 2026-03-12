@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static one.theone.server.common.config.cache.CacheConfig.PRODUCT_SEARCH;
 
 @Service
@@ -22,7 +24,7 @@ public class SearchCacheService {
             key = "'keyword:' + #keyword + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize",
             cacheManager = "localCacheManager")
     @Transactional(readOnly = true)
-    public PageResponse<ProductSearchResponse> getOrCache(String keyword, Pageable pageable) {
-        return productRepository.findProductByKeyword(keyword, pageable);
+    public PageResponse<ProductSearchResponse> getOrCache(List<String> keywordMorphemes, String keyword, Pageable pageable) {
+        return productRepository.findProductByKeyword(keywordMorphemes, keyword, pageable);
     }
 }
