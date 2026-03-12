@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.domain.category.dto.CategoryDetailUpdateRequest;
 
 @Getter
 @Entity
@@ -44,5 +45,17 @@ public class CategoryDetail extends BaseEntity {
 
     public void updateSortNum(Integer sortNum) {
         this.sortNum = sortNum;
+    }
+
+    public void update(CategoryDetailUpdateRequest request) {
+        if (request.categoryId() != null) {
+            this.categoryId = request.categoryId();
+        }
+        if (request.name() != null) {
+            this.name = request.name();
+        }
+        if (request.sortNum() != null) {
+            this.sortNum = request.sortNum();
+        }
     }
 }

@@ -37,4 +37,12 @@ public class CategoryController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), "소분류 카테고리 생성 성공", categoryService.createCategoryDetail(request)));
     }
+
+    @PatchMapping("/category-details/{id}")
+    public ResponseEntity<BaseResponse<CategoryDetailUpdateResponse>> updateCategoryDetail(
+            @PathVariable Long id,
+            @Valid @RequestBody CategoryDetailUpdateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "소분류 카테고리 수정 성공", categoryService.updateCategoryDetail(id, request)));
+    }
 }

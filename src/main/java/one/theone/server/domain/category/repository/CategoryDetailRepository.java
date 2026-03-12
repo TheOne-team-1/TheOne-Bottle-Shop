@@ -9,7 +9,7 @@ public interface CategoryDetailRepository extends JpaRepository<CategoryDetail, 
 
     boolean existsByCategoryIdAndName(Long categoryId, String name);
 
-    boolean existsBySortNum(Integer sortNum);
+    boolean existsByCategoryIdAndSortNum(Long categoryId, Integer sortNum);
 
     List<CategoryDetail> findAllByCategoryIdAndSortNumGreaterThanEqual(Long categoryId, Integer sortNum);
 }

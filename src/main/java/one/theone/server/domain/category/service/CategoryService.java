@@ -67,7 +67,7 @@ public class CategoryService {
             throw new ServiceErrorException(CategoryExceptionEnum.ERR_DUPLICATE_CATEGORY_DETAIL_NAME);
         }
 
-        if (request.sortNum() != null && categoryDetailRepository.existsBySortNum(request.sortNum())) {
+        if (request.sortNum() != null && categoryDetailRepository.existsByCategoryIdAndSortNum(request.categoryId(), request.sortNum())) {
             List<CategoryDetail> targets = categoryDetailRepository.findAllByCategoryIdAndSortNumGreaterThanEqual(request.categoryId(), request.sortNum());
             for (CategoryDetail categoryDetail : targets) {
                 categoryDetail.updateSortNum(categoryDetail.getSortNum() + 1);
@@ -77,5 +77,31 @@ public class CategoryService {
         CategoryDetail categoryDetail = CategoryDetail.register(request.categoryId(), request.name(), request.sortNum());
         categoryDetailRepository.save(categoryDetail);
         return CategoryDetailCreateResponse.from(categoryDetail);
+    }
+
+    @Transactional
+    public CategoryDetailUpdateResponse updateCategoryDetail(Long id, CategoryDetailUpdateRequest request) {
+        CategoryDetail categoryDetail = categoryDetailRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_NOT_FOUND));
+
+        Long targetCategoryId = request.categoryId() != null ? request.categoryId() : categoryDetail.getCategoryId();
+
+        if (request.categoryId() != null && !categoryRepository.existsById(request.categoryId())) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND);
+        }
+
+        if (request.name() != null && categoryDetailRepository.existsByCategoryIdAndName(targetCategoryId, request.name())) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_DUPLICATE_CATEGORY_DETAIL_NAME);
+        }
+
+        if (request.sortNum() != null && categoryDetailRepository.existsByCategoryIdAndSortNum(targetCategoryId, request.sortNum())) {
+            List<CategoryDetail> targets = categoryDetailRepository.findAllByCategoryIdAndSortNumGreaterThanEqual(targetCategoryId, request.sortNum());
+            for (CategoryDetail target : targets) {
+                target.updateSortNum(target.getSortNum() + 1);
+            }
+        }
+
+        categoryDetail.update(request);
+        return CategoryDetailUpdateResponse.from(categoryDetail);
     }
 }
