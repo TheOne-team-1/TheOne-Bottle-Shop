@@ -33,4 +33,8 @@ public class Category extends BaseEntity {
 
         return category;
     }
+
+    public void updateSortNum(Integer sortNum) {
+        this.sortNum = sortNum;
+    }
 }
