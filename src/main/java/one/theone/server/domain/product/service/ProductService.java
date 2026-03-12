@@ -5,7 +5,6 @@ import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CategoryExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
-import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
@@ -91,5 +90,25 @@ public class ProductService {
         product.updateStatus(request);
 
         return ProductStatusUpdateResponse.from(product);
+    }
+
+
+    // ---------------------------------------------------------------------------------------------------
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public void decreaseStock(Long id, Long quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.decreaseStock(quantity);
+    }
+
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public void increaseStock(Long id, Long quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.increaseStock(quantity);
     }
 }

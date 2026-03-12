@@ -111,4 +111,32 @@ public class Product extends BaseEntity {
         }
         this.status = request.status();
     }
+
+    public void decreaseStock(Long quantity) {
+        if (quantity <= 0) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_INVALID_QUANTITY);
+        }
+        if (this.status != ProductStatus.SALES || this.getDeleted()) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_SALES);
+        }
+        if (this.quantity < quantity) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_INSUFFICIENT_STOCK);
+        }
+
+        this.quantity -= quantity;
+        if (this.quantity == 0) {
+            this.status = ProductStatus.SOLD_OUT;
+        }
+    }
+
+    public void increaseStock(Long quantity) {
+        if (quantity <= 0) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_INVALID_QUANTITY);
+        }
+
+        this.quantity += quantity;
+//        if (this.quantity > 0 && this.status == ProductStatus.SOLD_OUT) {
+//            this.status = ProductStatus.SALES;
+//        }
+    }
 }
