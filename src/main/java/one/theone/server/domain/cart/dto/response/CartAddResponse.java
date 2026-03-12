@@ -1,4 +1,7 @@
 package one.theone.server.domain.cart.dto.response;
 
-public class CartAddResponse {
+public record CartAddResponse (
+        Long productId,
+        Integer quantity
+){
 }
