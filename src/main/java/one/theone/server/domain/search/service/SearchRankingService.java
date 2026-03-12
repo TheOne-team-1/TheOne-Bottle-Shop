@@ -38,7 +38,7 @@ public class SearchRankingService {
     @Async("asyncExecutor")
     @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "localCacheManager")
     public void record(String keyword) {
-        String lockKey = LOCK_PREFIX + keyword.trim().toLowerCase();
+        String lockKey = LOCK_PREFIX + keyword;
         String lockValue = null;
 
         try {
@@ -47,12 +47,12 @@ public class SearchRankingService {
             if (lockValue == null) {
                 return;
             }
-            String dedupKey = DEDUP_PREFIX + keyword.trim().toLowerCase();
+            String dedupKey = DEDUP_PREFIX + keyword;
             Boolean isFirstSearch = redisTemplate.opsForValue().setIfAbsent(dedupKey, "locked", DEDUP_TTL, TimeUnit.SECONDS);
 
             if (Boolean.TRUE.equals(isFirstSearch)) {
                 String rankingKey = getWeeklyRankingKey();
-                redisTemplate.opsForZSet().incrementScore(rankingKey, keyword.trim().toLowerCase(), 1);
+                redisTemplate.opsForZSet().incrementScore(rankingKey, keyword, 1);
                 if (redisTemplate.getExpire(rankingKey) == -1L) {
                     redisTemplate.expire(rankingKey, 8, TimeUnit.DAYS);
                 }

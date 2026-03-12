@@ -25,13 +25,15 @@ public class SearchService {
 
     @Transactional(readOnly = true)
     public SearchResultResponse searchByKeywordV1(String keyword, Pageable pageable) {
-        List<String> keywordMorphemes = komoranCorrector.extractMorphemes(keyword);
-        return searchResult(productRepository.findProductByKeyword(keywordMorphemes, keyword, pageable), keyword);
+        String normalizedKeyword = keyword.trim().toLowerCase();
+        List<String> keywordMorphemes = komoranCorrector.extractMorphemes(normalizedKeyword);
+        return searchResult(productRepository.findProductByKeyword(keywordMorphemes, keyword, pageable), normalizedKeyword);
     }
 
     public SearchResultResponse searchByKeywordV2(String keyword, Pageable pageable) {
-        List<String> keywordMorphemes = komoranCorrector.extractMorphemes(keyword);
-        return searchResult(searchCacheService.getOrCache(keywordMorphemes, keyword, pageable), keyword);
+        String normalizedKeyword = keyword.trim().toLowerCase();
+        List<String> keywordMorphemes = komoranCorrector.extractMorphemes(normalizedKeyword);
+        return searchResult(searchCacheService.getOrCache(keywordMorphemes, keyword, pageable), normalizedKeyword);
 
     }
 
