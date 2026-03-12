@@ -10,6 +10,7 @@ import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,6 +66,7 @@ public class ProductService {
         return response.withViewCount(productViewService.getViewCount(id));
     }
 
+    @CacheEvict(value = "productCache", allEntries = true)
     @Transactional
     public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
@@ -80,6 +82,7 @@ public class ProductService {
         return ProductUpdateResponse.from(product);
     }
 
+    @CacheEvict(value = "productCache", allEntries = true)
     @Transactional
     public ProductStatusUpdateResponse updateProductStatus(Long id, ProductStatusUpdateRequest request) {
         Product product = productRepository.findById(id)
