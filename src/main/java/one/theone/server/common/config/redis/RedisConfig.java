@@ -3,6 +3,7 @@ package one.theone.server.common.config.redis;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -13,6 +14,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RedisConfig {
@@ -28,7 +31,8 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisCacheManager cacheManager() {
+    @Primary
+    public RedisCacheManager redisCacheManager() {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
                 .serializeValuesWith(
@@ -37,12 +41,12 @@ public class RedisConfig {
                 );
 
         // 캐시별 TTL 개별 설정
-        //Map<String, RedisCacheConfiguration> configs = new HashMap<>();
-        //configs.put("products", defaultConfig.entryTtl(Duration.ofHours(1)));
+        Map<String, RedisCacheConfiguration> configs = new HashMap<>();
+        configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)
-                //.withInitialCacheConfigurations(configs)
+                .withInitialCacheConfigurations(configs)
                 .build();
     }
 

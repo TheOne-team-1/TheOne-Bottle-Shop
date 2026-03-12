@@ -39,6 +39,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private Long quantity;
 
+    @Column(precision = 2, scale = 1)
+    private BigDecimal rating;
+
     public static Product register(
             String name,
             Long price,
@@ -51,7 +54,7 @@ public class Product extends BaseEntity {
 
         product.name = name;
         product.price = price;
-        product.status = ProductStatus.SALES;
+        product.status = quantity == 0 ? ProductStatus.SOLD_OUT : ProductStatus.SALES;
         product.abv = abv;
         product.volumeMl = volumeMl;
         product.categoryDetailId = categoryDetailId;
