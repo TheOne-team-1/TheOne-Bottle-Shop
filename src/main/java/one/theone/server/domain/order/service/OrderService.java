@@ -22,12 +22,12 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponse createOrder(OrderCreateRequest request) {
-        BigDecimal totalAmount = calculateTotalAmount(request);
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal usedPoint = defaultIfNull(request.usedPoint());
-        BigDecimal finalAmount = totalAmount.subtract(discountAmount).subtract(usedPoint);
+        Long totalAmount = calculateTotalAmount(request);
+        Long discountAmount = 0L;
+        Long usedPoint = request.usedPoint() == null ? 0L : request.usedPoint();
+        Long finalAmount = totalAmount - discountAmount - usedPoint;
 
-        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+        if (finalAmount < 0) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_AMOUNT);
         }
 
@@ -57,15 +57,10 @@ public class OrderService {
         return OrderCreateResponse.from(savedOrder);
     }
 
-    private BigDecimal calculateTotalAmount(OrderCreateRequest request) {
+    private Long calculateTotalAmount(OrderCreateRequest request) {
         return request.orderItems().stream()
-                .map(item -> item.productPriceSnap().multiply(
-                        BigDecimal.valueOf(item.quantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal defaultIfNull(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
+                .mapToLong(item -> item.productPriceSnap() * item.quantity())
+                .sum();
     }
 
     private String generateOrderNum() {

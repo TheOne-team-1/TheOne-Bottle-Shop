@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,16 +33,16 @@ public class Order extends BaseEntity {
     private OrderStatus status;
 
     @Column(name = "used_point", nullable = false)
-    private BigDecimal usedPoint;
+    private Long usedPoint;
 
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal totalAmount;
+    private Long totalAmount;
 
     @Column(name = "discount_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal discountAmount;
+    private Long discountAmount;
 
     @Column(name = "final_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal finalAmount;
+    private Long finalAmount;
 
     @Column(name = "member_address_snap", nullable = false, length = 500)
     private String memberAddressSnap;
@@ -55,8 +54,8 @@ public class Order extends BaseEntity {
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
     public static Order create(
-            Long memberId, Long memberCouponId, String orderNum, BigDecimal usedPoint,
-            BigDecimal totalAmount, BigDecimal discountAmount, BigDecimal finalAmount,
+            Long memberId, Long memberCouponId, String orderNum, Long usedPoint,
+            Long totalAmount, Long discountAmount, Long finalAmount,
             String memberAddressSnap, String memberAddressDetailSnap) {
 
         Order order = new Order();
