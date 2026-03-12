@@ -28,18 +28,18 @@ public class OrderDetail extends BaseEntity {
     private String productNameSnap;
 
     @Column(name = "product_price_snap", nullable = false, precision = 15, scale = 2)
-    private BigDecimal productPriceSnap;
+    private Long productPriceSnap;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     @Column(name = "line_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal lineAmount;
+    private Long lineAmount;
 
     public static OrderDetail create(
             Long productId,
             String productNameSnap,
-            BigDecimal productPriceSnap,
+            Long productPriceSnap,
             Integer quantity
     ) {
         OrderDetail detail = new OrderDetail();
@@ -48,7 +48,7 @@ public class OrderDetail extends BaseEntity {
         detail.productNameSnap = productNameSnap;
         detail.productPriceSnap = productPriceSnap;
         detail.quantity = quantity;
-        detail.lineAmount = productPriceSnap.multiply(BigDecimal.valueOf(quantity));
+        detail.lineAmount = productPriceSnap * quantity;
 
         return detail;
     }

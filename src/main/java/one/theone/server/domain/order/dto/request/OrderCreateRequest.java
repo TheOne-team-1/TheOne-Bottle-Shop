@@ -1,12 +1,11 @@
 package one.theone.server.domain.order.dto.request;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderCreateRequest(
         Long memberId,
         Long memberCouponId,
-        BigDecimal usedPoint,
+        Long usedPoint,
         String memberAddressSnap,
         String memberAddressDetailSnap,
         List<OrderItemRequest> orderItems
@@ -14,7 +13,7 @@ public record OrderCreateRequest(
     public record OrderItemRequest(
             Long productId,
             String productNameSnap,
-            BigDecimal productPriceSnap,
+            Long productPriceSnap,
             Integer quantity
     ) {
     }
