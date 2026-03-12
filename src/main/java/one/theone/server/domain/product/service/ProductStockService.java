@@ -17,8 +17,8 @@ public class ProductStockService {
     private final ProductService productService;
 
     private static final String LOCK_PREFIX = "product:stock:lock:";
-    private static final long LOCK_WAIT = 1L;
-    private static final long LOCK_LEASE = 3L;
+    private static final long LOCK_WAIT = 3L;
+    private static final long LOCK_LEASE = 5L;
     private static final int MAX_RETRY = 3;
 
     private void executeWithLock(Long productId, Runnable task) {
