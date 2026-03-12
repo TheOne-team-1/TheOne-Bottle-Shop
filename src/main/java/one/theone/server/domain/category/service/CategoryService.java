@@ -26,7 +26,7 @@ public class CategoryService {
             throw new ServiceErrorException(CategoryExceptionEnum.ERR_DUPLICATE_CATEGORY_NAME);
         }
 
-        if (categoryRepository.existsBySortNum(request.sortNum())) {
+        if (request.sortNum() != null && categoryRepository.existsBySortNum(request.sortNum())) {
             List<Category> targets = categoryRepository.findAllBySortNumGreaterThanEqual(request.sortNum());
             for (Category category : targets) {
                 category.updateSortNum(category.getSortNum() + 1);
