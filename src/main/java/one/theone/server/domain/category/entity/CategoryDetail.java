@@ -41,4 +41,8 @@ public class CategoryDetail extends BaseEntity {
 
         return categoryDetail;
     }
+
+    public void updateSortNum(Integer sortNum) {
+        this.sortNum = sortNum;
+    }
 }

@@ -3,11 +3,9 @@ package one.theone.server.domain.category.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CategoryExceptionEnum;
-import one.theone.server.domain.category.dto.CategoryCreateRequest;
-import one.theone.server.domain.category.dto.CategoryCreateResponse;
-import one.theone.server.domain.category.dto.CategoryUpdateRequest;
-import one.theone.server.domain.category.dto.CategoryUpdateResponse;
+import one.theone.server.domain.category.dto.*;
 import one.theone.server.domain.category.entity.Category;
+import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.category.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
@@ -58,5 +56,26 @@ public class CategoryService {
 
         category.update(request);
         return CategoryUpdateResponse.from(category);
+    }
+
+    @Transactional
+    public CategoryDetailCreateResponse createCategoryDetail(CategoryDetailCreateRequest request) {
+        categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
+
+        if (categoryDetailRepository.existsByCategoryIdAndName(request.categoryId(), request.name())) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_DUPLICATE_CATEGORY_DETAIL_NAME);
+        }
+
+        if (request.sortNum() != null && categoryDetailRepository.existsBySortNum(request.sortNum())) {
+            List<CategoryDetail> targets = categoryDetailRepository.findAllByCategoryIdAndSortNumGreaterThanEqual(request.categoryId(), request.sortNum());
+            for (CategoryDetail categoryDetail : targets) {
+                categoryDetail.updateSortNum(categoryDetail.getSortNum() + 1);
+            }
+        }
+
+        CategoryDetail categoryDetail = CategoryDetail.register(request.categoryId(), request.name(), request.sortNum());
+        categoryDetailRepository.save(categoryDetail);
+        return CategoryDetailCreateResponse.from(categoryDetail);
     }
 }

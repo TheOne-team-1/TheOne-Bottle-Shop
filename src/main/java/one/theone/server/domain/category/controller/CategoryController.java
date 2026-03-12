@@ -3,10 +3,7 @@ package one.theone.server.domain.category.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
-import one.theone.server.domain.category.dto.CategoryCreateRequest;
-import one.theone.server.domain.category.dto.CategoryCreateResponse;
-import one.theone.server.domain.category.dto.CategoryUpdateRequest;
-import one.theone.server.domain.category.dto.CategoryUpdateResponse;
+import one.theone.server.domain.category.dto.*;
 import one.theone.server.domain.category.service.CategoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +29,12 @@ public class CategoryController {
             @Valid @RequestBody CategoryUpdateRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "대분류 카테고리 수정 성공", categoryService.updateCategory(id, request)));
+    }
+
+    @PostMapping("/category-details")
+    public ResponseEntity<BaseResponse<CategoryDetailCreateResponse>> createCategoryDetail(
+            @Valid @RequestBody CategoryDetailCreateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), "소분류 카테고리 생성 성공", categoryService.createCategoryDetail(request)));
     }
 }
