@@ -1,30 +1,32 @@
 package one.theone.server.domain.search.corrector;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class EngToKorCorrector {
 
     private static final Map<Character, Character> ENG_TO_KOR = Map.ofEntries(
             Map.entry('r', 'ㄱ'), Map.entry('R', 'ㄲ'), Map.entry('s', 'ㄴ'),
             Map.entry('e', 'ㄷ'), Map.entry('E', 'ㄸ'), Map.entry('f', 'ㄹ'),
-            Map.entry('a', 'ㅁ'), Map.entry('q', 'ㅂ'), Map.entry('t', 'ㅅ'),
-            Map.entry('T', 'ㅆ'), Map.entry('d', 'ㅇ'), Map.entry('w', 'ㅈ'),
-            Map.entry('W', 'ㅉ'), Map.entry('c', 'ㅊ'), Map.entry('z', 'ㅋ'),
-            Map.entry('x', 'ㅌ'), Map.entry('v', 'ㅍ'), Map.entry('g', 'ㅎ'),
-            Map.entry('k', 'ㅏ'), Map.entry('i', 'ㅑ'), Map.entry('j', 'ㅓ'),
-            Map.entry('u', 'ㅕ'), Map.entry('h', 'ㅗ'), Map.entry('y', 'ㅛ'),
-            Map.entry('n', 'ㅜ'), Map.entry('b', 'ㅠ'), Map.entry('m', 'ㅡ'),
-            Map.entry('l', 'ㅣ'), Map.entry('o', 'ㅐ'), Map.entry('p', 'ㅔ'),
-            Map.entry('O', 'ㅒ'), Map.entry('P', 'ㅖ')
+            Map.entry('a', 'ㅁ'), Map.entry('q', 'ㅂ'), Map.entry('Q', 'ㅃ'),
+            Map.entry('t', 'ㅅ'), Map.entry('T', 'ㅆ'), Map.entry('d', 'ㅇ'),
+            Map.entry('w', 'ㅈ'), Map.entry('W', 'ㅉ'), Map.entry('c', 'ㅊ'),
+            Map.entry('z', 'ㅋ'), Map.entry('x', 'ㅌ'), Map.entry('v', 'ㅍ'),
+            Map.entry('g', 'ㅎ'), Map.entry('k', 'ㅏ'), Map.entry('i', 'ㅑ'),
+            Map.entry('j', 'ㅓ'), Map.entry('u', 'ㅕ'), Map.entry('h', 'ㅗ'),
+            Map.entry('y', 'ㅛ'), Map.entry('n', 'ㅜ'), Map.entry('b', 'ㅠ'),
+            Map.entry('m', 'ㅡ'), Map.entry('l', 'ㅣ'), Map.entry('o', 'ㅐ'),
+            Map.entry('p', 'ㅔ'), Map.entry('O', 'ㅒ'), Map.entry('P', 'ㅖ')
     );
 
     // 초성
     private static final char[] CHOSUNG = {
-            'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅅ',
+            'ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ',
             'ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'
     };
     // 중성
@@ -63,6 +65,7 @@ public class EngToKorCorrector {
     }
 
     private String compose(String jamos) {
+        log.debug("자모 입력: {}", jamos);
         StringBuilder result = new StringBuilder();
         int i = 0;
 
