@@ -5,7 +5,6 @@ import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CommonExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
-import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -22,7 +21,7 @@ public class ProductStockService {
     private static final long LOCK_LEASE = 3L;
     private static final int MAX_RETRY = 3;
 
-    public void decreaseStock(Long productId, Long quantity) {
+    private void executeWithLock(Long productId, Runnable task) {
         String lockKey = LOCK_PREFIX + productId;
         int retry = 0;
 
@@ -36,7 +35,7 @@ public class ProductStockService {
                     continue;
                 }
 
-                productService.decreaseStock(productId,quantity);
+                task.run();
                 return;
 
             } catch (InterruptedException e) {
@@ -51,32 +50,11 @@ public class ProductStockService {
         throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_LOCK_FAILED);
     }
 
+    public void decreaseStock(Long productId, Long quantity) {
+        executeWithLock(productId, () -> productService.decreaseStock(productId, quantity));
+    }
+
     public void increaseStock(Long productId, Long quantity) {
-        String lockKey = LOCK_PREFIX + productId;
-        int retry = 0;
-
-        while (retry < MAX_RETRY) {
-            String lockValue = null;
-            try {
-                lockValue = redisLockService.tryLock(lockKey, LOCK_WAIT, LOCK_LEASE, TimeUnit.SECONDS);
-
-                if (lockValue == null) {
-                    retry++;
-                    continue;
-                }
-
-                productService.increaseStock(productId, quantity);
-                return;
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ServiceErrorException(CommonExceptionEnum.ERR_GET_REDIS_LOCK_FAIL);
-            } finally {
-                if (lockValue != null) {
-                    redisLockService.unLock(lockKey, lockValue);
-                }
-            }
-        }
-        throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_LOCK_FAILED);
+        executeWithLock(productId, () -> productService.increaseStock(productId, quantity));
     }
 }
