@@ -11,13 +11,13 @@ public record ProductGetResponse(
         Product.ProductStatus status,
         BigDecimal abv,
         int volumeMl,
-        String categoryName,
-        String categoryDetailName,
+        Long categoryId,
+        Long categoryDetailId,
         Long quantity,
         BigDecimal rating,
         Long viewCount
 ) {
     public ProductGetResponse withViewCount(Long viewCount) {
-        return new ProductGetResponse(id, name,price, status, abv, volumeMl, categoryName, categoryDetailName, quantity, rating, viewCount);
+        return new ProductGetResponse(id, name,price, status, abv, volumeMl, categoryId, categoryDetailId, quantity, rating, viewCount);
     }
 }
