@@ -18,7 +18,7 @@ public record ProductUpdateRequest(
         BigDecimal abv,
 
         @Positive(message = "용량은 0보다 커야 합니다")
-        int volumeMl,
+        Integer volumeMl,
 
         Long categoryDetailId,
 

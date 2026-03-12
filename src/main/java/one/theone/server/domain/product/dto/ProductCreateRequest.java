@@ -17,8 +17,9 @@ public record ProductCreateRequest(
         @DecimalMax(value = "99.999", message = "도수는 99.999 이하여야 합니다")
         BigDecimal abv,
 
+        @NotNull(message = "용량은 필수입니다")
         @Positive(message = "용량은 0보다 커야 합니다")
-        int volumeMl,
+        Integer volumeMl,
 
         @NotNull(message = "카테고리는 필수입니다")
         Long productCategoryDetailId,

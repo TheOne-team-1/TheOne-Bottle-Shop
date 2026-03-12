@@ -87,7 +87,7 @@ public class Product extends BaseEntity {
         if (request.abv() != null) {
             this.abv = request.abv();
         }
-        if (request.volumeMl() != 0) {
+        if (request.volumeMl() != null) {
             this.volumeMl = request.volumeMl();
         }
         if (request.categoryDetailId() != null) {
