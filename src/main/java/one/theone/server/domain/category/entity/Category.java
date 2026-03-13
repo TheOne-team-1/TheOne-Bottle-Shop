@@ -5,7 +5,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.CategoryExceptionEnum;
 import one.theone.server.domain.category.dto.CategoryUpdateRequest;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -22,6 +26,9 @@ public class Category extends BaseEntity {
     private String name;
 
     private Integer sortNum;
+
+    private Boolean deleted = Boolean.FALSE;
+    private LocalDateTime deletedAt;
 
     public static Category register(
             String name,
@@ -46,5 +53,14 @@ public class Category extends BaseEntity {
         if (request.sortNum() != null) {
             this.sortNum = request.sortNum();
         }
+    }
+
+    public void delete() {
+        if (this.deleted) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_ALREADY_DELETED);
+        }
+        this.name = this.name + "_deleted_" + this.id;
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 }

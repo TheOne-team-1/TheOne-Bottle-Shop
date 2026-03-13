@@ -62,6 +62,19 @@ public class CategoryService {
     }
 
     @Transactional
+    public CategoryDeleteResponse deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
+
+        if (categoryDetailRepository.existsByCategoryIdAndDeletedFalse(id)) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_HAS_DETAILS);
+        }
+
+        category.delete();
+        return CategoryDeleteResponse.from(category);
+    }
+
+    @Transactional
     public CategoryDetailCreateResponse createCategoryDetail(CategoryDetailCreateRequest request) {
         categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));

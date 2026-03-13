@@ -34,6 +34,13 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "대분류 카테고리 수정 성공", categoryService.updateCategory(id, request)));
     }
 
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<BaseResponse<CategoryDeleteResponse>> deleteCategory(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "대분류 카테고리 삭제 성공", categoryService.deleteCategory(id)));
+    }
+
     @PostMapping("/category-details")
     public ResponseEntity<BaseResponse<CategoryDetailCreateResponse>> createCategoryDetail(
             @Valid @RequestBody CategoryDetailCreateRequest request

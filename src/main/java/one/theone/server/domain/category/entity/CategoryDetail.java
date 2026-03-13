@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 import one.theone.server.domain.category.dto.CategoryDetailUpdateRequest;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "category_details", uniqueConstraints = {
@@ -28,6 +30,9 @@ public class CategoryDetail extends BaseEntity {
     private String name;
 
     private Integer sortNum;
+
+    private Boolean deleted = Boolean.FALSE;
+    private LocalDateTime deletedAt;
 
     public static CategoryDetail register(
             Long categoryId,
