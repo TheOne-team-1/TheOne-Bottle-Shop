@@ -1,0 +1,19 @@
+package one.theone.server.common.exception.domain;
+
+import lombok.Getter;
+import one.theone.server.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+@Getter
+public enum PaymentExceptionEnum implements ErrorCode {
+    ERR_INVALID_PENDING(HttpStatus.CONFLICT, "결제 대기 상태에서만 가능 합니다")
+    , ERR_INVALID_COMPLETE(HttpStatus.CONFLICT, "결제 완료 상태에서만 가능 합니다");
+
+    private final HttpStatus httpStatus;
+    private final String message;
+
+    PaymentExceptionEnum(HttpStatus httpStatus, String message) {
+        this.httpStatus = httpStatus;
+        this.message = message;
+    }
+}
