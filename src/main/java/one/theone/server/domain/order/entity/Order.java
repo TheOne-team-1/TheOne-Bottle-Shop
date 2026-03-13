@@ -50,9 +50,6 @@ public class Order extends BaseEntity {
     @Column(name = "member_address_detail_snap", nullable = false, length = 500)
     private String memberAddressDetailSnap;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderDetail> orderDetails = new ArrayList<>();
-
     public static Order create(
             Long memberId, Long memberCouponId, String orderNum, Long usedPoint,
             Long totalAmount, Long discountAmount, Long finalAmount,
@@ -73,11 +70,6 @@ public class Order extends BaseEntity {
         order.status = OrderStatus.PENDING_PAYMENT;
 
         return order;
-    }
-
-    public void addOrderDetail(OrderDetail detail) {
-        this.orderDetails.add(detail);
-        detail.assignOrder(this);
     }
 
     public void markCancelled() {
