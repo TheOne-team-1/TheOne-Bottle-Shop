@@ -6,7 +6,14 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum CategoryExceptionEnum implements ErrorCode {
-    ERR_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다");
+    ERR_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "대분류 카테고리를 찾을 수 없습니다"),
+    ERR_DUPLICATE_CATEGORY_NAME(HttpStatus.CONFLICT, "이미 존재하는 대분류 카테고리입니다"),
+    ERR_CATEGORY_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "소분류 카테고리를 찾을 수 없습니다"),
+    ERR_DUPLICATE_CATEGORY_DETAIL_NAME(HttpStatus.CONFLICT, "대분류 카테고리에 이미 존재하는 소분류 카테고리입니다"),
+    ERR_CATEGORY_HAS_DETAILS(HttpStatus.CONFLICT, "소분류 카테고리가 존재하여 삭제할 수 없습니다"),
+    ERR_CATEGORY_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 대분류 카테고리입니다"),
+    ERR_CATEGORY_DETAIL_HAS_PRODUCT(HttpStatus.CONFLICT, "상품이 존재하여 삭제할 수 없습니다"),
+    ERR_CATEGORY_DETAIL_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 소분류 카테고리입니다");
 
     private final HttpStatus httpStatus;
     private final String message;
