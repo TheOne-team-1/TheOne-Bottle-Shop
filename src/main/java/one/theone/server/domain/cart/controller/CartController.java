@@ -5,6 +5,7 @@ import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
 import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
 import one.theone.server.domain.cart.dto.response.CartAddResponse;
+import one.theone.server.domain.cart.dto.response.CartRemoveItemResponse;
 import one.theone.server.domain.cart.dto.response.CartResponse;
 import one.theone.server.domain.cart.dto.response.CartUpdateQuantityResponse;
 import one.theone.server.domain.cart.service.CartService;
@@ -43,7 +44,7 @@ public class CartController {
             @PathVariable Long productId,
             @RequestBody CartUpdateQuantityRequest request
     ) {
-        CartUpdateQuantityResponse response = cartService.UpdateQuantity(memberId, productId, request);
+        CartUpdateQuantityResponse response = cartService.updateQuantity(memberId, productId, request);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 수량 변경 성공", response));

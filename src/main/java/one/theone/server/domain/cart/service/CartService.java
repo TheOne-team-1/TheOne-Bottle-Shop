@@ -8,6 +8,7 @@ import one.theone.server.domain.cart.dto.request.CartAddRequest;
 import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
 import one.theone.server.domain.cart.dto.response.CartAddResponse;
 import one.theone.server.domain.cart.dto.response.CartItemResponse;
+import one.theone.server.domain.cart.dto.response.CartRemoveItemResponse;
 import one.theone.server.domain.cart.dto.response.CartResponse;
 import one.theone.server.domain.cart.dto.response.CartUpdateQuantityResponse;
 import one.theone.server.domain.product.entity.Product;
@@ -24,27 +25,28 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CartService {
-    private final RedisTemplate <String, Object> redisTemplate;
+
+    private final RedisTemplate<String, Object> redisTemplate;
     private final ProductRepository productRepository;
 
     @Transactional
     public CartAddResponse addItem(Long memberId, CartAddRequest request) {
-        validateRequest(request);
+        validateAddRequest(request);
 
         if (!productRepository.existsById(request.productId())) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
         }
 
         String cartKey = generateCartKey(memberId);
+        String field = generateCartField(request.productId());
 
         redisTemplate.opsForHash().increment(
                 cartKey,
-                request.productId().toString(),
+                field,
                 request.quantity()
         );
 
-        Object savedQuantity = redisTemplate.opsForHash()
-                .get(cartKey, request.productId().toString());
+        Object savedQuantity = redisTemplate.opsForHash().get(cartKey, field);
 
         return new CartAddResponse(
                 request.productId(),
@@ -74,7 +76,7 @@ public class CartService {
         List<CartItemResponse> items = new ArrayList<>();
 
         for (Product product : products) {
-            Object quantityValue = cartEntries.get(product.getId().toString()).toString();
+            Object quantityValue = cartEntries.get(product.getId().toString());
 
             if (quantityValue == null) {
                 continue;
@@ -92,25 +94,23 @@ public class CartService {
             ));
         }
 
-        Long totalAmount = items.stream().mapToLong(CartItemResponse::lineAmount).sum();
+        Long totalAmount = items.stream()
+                .mapToLong(CartItemResponse::lineAmount)
+                .sum();
 
         return new CartResponse(items, totalAmount);
     }
 
     @Transactional
-    public CartUpdateQuantityResponse UpdateQuantity(
-            Long memberId, Long productId, CartUpdateQuantityRequest request) {
-
+    public CartUpdateQuantityResponse updateQuantity(
+            Long memberId, Long productId, CartUpdateQuantityRequest request
+    ) {
         validateUpdateQuantityRequest(productId, request);
 
         String cartKey = generateCartKey(memberId);
-        String field = productId.toString();
+        String field = generateCartField(productId);
 
-        Boolean exists = redisTemplate.opsForHash().hasKey(cartKey, field);
-
-        if (!Boolean.TRUE.equals(exists)) {
-            throw new ServiceErrorException(CartExceptionEnum.ERR_CART_ITEM_NOT_FOUND);
-        }
+        validateCartItemExists(cartKey, field);
 
         redisTemplate.opsForHash().put(cartKey, field, request.quantity());
 
@@ -120,8 +120,21 @@ public class CartService {
         );
     }
 
+    @Transactional
+    public CartRemoveItemResponse removeItem(Long memberId, Long productId) {
+        validateProductId(productId);
 
-    private void validateRequest(CartAddRequest request) {
+        String cartKey = generateCartKey(memberId);
+        String field = generateCartField(productId);
+
+        validateCartItemExists(cartKey, field);
+
+        redisTemplate.opsForHash().delete(cartKey, field);
+
+        return new CartRemoveItemResponse(productId);
+    }
+
+    private void validateAddRequest(CartAddRequest request) {
         validateProductId(request.productId());
         validateQuantity(request.quantity());
     }
@@ -143,7 +156,19 @@ public class CartService {
         }
     }
 
+    private void validateCartItemExists(String cartKey, String field) {
+        Boolean exists = redisTemplate.opsForHash().hasKey(cartKey, field);
+
+        if (!Boolean.TRUE.equals(exists)) {
+            throw new ServiceErrorException(CartExceptionEnum.ERR_CART_ITEM_NOT_FOUND);
+        }
+    }
+
     private String generateCartKey(Long memberId) {
         return "cart:member:" + memberId;
+    }
+
+    private String generateCartField(Long productId) {
+        return productId.toString();
     }
 }
