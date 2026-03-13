@@ -62,4 +62,11 @@ public class ProductController {
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상태 변경 성공", productService.updateProductStatus(id, request)));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse<ProductDeleteResponse>> deleteProduct(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 삭제 성공", productService.deleteProduct(id)));
+    }
 }

@@ -61,7 +61,6 @@ public class ProductService {
         }
 
         productViewService.record(id, clientIp);
-
         return response.withViewCount(productViewService.getViewCount(id));
     }
 
@@ -77,7 +76,6 @@ public class ProductService {
         }
 
         product.update(request);
-
         return ProductUpdateResponse.from(product);
     }
 
@@ -88,8 +86,17 @@ public class ProductService {
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
 
         product.updateStatus(request);
-
         return ProductStatusUpdateResponse.from(product);
+    }
+
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public ProductDeleteResponse deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.delete();
+        return ProductDeleteResponse.from(product);
     }
 
 
