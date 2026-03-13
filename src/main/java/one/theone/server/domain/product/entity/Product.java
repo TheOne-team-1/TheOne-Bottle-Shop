@@ -11,6 +11,7 @@ import one.theone.server.domain.product.dto.ProductStatusUpdateRequest;
 import one.theone.server.domain.product.dto.ProductUpdateRequest;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -46,6 +47,9 @@ public class Product extends BaseEntity {
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
 
+    private Boolean deleted = Boolean.FALSE;
+    private LocalDateTime deletedAt;
+
     public static Product register(
             String name,
             Long price,
@@ -72,7 +76,7 @@ public class Product extends BaseEntity {
     }
 
     public void update(ProductUpdateRequest request) {
-        if (this.getDeleted()) {
+        if (this.deleted) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DELETED);
         }
         if (this.status == ProductStatus.DISCONTINUE) {
@@ -100,7 +104,7 @@ public class Product extends BaseEntity {
     }
 
     public void updateStatus(ProductStatusUpdateRequest request) {
-        if (this.getDeleted()) {
+        if (this.deleted) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_DELETED);
         }
         if (this.status == ProductStatus.DISCONTINUE) {
@@ -135,8 +139,5 @@ public class Product extends BaseEntity {
         }
 
         this.quantity += quantity;
-//        if (this.quantity > 0 && this.status == ProductStatus.SOLD_OUT) {
-//            this.status = ProductStatus.SALES;
-//        }
     }
 }

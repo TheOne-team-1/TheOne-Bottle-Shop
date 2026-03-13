@@ -5,6 +5,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.CategoryExceptionEnum;
+import one.theone.server.domain.category.dto.CategoryDetailUpdateRequest;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -28,6 +33,9 @@ public class CategoryDetail extends BaseEntity {
 
     private Integer sortNum;
 
+    private Boolean deleted = Boolean.FALSE;
+    private LocalDateTime deletedAt;
+
     public static CategoryDetail register(
             Long categoryId,
             String name,
@@ -40,5 +48,33 @@ public class CategoryDetail extends BaseEntity {
         categoryDetail.sortNum = sortNum;
 
         return categoryDetail;
+    }
+
+    public void updateSortNum(Integer sortNum) {
+        this.sortNum = sortNum;
+    }
+
+    public void update(CategoryDetailUpdateRequest request) {
+        if (this.deleted) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_ALREADY_DELETED);
+        }
+        if (request.categoryId() != null) {
+            this.categoryId = request.categoryId();
+        }
+        if (request.name() != null) {
+            this.name = request.name();
+        }
+        if (request.sortNum() != null) {
+            this.sortNum = request.sortNum();
+        }
+    }
+
+    public void delete() {
+        if (this.deleted) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_ALREADY_DELETED);
+        }
+        this.name = this.name + "_deleted_" + this.id;
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 }
