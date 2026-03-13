@@ -26,6 +26,7 @@ public class Event extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime startAt;
 
+    @Column(nullable = false)
     private LocalDateTime endAt;
 
     @Enumerated(EnumType.STRING)
@@ -42,22 +43,26 @@ public class Event extends BaseEntity {
     private LocalDateTime deletedAt;
 
     public static Event register(String name, LocalDateTime startAt, LocalDateTime endAt, EventType type) {
-        if (endAt != null && !endAt.isAfter(startAt)) {
-            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
-        }
+        validateTime(startAt, endAt);
 
         Event event = new Event();
         event.name = name;
         event.startAt = startAt;
         event.endAt = endAt;
         event.type = type;
-        event.status = LocalDateTime.now().isBefore(startAt) ? EventStatus.PENDING : EventStatus.OPEN;
+        event.status = EventStatus.PENDING;
         event.deleted = false;
         return event;
     }
 
+    private static void validateTime(LocalDateTime startAt, LocalDateTime endAt) {
+        if (!endAt.isAfter(startAt)) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
+        }
+    }
+
     public enum EventType {
-        ALWAYS, PRODUCT_BUY, AMOUNT_BUY, FIRST
+        PRODUCT_BUY, AMOUNT_BUY, FIRST
     }
 
     public enum EventStatus {
