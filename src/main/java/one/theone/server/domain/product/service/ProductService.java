@@ -94,16 +94,16 @@ public class ProductService {
 
 
     // ---------------------------------------------------------------------------------------------------
-    @CacheEvict(value = "productCache", allEntries = true)
+    @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
     @Transactional
-    public void decreaseStock(Long id, Long quantity) {
+    public boolean decreaseStock(Long id, Long quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
 
         product.decreaseStock(quantity);
+        return product.getQuantity() == 0;
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
     @Transactional
     public void increaseStock(Long id, Long quantity) {
         Product product = productRepository.findById(id)
