@@ -3,8 +3,10 @@ package one.theone.server.domain.cart.controller;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
+import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
 import one.theone.server.domain.cart.dto.response.CartAddResponse;
 import one.theone.server.domain.cart.dto.response.CartResponse;
+import one.theone.server.domain.cart.dto.response.CartUpdateQuantityResponse;
 import one.theone.server.domain.cart.service.CartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,8 @@ public class CartController {
     @PostMapping("/items")
     public ResponseEntity<BaseResponse<CartAddResponse>> addItem(
             @RequestParam Long memberId,
-            @RequestBody CartAddRequest request) {
+            @RequestBody CartAddRequest request
+    ) {
         CartAddResponse response = cartService.addItem(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "장바구니 상품 등록 성공", response));
@@ -27,9 +30,22 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<CartResponse>> getCart(
-            @RequestParam Long memberId) {
+            @RequestParam Long memberId
+    ) {
         CartResponse response = cartService.getCart(memberId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 조회 성공", response));
+    }
+
+    @PatchMapping("/items/{productId}")
+    public ResponseEntity<BaseResponse<CartUpdateQuantityResponse>> updateCart(
+            @RequestParam Long memberId,
+            @PathVariable Long productId,
+            @RequestBody CartUpdateQuantityRequest request
+    ) {
+        CartUpdateQuantityResponse response = cartService.UpdateQuantity(memberId, productId, request);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 수량 변경 성공", response));
     }
 }
