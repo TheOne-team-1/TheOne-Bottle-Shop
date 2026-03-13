@@ -1,6 +1,7 @@
 package one.theone.server.domain.category.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CategoryExceptionEnum;
 import one.theone.server.domain.category.dto.*;
@@ -8,6 +9,8 @@ import one.theone.server.domain.category.entity.Category;
 import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.category.repository.CategoryRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -103,5 +106,11 @@ public class CategoryService {
 
         categoryDetail.update(request);
         return CategoryDetailUpdateResponse.from(categoryDetail);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<CategoriesGetResponse> getCategories(Pageable pageable) {
+        Page<CategoriesGetResponse> page = categoryRepository.findAllCategories(pageable);
+        return PageResponse.register(page);
     }
 }

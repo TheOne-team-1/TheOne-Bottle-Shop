@@ -3,15 +3,18 @@ package one.theone.server.domain.category.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
+import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.category.dto.*;
 import one.theone.server.domain.category.service.CategoryService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/admin")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -44,5 +47,12 @@ public class CategoryController {
             @Valid @RequestBody CategoryDetailUpdateRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "소분류 카테고리 수정 성공", categoryService.updateCategoryDetail(id, request)));
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<BaseResponse<PageResponse<CategoriesGetResponse>>> getCategories(
+            @PageableDefault(page = 0, size = 10) Pageable pageable
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "카테고리 목록 조회 성공", categoryService.getCategories(pageable)));
     }
 }
