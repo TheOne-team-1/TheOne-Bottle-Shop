@@ -13,7 +13,8 @@ public enum ProductExceptionEnum implements ErrorCode {
     ERR_INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "상품 수량은 1 이상이어야 합니다"),
     ERR_PRODUCT_NOT_SALES(HttpStatus.BAD_REQUEST, "판매 중인 상품이 아닙니다"),
     ERR_PRODUCT_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "상품 재고가 부족합니다"),
-    ERR_PRODUCT_LOCK_FAILED(HttpStatus.CONFLICT, "잠시 후 다시 시도해주세요");
+    ERR_PRODUCT_LOCK_FAILED(HttpStatus.CONFLICT, "잠시 후 다시 시도해주세요"),
+    ERR_PRODUCT_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "이미 삭제된 상품입니다");
 
     private final HttpStatus httpStatus;
     private final String message;
