@@ -24,6 +24,7 @@ public class ProductService {
     private final CategoryDetailRepository categoryDetailRepository;
     private final ProductViewService productViewService;
 
+    // 관리자 전용 -----------------------------------------------------------------------------------------
     @Transactional
     public ProductCreateResponse createProduct(ProductCreateRequest request) {
         categoryDetailRepository.findById(request.productCategoryDetailId())
@@ -40,28 +41,6 @@ public class ProductService {
 
         productRepository.save(product);
         return ProductCreateResponse.from(product);
-    }
-
-    @Cacheable(
-            value = "productCache",
-            key = "'list:' + #request.sortType + ':' + #request.categoryIds + ':' + #request.abvMin + ':' + #request.abvMax + ':' + " +
-                    "#request.priceMin + ':' + #request.priceMax + ':' + #request.volumeMl + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
-    )
-    @Transactional(readOnly = true)
-    public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
-        Page<ProductsGetResponse> page = productRepository.findProductWithConditions(pageable, request);
-        return PageResponse.register(page);
-    }
-
-    @Transactional(readOnly = true)
-    public ProductGetResponse getProduct(Long id, String clientIp) {
-        ProductGetResponse response = productRepository.findProductById(id);
-        if (response == null) {
-            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
-        }
-
-        productViewService.record(id, clientIp);
-        return response.withViewCount(productViewService.getViewCount(id));
     }
 
     @CacheEvict(value = "productCache", allEntries = true)
@@ -100,7 +79,31 @@ public class ProductService {
     }
 
 
-    // ---------------------------------------------------------------------------------------------------
+    // 일반 사용자 -----------------------------------------------------------------------------------------
+    @Cacheable(
+            value = "productCache",
+            key = "'list:' + #request.sortType + ':' + #request.categoryIds + ':' + #request.abvMin + ':' + #request.abvMax + ':' + " +
+                    "#request.priceMin + ':' + #request.priceMax + ':' + #request.volumeMl + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+    )
+    @Transactional(readOnly = true)
+    public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
+        Page<ProductsGetResponse> page = productRepository.findProductWithConditions(pageable, request);
+        return PageResponse.register(page);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductGetResponse getProduct(Long id, String clientIp) {
+        ProductGetResponse response = productRepository.findProductById(id);
+        if (response == null) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
+        }
+
+        productViewService.record(id, clientIp);
+        return response.withViewCount(productViewService.getViewCount(id));
+    }
+
+
+    // 재고 차감/복구 --------------------------------------------------------------------------------------
     @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
     @Transactional
     public boolean decreaseStock(Long id, Long quantity) {
