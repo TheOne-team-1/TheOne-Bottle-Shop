@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "event_details")
@@ -23,10 +25,16 @@ public class EventDetail extends BaseEntity {
 
     private Long eventProductId;
 
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deletedAt;
+
     public static EventDetail amountBuyEvent(Long eventId, Long minPrice) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
         eventDetail.minPrice = minPrice;
+        eventDetail.deleted = false;
         return eventDetail;
     }
 
@@ -34,12 +42,14 @@ public class EventDetail extends BaseEntity {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
         eventDetail.eventProductId = eventProductId;
+        eventDetail.deleted = false;
         return eventDetail;
     }
 
     public static EventDetail noBuyEvent(Long eventId) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
+        eventDetail.deleted = false;
         return eventDetail;
     }
 }

@@ -36,6 +36,11 @@ public class Event extends BaseEntity {
     @Column(nullable = false)
     private EventStatus status;
 
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deletedAt;
+
     public static Event register(String name, LocalDateTime startAt, LocalDateTime endAt, EventType type) {
         if (endAt != null && !endAt.isAfter(startAt)) {
             throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
@@ -47,6 +52,7 @@ public class Event extends BaseEntity {
         event.endAt = endAt;
         event.type = type;
         event.status = LocalDateTime.now().isBefore(startAt) ? EventStatus.PENDING : EventStatus.OPEN;
+        event.deleted = false;
         return event;
     }
 

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "event_rewards")
@@ -27,11 +29,17 @@ public class EventReward extends BaseEntity {
 
     private Long freebieId;
 
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deletedAt;
+
     public static EventReward couponReward(Long eventId, Long couponId) {
         EventReward reward = new EventReward();
         reward.eventId = eventId;
         reward.rewardType = EventRewardType.COUPON;
         reward.couponId = couponId;
+        reward.deleted = false;
         return reward;
     }
 
@@ -40,6 +48,7 @@ public class EventReward extends BaseEntity {
         reward.eventId = eventId;
         reward.rewardType = EventRewardType.FREEBIE;
         reward.freebieId = freebieId;
+        reward.deleted = false;
         return reward;
     }
 
