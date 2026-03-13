@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.domain.event.dto.EventRewardRequest;
 
 import java.time.LocalDateTime;
 
@@ -34,7 +35,14 @@ public class EventReward extends BaseEntity {
 
     private LocalDateTime deletedAt;
 
-    public static EventReward couponReward(Long eventId, Long couponId) {
+    public static EventReward registerByRewardType(Long eventId, EventRewardRequest rewards) {
+        return switch (rewards.rewardType()) {
+            case COUPON -> couponReward(eventId, rewards.rewardId());
+            case FREEBIE -> freebieReward(eventId, rewards.rewardId());
+        };
+    }
+
+    private static EventReward couponReward(Long eventId, Long couponId) {
         EventReward reward = new EventReward();
         reward.eventId = eventId;
         reward.rewardType = EventRewardType.COUPON;
@@ -43,7 +51,7 @@ public class EventReward extends BaseEntity {
         return reward;
     }
 
-    public static EventReward freebieReward(Long eventId, Long freebieId) {
+    private static EventReward freebieReward(Long eventId, Long freebieId) {
         EventReward reward = new EventReward();
         reward.eventId = eventId;
         reward.rewardType = EventRewardType.FREEBIE;

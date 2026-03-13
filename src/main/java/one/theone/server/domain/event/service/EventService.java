@@ -5,8 +5,10 @@ import one.theone.server.domain.event.dto.EventCreateRequest;
 import one.theone.server.domain.event.dto.EventCreateResponse;
 import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.entity.EventDetail;
+import one.theone.server.domain.event.entity.EventReward;
 import one.theone.server.domain.event.repository.EventDetailRepository;
 import one.theone.server.domain.event.repository.EventRepository;
+import one.theone.server.domain.event.repository.EventRewardRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final EventDetailRepository eventDetailRepository;
+    private final EventRewardRepository eventRewardRepository;
 
     @Transactional
     public EventCreateResponse createEvent(EventCreateRequest request) {
         EventDetail.validateDetails(request.details());
+        // TODO 사은품, 쿠폰 존재 여부 검증,, 사은품 재고, 쿠폰 만료일 검증
 
         Event event = Event.register(
                 request.name(),
@@ -34,8 +38,11 @@ public class EventService {
                 request.details());
         eventDetailRepository.save(eventDetail);
 
-        // 이벤트 보상 생성 & 저장
+        EventReward eventReward = EventReward.registerByRewardType(
+                event.getId(),
+                request.rewards());
+        eventRewardRepository.save(eventReward);
 
-        // EventCreateResponse 반환
+        return EventCreateResponse.from(event, eventReward);
     }
 }
