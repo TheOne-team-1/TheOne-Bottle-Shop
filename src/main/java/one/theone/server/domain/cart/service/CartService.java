@@ -6,11 +6,7 @@ import one.theone.server.common.exception.domain.CartExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
 import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
-import one.theone.server.domain.cart.dto.response.CartAddResponse;
-import one.theone.server.domain.cart.dto.response.CartItemResponse;
-import one.theone.server.domain.cart.dto.response.CartRemoveItemResponse;
-import one.theone.server.domain.cart.dto.response.CartResponse;
-import one.theone.server.domain.cart.dto.response.CartUpdateQuantityResponse;
+import one.theone.server.domain.cart.dto.response.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -132,6 +128,15 @@ public class CartService {
         redisTemplate.opsForHash().delete(cartKey, field);
 
         return new CartRemoveItemResponse(productId);
+    }
+
+    @Transactional
+    public CartRemoveResponse removeCart(Long memberId) {
+        String cartKey = generateCartKey(memberId);
+
+        redisTemplate.delete(cartKey);
+
+        return new CartRemoveResponse("장바구니가 비워졌습니다");
     }
 
     private void validateAddRequest(CartAddRequest request) {
