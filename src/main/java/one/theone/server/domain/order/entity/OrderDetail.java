@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
-import java.math.BigDecimal;
-
 @Getter
 @Entity
 @Table(name = "order_details")
@@ -17,9 +15,8 @@ public class OrderDetail extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
@@ -51,9 +48,5 @@ public class OrderDetail extends BaseEntity {
         detail.lineAmount = productPriceSnap * quantity;
 
         return detail;
-    }
-
-    public void assignOrder(Order order) {
-        this.order = order;
     }
 }

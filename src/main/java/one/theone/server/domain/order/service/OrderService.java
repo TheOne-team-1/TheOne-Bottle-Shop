@@ -3,7 +3,7 @@ package one.theone.server.domain.order.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.OrderExceptionEnum;
-import one.theone.server.domain.order.dto.request.OrderCreateRequest;
+import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
@@ -11,7 +11,6 @@ import one.theone.server.domain.order.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -21,7 +20,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public OrderCreateResponse createOrder(OrderCreateRequest request) {
+    public OrderCreateResponse createOrder(OrderCreateDirectRequest request) {
         Long totalAmount = calculateTotalAmount(request);
         Long discountAmount = 0L;
         Long usedPoint = request.usedPoint() == null ? 0L : request.usedPoint();
@@ -43,7 +42,7 @@ public class OrderService {
                 request.memberAddressDetailSnap()
         );
 
-        for (OrderCreateRequest.OrderItemRequest item : request.orderItems()) {
+        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
             OrderDetail detail = OrderDetail.create(
                     item.productId(),
                     item.productNameSnap(),
@@ -57,7 +56,7 @@ public class OrderService {
         return OrderCreateResponse.from(savedOrder);
     }
 
-    private Long calculateTotalAmount(OrderCreateRequest request) {
+    private Long calculateTotalAmount(OrderCreateDirectRequest request) {
         return request.orderItems().stream()
                 .mapToLong(item -> item.productPriceSnap() * item.quantity())
                 .sum();

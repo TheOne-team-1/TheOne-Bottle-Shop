@@ -2,7 +2,7 @@ package one.theone.server.domain.order.dto.request;
 
 import java.util.List;
 
-public record OrderCreateRequest(
+public record OrderCreateDirectRequest(
         Long memberId,
         Long memberCouponId,
         Long usedPoint,
