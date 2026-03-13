@@ -9,6 +9,7 @@ import one.theone.server.domain.category.entity.Category;
 import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.category.repository.CategoryRepository;
+import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryDetailRepository categoryDetailRepository;
+    private final ProductRepository productRepository;
 
     @Transactional
     public CategoryCreateResponse createCategory(CategoryCreateRequest request) {
@@ -119,6 +121,19 @@ public class CategoryService {
 
         categoryDetail.update(request);
         return CategoryDetailUpdateResponse.from(categoryDetail);
+    }
+
+    @Transactional
+    public CategoryDetailDeleteResponse deleteCategoryDetail(Long id) {
+        CategoryDetail categoryDetail = categoryDetailRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_NOT_FOUND));
+
+        if (productRepository.existsByCategoryDetailIdAndDeletedFalse(id)) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_HAS_PRODUCT);
+        }
+
+        categoryDetail.delete();
+        return CategoryDetailDeleteResponse.from(categoryDetail);
     }
 
     @Transactional(readOnly = true)

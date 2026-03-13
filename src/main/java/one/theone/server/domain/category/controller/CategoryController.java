@@ -56,6 +56,13 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "소분류 카테고리 수정 성공", categoryService.updateCategoryDetail(id, request)));
     }
 
+    @DeleteMapping("/category-details/{id}")
+    public ResponseEntity<BaseResponse<CategoryDetailDeleteResponse>> deleteCategoryDetail(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "소분류 카테고리 삭제 성공", categoryService.deleteCategoryDetail(id)));
+    }
+
     @GetMapping("/categories")
     public ResponseEntity<BaseResponse<PageResponse<CategoriesGetResponse>>> getCategories(
             @PageableDefault(page = 0, size = 10) Pageable pageable

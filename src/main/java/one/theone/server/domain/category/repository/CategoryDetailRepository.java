@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface CategoryDetailRepository extends JpaRepository<CategoryDetail, Long> {
 
-    boolean existsByCategoryIdAndDeletedFalse(Long id);
+    boolean existsByCategoryIdAndDeletedFalse(Long categoryId);
 
     boolean existsByCategoryIdAndName(Long categoryId, String name);
 
