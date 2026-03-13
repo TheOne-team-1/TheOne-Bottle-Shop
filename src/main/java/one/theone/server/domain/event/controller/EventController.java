@@ -23,7 +23,9 @@ public class EventController {
     @PostMapping("/admin/events")
     public ResponseEntity<BaseResponse<EventCreateResponse>> createEvent(
             @Valid @RequestBody EventCreateRequest request) {
-        return ResponseEntity.created(BaseResponse.success(
-                HttpStatus.CREATED.name(), "이벤트 생성 성공", eventService.createEvent(request)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(
+                HttpStatus.CREATED.name(),
+                "이벤트 생성 성공",
+                eventService.createEvent(request)));
     }
 }
