@@ -43,6 +43,7 @@ public class RedisConfig {
         // 캐시별 TTL 개별 설정
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
         configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        configs.put("categoryCache", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)

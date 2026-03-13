@@ -10,6 +10,8 @@ import one.theone.server.domain.category.entity.CategoryDetail;
 import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.category.repository.CategoryRepository;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class CategoryService {
     private final CategoryDetailRepository categoryDetailRepository;
     private final ProductRepository productRepository;
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryCreateResponse createCategory(CategoryCreateRequest request) {
         if (categoryRepository.existsByName(request.name())) {
@@ -43,6 +46,7 @@ public class CategoryService {
         return CategoryCreateResponse.from(category);
     }
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryUpdateResponse updateCategory(Long id, CategoryUpdateRequest request) {
         Category category = categoryRepository.findById(id)
@@ -63,6 +67,7 @@ public class CategoryService {
         return CategoryUpdateResponse.from(category);
     }
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryDeleteResponse deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
@@ -76,6 +81,7 @@ public class CategoryService {
         return CategoryDeleteResponse.from(category);
     }
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryDetailCreateResponse createCategoryDetail(CategoryDetailCreateRequest request) {
         categoryRepository.findById(request.categoryId())
@@ -97,6 +103,7 @@ public class CategoryService {
         return CategoryDetailCreateResponse.from(categoryDetail);
     }
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryDetailUpdateResponse updateCategoryDetail(Long id, CategoryDetailUpdateRequest request) {
         CategoryDetail categoryDetail = categoryDetailRepository.findById(id)
@@ -123,6 +130,7 @@ public class CategoryService {
         return CategoryDetailUpdateResponse.from(categoryDetail);
     }
 
+    @CacheEvict(value = "categoryCache", allEntries = true)
     @Transactional
     public CategoryDetailDeleteResponse deleteCategoryDetail(Long id) {
         CategoryDetail categoryDetail = categoryDetailRepository.findById(id)
@@ -136,6 +144,10 @@ public class CategoryService {
         return CategoryDetailDeleteResponse.from(categoryDetail);
     }
 
+    @Cacheable(
+            value = "categoryCache",
+            key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize"
+    )
     @Transactional(readOnly = true)
     public PageResponse<CategoriesGetResponse> getCategories(Pageable pageable) {
         Page<CategoriesGetResponse> page = categoryRepository.findAllCategories(pageable);
