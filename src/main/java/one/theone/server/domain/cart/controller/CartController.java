@@ -49,4 +49,15 @@ public class CartController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 수량 변경 성공", response));
     }
+
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<BaseResponse<CartRemoveItemResponse>> removeCart(
+            @RequestParam Long memberId,
+            @PathVariable Long productId
+    ) {
+        CartRemoveItemResponse response = cartService.removeItem(memberId, productId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 상품 삭제 성공", response));
+    }
 }
