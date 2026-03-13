@@ -24,7 +24,4 @@ public class BaseEntity {
     @LastModifiedDate
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    private Boolean deleted = Boolean.FALSE;
-    private LocalDateTime deletedAt;
 }
