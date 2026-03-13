@@ -55,6 +55,9 @@ public class CategoryDetail extends BaseEntity {
     }
 
     public void update(CategoryDetailUpdateRequest request) {
+        if (this.deleted) {
+            throw new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_DETAIL_ALREADY_DELETED);
+        }
         if (request.categoryId() != null) {
             this.categoryId = request.categoryId();
         }
