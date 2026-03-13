@@ -68,6 +68,9 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
     testImplementation 'com.redis:testcontainers-redis:2.2.4'
 
+    // ULID
+    implementation 'com.github.f4b6a3:ulid-creator:5.2.4'
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
