@@ -26,7 +26,7 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
         List<Category> categories = queryFactory
                 .selectFrom(category)
                 .where(category.deleted.isFalse())
-                .orderBy(category.sortNum.asc())
+                .orderBy(category.sortNum.asc().nullsLast(), category.id.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -53,7 +53,7 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
                         categoryDetail.categoryId.in(categoryIds),
                         categoryDetail.deleted.isFalse()
                 )
-                .orderBy(categoryDetail.sortNum.asc())
+                .orderBy(categoryDetail.sortNum.asc().nullsLast(), categoryDetail.id.asc())
                 .fetch();
 
         // 그룹핑
