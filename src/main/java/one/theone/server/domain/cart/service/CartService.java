@@ -80,11 +80,13 @@ public class CartService {
 
             Integer quantity = Integer.valueOf(quantityValue.toString());
             Long lineAmount = product.getPrice() * quantity;
+            Long remainingQuantity = product.getQuantity();
 
             items.add(new CartItemResponse(
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
+                    remainingQuantity,
                     quantity,
                     lineAmount
             ));
