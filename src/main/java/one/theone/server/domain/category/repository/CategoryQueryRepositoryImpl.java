@@ -25,6 +25,7 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
     public Page<CategoriesGetResponse> findAllCategories(Pageable pageable) {
         List<Category> categories = queryFactory
                 .selectFrom(category)
+                .where(category.deleted.isFalse())
                 .orderBy(category.sortNum.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -33,6 +34,7 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
         Long total = queryFactory
                 .select(category.count())
                 .from(category)
+                .where(category.deleted.isFalse())
                 .fetchOne();
 
         if (total == null) {
@@ -47,7 +49,10 @@ public class CategoryQueryRepositoryImpl implements CategoryQueryRepository {
         // 소분류 카테고리 조회
         List<CategoryDetail> categoryDetails = queryFactory
                 .selectFrom(categoryDetail)
-                .where(categoryDetail.categoryId.in(categoryIds))
+                .where(
+                        categoryDetail.categoryId.in(categoryIds),
+                        categoryDetail.deleted.isFalse()
+                )
                 .orderBy(categoryDetail.sortNum.asc())
                 .fetch();
 
