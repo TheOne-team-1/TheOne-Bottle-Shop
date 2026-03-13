@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,17 +30,32 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
 
     private final JPAQueryFactory queryFactory;
 
-    private BooleanExpression buildCondition(String keyword) {
-        if (!StringUtils.hasText(keyword)) return null;
+    private BooleanExpression buildCondition(List<String> keywordMorphemes, String keyword) {
+        if (keywordMorphemes.isEmpty()) return null;
 
-        return product.name.containsIgnoreCase(keyword)
-                .or(category.name.containsIgnoreCase(keyword))
-                .or(categoryDetail.name.containsIgnoreCase(keyword));
+        BooleanExpression condition = null;
+        for (String morpheme : keywordMorphemes) {
+            BooleanExpression morphemeCondition = product.name.containsIgnoreCase(morpheme)
+                    .or(category.name.containsIgnoreCase(morpheme))
+                    .or(categoryDetail.name.containsIgnoreCase(morpheme));
+
+            condition = condition == null ? morphemeCondition : condition.or(morphemeCondition);
+        }
+
+        boolean isDifferent = keywordMorphemes.size() != 1 || !keywordMorphemes.getFirst().equals(keyword);
+        if (isDifferent) {
+            BooleanExpression originalCondition = product.name.containsIgnoreCase(keyword)
+                    .or(category.name.containsIgnoreCase(keyword))
+                    .or(categoryDetail.name.containsIgnoreCase(keyword));
+            condition = condition.or(originalCondition);
+        }
+
+        return condition;
     }
 
     @Override
-    public PageResponse<ProductSearchResponse> findProductByKeyword(String keyword, Pageable pageable) {
-        BooleanExpression condition = buildCondition(keyword);
+    public PageResponse<ProductSearchResponse> findProductByKeyword(List<String> keywordMorphemes, String keyword, Pageable pageable) {
+        BooleanExpression condition = buildCondition(keywordMorphemes, keyword);
 
         List<ProductSearchResponse> content = queryFactory
                 .select(Projections.constructor(ProductSearchResponse.class,
@@ -123,14 +137,13 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         product.status,
                         product.abv,
                         product.volumeMl,
-                        category.name,
-                        categoryDetail.name,
+                        categoryDetail.categoryId,
+                        product.categoryDetailId,
                         product.quantity,
                         product.rating,
                         Expressions.constant(0L)))
                 .from(product)
                 .leftJoin(categoryDetail).on(product.categoryDetailId.eq(categoryDetail.id))
-                .leftJoin(category).on(categoryDetail.categoryId.eq(category.id))
                 .where(
                         product.id.eq(id),
                         product.deleted.isFalse())

@@ -2,8 +2,7 @@ package one.theone.server.domain.search.controller;
 
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
-import one.theone.server.common.dto.PageResponse;
-import one.theone.server.domain.search.dto.ProductSearchResponse;
+import one.theone.server.domain.search.dto.SearchResultResponse;
 import one.theone.server.domain.search.service.SearchRankingService;
 import one.theone.server.domain.search.service.SearchService;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +25,7 @@ public class SearchController {
     private final SearchRankingService searchRankingService;
 
     @GetMapping("/search/v1")
-    public ResponseEntity<BaseResponse<PageResponse<ProductSearchResponse>>> searchProductV1(
+    public ResponseEntity<BaseResponse<SearchResultResponse>> searchProductV1(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -40,7 +39,7 @@ public class SearchController {
     }
 
     @GetMapping("/search/v2")
-    public ResponseEntity<BaseResponse<PageResponse<ProductSearchResponse>>> searchProductV2(
+    public ResponseEntity<BaseResponse<SearchResultResponse>> searchProductV2(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
