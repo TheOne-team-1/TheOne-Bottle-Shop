@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
 import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
-import one.theone.server.domain.cart.dto.response.CartAddResponse;
-import one.theone.server.domain.cart.dto.response.CartRemoveItemResponse;
-import one.theone.server.domain.cart.dto.response.CartResponse;
-import one.theone.server.domain.cart.dto.response.CartUpdateQuantityResponse;
+import one.theone.server.domain.cart.dto.response.*;
 import one.theone.server.domain.cart.service.CartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +48,7 @@ public class CartController {
     }
 
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<BaseResponse<CartRemoveItemResponse>> removeCart(
+    public ResponseEntity<BaseResponse<CartRemoveItemResponse>> removeItem(
             @RequestParam Long memberId,
             @PathVariable Long productId
     ) {
@@ -59,5 +56,15 @@ public class CartController {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 상품 삭제 성공", response));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<BaseResponse<CartRemoveResponse>> removeCart(
+            @RequestParam Long memberId
+    ) {
+        CartRemoveResponse response = cartService.removeCart(memberId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "장바구니 삭제 성공", response));
     }
 }
