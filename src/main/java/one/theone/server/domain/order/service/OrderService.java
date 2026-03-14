@@ -7,10 +7,13 @@ import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
+import one.theone.server.domain.order.repository.OrderDetailRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,9 +21,12 @@ import java.util.UUID;
 @Transactional
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final OrderDetailRepository orderDetailRepository;
 
     @Transactional
-    public OrderCreateResponse createOrder(OrderCreateDirectRequest request) {
+    public OrderCreateResponse createDirectOrder(OrderCreateDirectRequest request) {
+        validateCreateOrderRequest(request);
+
         Long totalAmount = calculateTotalAmount(request);
         Long discountAmount = 0L;
         Long usedPoint = request.usedPoint() == null ? 0L : request.usedPoint();
@@ -42,18 +48,39 @@ public class OrderService {
                 request.memberAddressDetailSnap()
         );
 
+        Order savedOrder = orderRepository.save(order);
+
+        List<OrderDetail> details = new ArrayList<>();
+
         for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
-            OrderDetail detail = OrderDetail.create(
+            details.add(OrderDetail.create(
+                    savedOrder.getId(),
                     item.productId(),
                     item.productNameSnap(),
                     item.productPriceSnap(),
                     item.quantity()
-            );
-            order.addOrderDetail(detail);
+            ));
         }
 
-        Order savedOrder = orderRepository.save(order);
+        orderDetailRepository.saveAll(details);
+
         return OrderCreateResponse.from(savedOrder);
+    }
+
+    private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
+        if (request.orderItems() == null || request.orderItems().isEmpty()) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_EMPTY);
+        }
+
+        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
+            if (item.quantity() == null || item.quantity() < 1) {
+                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_QUANTITY);
+            }
+
+            if (item.productPriceSnap() == null || item.productPriceSnap() < 0) {
+                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_PRICE);
+            }
+        }
     }
 
     private Long calculateTotalAmount(OrderCreateDirectRequest request) {
