@@ -39,6 +39,7 @@ public class FreebieStockService {
             runnable.run();
         } catch (InterruptedException e) {
             log.error("사은품 재고 락 작동 오류 : {}", e.getMessage());
+            Thread.currentThread().interrupt();
             throw new ServiceErrorException(CommonExceptionEnum.ERR_GET_REDIS_LOCK_FAIL);
         } finally {
             if(watchDog != null) {
