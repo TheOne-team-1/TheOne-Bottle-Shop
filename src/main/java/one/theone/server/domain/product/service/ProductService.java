@@ -24,6 +24,7 @@ public class ProductService {
     private final CategoryDetailRepository categoryDetailRepository;
     private final ProductViewService productViewService;
 
+    // 관리자 전용 -----------------------------------------------------------------------------------------
     @Transactional
     public ProductCreateResponse createProduct(ProductCreateRequest request) {
         categoryDetailRepository.findById(request.productCategoryDetailId())
@@ -42,6 +43,43 @@ public class ProductService {
         return ProductCreateResponse.from(product);
     }
 
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        if (request.categoryDetailId() != null) {
+            categoryDetailRepository.findById(request.categoryDetailId())
+                    .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
+        }
+
+        product.update(request);
+        return ProductUpdateResponse.from(product);
+    }
+
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public ProductStatusUpdateResponse updateProductStatus(Long id, ProductStatusUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.updateStatus(request);
+        return ProductStatusUpdateResponse.from(product);
+    }
+
+    @CacheEvict(value = "productCache", allEntries = true)
+    @Transactional
+    public ProductDeleteResponse deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.delete();
+        return ProductDeleteResponse.from(product);
+    }
+
+
+    // 일반 사용자 -----------------------------------------------------------------------------------------
     @Cacheable(
             value = "productCache",
             key = "'list:' + #request.sortType + ':' + #request.categoryIds + ':' + #request.abvMin + ':' + #request.abvMax + ':' + " +
@@ -61,49 +99,21 @@ public class ProductService {
         }
 
         productViewService.record(id, clientIp);
-
         return response.withViewCount(productViewService.getViewCount(id));
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
+
+    // 재고 차감/복구 --------------------------------------------------------------------------------------
+    @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
     @Transactional
-    public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
-
-        if (request.categoryDetailId() != null) {
-            categoryDetailRepository.findById(request.categoryDetailId())
-                    .orElseThrow(() -> new ServiceErrorException(CategoryExceptionEnum.ERR_CATEGORY_NOT_FOUND));
-        }
-
-        product.update(request);
-
-        return ProductUpdateResponse.from(product);
-    }
-
-    @CacheEvict(value = "productCache", allEntries = true)
-    @Transactional
-    public ProductStatusUpdateResponse updateProductStatus(Long id, ProductStatusUpdateRequest request) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
-
-        product.updateStatus(request);
-
-        return ProductStatusUpdateResponse.from(product);
-    }
-
-
-    // ---------------------------------------------------------------------------------------------------
-    @CacheEvict(value = "productCache", allEntries = true)
-    @Transactional
-    public void decreaseStock(Long id, Long quantity) {
+    public boolean decreaseStock(Long id, Long quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
 
         product.decreaseStock(quantity);
+        return product.getQuantity() == 0;
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
     @Transactional
     public void increaseStock(Long id, Long quantity) {
         Product product = productRepository.findById(id)

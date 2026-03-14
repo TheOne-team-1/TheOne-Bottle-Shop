@@ -116,6 +116,14 @@ public class Product extends BaseEntity {
         this.status = request.status();
     }
 
+    public void delete() {
+        if (this.deleted) {
+            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_ALREADY_DELETED);
+        }
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
     public void decreaseStock(Long quantity) {
         if (quantity <= 0) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_INVALID_QUANTITY);
