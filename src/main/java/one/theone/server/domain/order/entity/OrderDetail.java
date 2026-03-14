@@ -34,6 +34,7 @@ public class OrderDetail extends BaseEntity {
     private Long lineAmount;
 
     public static OrderDetail create(
+            Long orderId,
             Long productId,
             String productNameSnap,
             Long productPriceSnap,
@@ -41,6 +42,7 @@ public class OrderDetail extends BaseEntity {
     ) {
         OrderDetail detail = new OrderDetail();
 
+        detail.orderId = orderId;
         detail.productId = productId;
         detail.productNameSnap = productNameSnap;
         detail.productPriceSnap = productPriceSnap;
