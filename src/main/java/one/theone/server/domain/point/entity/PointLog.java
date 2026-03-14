@@ -35,4 +35,15 @@ public class PointLog extends BaseEntity {
     public enum PointType {
         EARN, USE, EXPIRED, ADMIN
     }
+
+    public static PointLog ofAdmin(Long memberId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.type = PointType.ADMIN;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
 }
