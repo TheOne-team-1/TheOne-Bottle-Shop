@@ -28,6 +28,8 @@ public class PointLog extends BaseEntity {
 
     private Long amount;
 
+    private Long remainingAmount;
+
     private Long balanceSnap;
 
     private LocalDateTime expiredAt;
@@ -45,5 +47,21 @@ public class PointLog extends BaseEntity {
         pointLog.balanceSnap = balanceSnap;
 
         return pointLog;
+    }
+
+    public static PointLog ofUse(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.USE;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
+
+    public void deduct(Long amount) {
+        this.remainingAmount -= amount;
     }
 }
