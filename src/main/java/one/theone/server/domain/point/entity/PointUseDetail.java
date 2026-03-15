@@ -4,17 +4,15 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import one.theone.server.common.entity.BaseEntity;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.PointExceptionEnum;
-import org.springframework.data.annotation.CreatedDate;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
 @Table(name = "point_use_details")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PointUseDetail {
+public class PointUseDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,10 +25,6 @@ public class PointUseDetail {
 
     @Column(nullable = false)
     private Long amount;
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime usedAt;
 
     private Boolean refunded = Boolean.FALSE;
 
