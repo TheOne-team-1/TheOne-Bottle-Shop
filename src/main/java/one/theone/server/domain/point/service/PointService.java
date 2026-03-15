@@ -101,6 +101,7 @@ public class PointService {
         for (PointUseDetail pointUseDetail : pointUseDetails) {
             PointLog usedPointLog = pointLogRepository.findById(pointUseDetail.getPointLogId())
                     .orElseThrow(() -> new ServiceErrorException(PointExceptionEnum.ERR_POINT_LOG_NOT_FOUND));
+            pointUseDetail.markRefunded();
             usedPointLog.restore(pointUseDetail.getAmount());
         }
 
