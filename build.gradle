@@ -22,6 +22,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -49,11 +50,26 @@ dependencies {
     implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.1'
     annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:7.1:jpa'
 
+    // KOMORAN
+    implementation 'com.github.shin285:KOMORAN:3.3.4'
+
     // Spring Cache
     implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // H2
+    runtimeOnly 'com.h2database:h2'
+
+    // TestContainer
+    testImplementation 'org.testcontainers:testcontainers:2.0.3'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.3'
+    testImplementation 'com.redis:testcontainers-redis:2.2.4'
+
+    // ULID
+    implementation 'com.github.f4b6a3:ulid-creator:5.2.4'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
