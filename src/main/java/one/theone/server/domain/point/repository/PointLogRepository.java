@@ -15,4 +15,8 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long>, Point
     @Query("SELECT pl FROM PointLog pl WHERE pl.memberId = :memberId AND pl.type IN ('EARN', 'ADMIN') AND " +
             "pl.remainingAmount > 0 AND pl.expiredAt > CURRENT_DATE ORDER BY pl.expiredAt ASC")
     List<PointLog> findAvailablePoints(@Param("memberId") Long memberId);
+
+    @Query("SELECT pl FROM PointLog pl WHERE pl.type IN ('EARN', 'ADMIN') AND " +
+            "pl.remainingAmount > 0 AND pl.expiredAt <= CURRENT_DATE")
+    List<PointLog> findExpiredPoints();
 }

@@ -18,6 +18,7 @@ import one.theone.server.order.entity.Order;
 import one.theone.server.order.repository.OrderRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,6 +111,27 @@ public class PointService {
 
         Point point = findOrCreatePoint(memberId);
         point.updateBalance(usedPoint);
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void expirePoint() {
+        List<PointLog> pointLogsToExpire = pointLogRepository.findExpiredPoints();
+
+        for (PointLog pointLogToExpire : pointLogsToExpire) {
+            Long expiredPoint = pointLogToExpire.getRemainingAmount();
+
+            Long actualBalance = calculateActualBalance(pointLogToExpire.getMemberId());
+
+            long newBalance = actualBalance - expiredPoint;
+            PointLog expiredPointLog = PointLog.ofExpired(pointLogToExpire.getMemberId(), -expiredPoint, newBalance);
+            pointLogRepository.save(expiredPointLog);
+
+            pointLogToExpire.deduct(expiredPoint);
+
+            Point point = findOrCreatePoint(pointLogToExpire.getMemberId());
+            point.updateBalance(-expiredPoint);
+        }
     }
 
     private Point findOrCreatePoint(Long memberId) {
