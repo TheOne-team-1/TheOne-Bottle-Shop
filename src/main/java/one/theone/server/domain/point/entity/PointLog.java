@@ -35,7 +35,7 @@ public class PointLog extends BaseEntity {
     private LocalDateTime expiredAt;
 
     public enum PointType {
-        EARN, USE, EXPIRED, ADMIN
+        EARN, USE, REFUND, EXPIRED, ADMIN
     }
 
     public static PointLog ofAdmin(Long memberId, Long amount, Long balanceSnap) {
@@ -61,7 +61,23 @@ public class PointLog extends BaseEntity {
         return pointLog;
     }
 
+    public static PointLog ofRefund(Long memberId, Long orderId, Long amount, long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.REFUND;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
+
     public void deduct(Long amount) {
         this.remainingAmount -= amount;
+    }
+
+    public void restore(Long amount) {
+        this.remainingAmount += amount;
     }
 }

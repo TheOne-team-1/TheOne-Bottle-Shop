@@ -88,6 +88,30 @@ public class PointService {
         point.updateBalance(-usePoint);
     }
 
+    @Transactional
+    public void refundPoint(Long memberId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+        Long usedPoint = order.getUsedPoint().longValue();
+
+        Long actualBalance = calculateActualBalance(memberId);
+
+        List<PointUseDetail> pointUseDetails = pointUseDetailRepository.findByOrderId(orderId);
+
+        for (PointUseDetail pointUseDetail : pointUseDetails) {
+            PointLog usedPointLog = pointLogRepository.findById(pointUseDetail.getPointLogId())
+                    .orElseThrow(() -> new ServiceErrorException(PointExceptionEnum.ERR_POINT_LOG_NOT_FOUND));
+            usedPointLog.restore(pointUseDetail.getAmount());
+        }
+
+        long newBalance = actualBalance + usedPoint;
+        PointLog refundPointLog = PointLog.ofRefund(memberId, orderId, usedPoint, newBalance);
+        pointLogRepository.save(refundPointLog);
+
+        Point point = findOrCreatePoint(memberId);
+        point.updateBalance(usedPoint);
+    }
+
     private Point findOrCreatePoint(Long memberId) {
         return pointRepository.findByMemberId(memberId)
                 .orElseGet(() -> pointRepository.save(Point.register(memberId)));
