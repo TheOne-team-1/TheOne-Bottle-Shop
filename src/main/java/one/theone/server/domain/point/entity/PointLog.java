@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Entity
@@ -32,7 +32,7 @@ public class PointLog extends BaseEntity {
 
     private Long balanceSnap;
 
-    private LocalDateTime expiredAt;
+    private LocalDate expiredAt;
 
     public enum PointType {
         EARN, USE, REFUND, EXPIRED, ADMIN
@@ -45,6 +45,11 @@ public class PointLog extends BaseEntity {
         pointLog.type = PointType.ADMIN;
         pointLog.amount = amount;
         pointLog.balanceSnap = balanceSnap;
+
+        if (amount > 0) {
+            pointLog.remainingAmount = amount;
+            pointLog.expiredAt = LocalDate.now().plusYears(1);
+        }
 
         return pointLog;
     }
