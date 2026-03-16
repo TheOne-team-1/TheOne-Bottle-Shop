@@ -3,7 +3,11 @@ package one.theone.server.domain.point.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.MemberExceptionEnum;
 import one.theone.server.common.exception.domain.PointExceptionEnum;
+import one.theone.server.domain.member.entity.Member;
+import one.theone.server.domain.member.entity.MemberGrade;
+import one.theone.server.domain.member.repository.MemberRepository;
 import one.theone.server.domain.point.dto.PointAdjustRequest;
 import one.theone.server.domain.point.dto.PointAdjustResponse;
 import one.theone.server.domain.point.dto.PointLogsGetRequest;
@@ -32,6 +36,7 @@ public class PointService {
     private final PointLogRepository pointLogRepository;
     private final OrderRepository orderRepository;
     private final PointUseDetailRepository pointUseDetailRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public PointAdjustResponse adjustPoint(Long memberId, PointAdjustRequest request) {
@@ -113,6 +118,23 @@ public class PointService {
         point.updateBalance(usedPoint);
     }
 
+    @Transactional
+    public void earnPoint(Long memberId, Long orderId, Long finalAmount) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
+
+        long earnPoint = calculateEarnAmount(member.getGrade(), finalAmount);
+        if (earnPoint == 0) return;
+
+        Long actualBalance = calculateActualBalance(memberId);
+        long newBalance = actualBalance + earnPoint;
+        PointLog earnPointLog = PointLog.ofEarn(memberId, orderId, earnPoint, newBalance);
+        pointLogRepository.save(earnPointLog);
+
+        Point point = findOrCreatePoint(memberId);
+        point.updateBalance(earnPoint);
+    }
+
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void expirePoint() {
@@ -147,5 +169,13 @@ public class PointService {
         if (actualBalance + amount < 0) {
             throw new ServiceErrorException(PointExceptionEnum.ERR_INSUFFICIENT_POINT);
         }
+    }
+
+    private long calculateEarnAmount(MemberGrade grade, long amount) {
+        return switch (grade) {
+            case GOLD -> amount * 3 / 100;
+            case SILVER -> amount * 2 /100;
+            case BRONZE -> amount * 1 /100;
+        };
     }
 }

@@ -78,6 +78,20 @@ public class PointLog extends BaseEntity {
         return pointLog;
     }
 
+    public static PointLog ofEarn(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.EARN;
+        pointLog.amount = amount;
+        pointLog.remainingAmount = amount;
+        pointLog.balanceSnap = balanceSnap;
+        pointLog.expiredAt = LocalDate.now().plusYears(1);
+
+        return pointLog;
+    }
+
     public static PointLog ofExpired(Long memberId, Long amount, Long balanceSnap) {
         PointLog pointLog = new PointLog();
 
