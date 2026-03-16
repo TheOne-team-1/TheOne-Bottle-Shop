@@ -3,13 +3,16 @@ package one.theone.server.domain.event.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
-import one.theone.server.domain.event.dto.EventCreateRequest;
-import one.theone.server.domain.event.dto.EventCreateResponse;
-import one.theone.server.domain.event.dto.EventStatusUpdateRequest;
-import one.theone.server.domain.event.dto.EventStatusUpdateResponse;
+import one.theone.server.common.dto.PageResponse;
+import one.theone.server.domain.event.dto.*;
+import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.service.EventService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -36,5 +39,17 @@ public class EventController {
                 HttpStatus.OK.name(),
                 "이벤트 상태 변경 성공",
                 eventService.updateEventStatus(eventId, request)));
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<BaseResponse<PageResponse<EventsGetResponse>>> getEvents(
+            @RequestParam(required = false)Event.EventStatus status,
+            @PageableDefault(page = 0, size = 10)Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(BaseResponse.success(
+                HttpStatus.OK.name(),
+                "이벤트 목록 조회 성공",
+                eventService.getEvents(status, pageable, userDetails)
+        ));
     }
 }

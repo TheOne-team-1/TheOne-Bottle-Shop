@@ -1,18 +1,18 @@
 package one.theone.server.domain.event.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.EventExceptionEnum;
-import one.theone.server.domain.event.dto.EventCreateRequest;
-import one.theone.server.domain.event.dto.EventCreateResponse;
-import one.theone.server.domain.event.dto.EventStatusUpdateRequest;
-import one.theone.server.domain.event.dto.EventStatusUpdateResponse;
+import one.theone.server.domain.event.dto.*;
 import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.entity.EventDetail;
 import one.theone.server.domain.event.entity.EventReward;
 import one.theone.server.domain.event.repository.EventDetailRepository;
 import one.theone.server.domain.event.repository.EventRepository;
 import one.theone.server.domain.event.repository.EventRewardRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,5 +58,9 @@ public class EventService {
         event.updateStatus(request.status());
 
         return new EventStatusUpdateResponse(event.getId(), event.getName());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EventsGetResponse> getEvents(Event.EventStatus status, Pageable pageable, UserDetails userDetails) {
     }
 }
