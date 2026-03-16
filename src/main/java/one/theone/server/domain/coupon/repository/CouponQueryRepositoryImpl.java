@@ -130,7 +130,7 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                 .innerJoin(memberCoupon)
                 .on(coupon.id.eq(memberCoupon.couponId))
                 .where(
-                        statusEq(status)
+                        userSearchStatusEq(status)
                         , memberCoupon.memberId.eq(memberId)
                 )
                 .orderBy(coupon.id.desc())
@@ -142,7 +142,7 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                 .select(memberCoupon.count())
                 .from(memberCoupon)
                 .where(
-                        statusEq(status)
+                        userSearchStatusEq(status)
                         , memberCoupon.memberId.eq(memberId)
                 )
                 .fetchOne();
@@ -158,8 +158,8 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
         return useType != null ? coupon.useType.eq(useType) : null;
     }
 
-    private BooleanExpression statusEq(MemberCoupon.MemberCouponStatus status) {
-        return status != null ? memberCoupon.status.eq(status) : null;
+    private BooleanExpression userSearchStatusEq(MemberCoupon.MemberCouponStatus status) {
+        return status != null ? memberCoupon.status.eq(status) : memberCoupon.status.notIn(MemberCoupon.MemberCouponStatus.RECALL);
     }
 
     private BooleanExpression startAtGoe(LocalDateTime startAt) {

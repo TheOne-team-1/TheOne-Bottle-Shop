@@ -3,6 +3,7 @@ package one.theone.server.common.config.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -33,7 +34,7 @@ public class SecurityConfig {
 
                         //region 쿠폰 관련
                         .requestMatchers("/api/admin/coupons").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/coupons/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/member/*/coupons/*/recall").hasRole("ADMIN")
                         //endregion
 
                         .anyRequest().authenticated()

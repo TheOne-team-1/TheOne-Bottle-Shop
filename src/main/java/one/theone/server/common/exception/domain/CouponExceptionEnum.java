@@ -7,7 +7,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum CouponExceptionEnum implements ErrorCode {
     ERR_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "쿠폰을 찾을 수 없습니다")
-    , ERR_COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "발급 가능한 쿠폰이 없습니다")
+    , ERR_COUPON_NOT_AVAILABLE(HttpStatus.CONFLICT, "발급 가능한 쿠폰이 없습니다")
+    , ERR_COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, "이미 보유중인 쿠폰입니다")
     , ERR_COUPON_NOT_STARTED(HttpStatus.BAD_REQUEST, "아직 발급 가능한 기간이 아닙니다")
     , ERR_COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "만료된 쿠폰입니다")
     , ERR_COUPON_MIN_PRICE(HttpStatus.BAD_REQUEST, "쿠폰 최소 주문금액을 충족하지 못했습니다")

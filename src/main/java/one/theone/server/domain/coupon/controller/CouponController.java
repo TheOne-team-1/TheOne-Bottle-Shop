@@ -4,25 +4,20 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.coupon.dto.request.CouponCreateRequest;
-import one.theone.server.domain.coupon.dto.response.CouponCreateResponse;
-import one.theone.server.domain.coupon.dto.response.CouponDetailResponse;
-import one.theone.server.domain.coupon.dto.response.CouponSearchMeResponse;
-import one.theone.server.domain.coupon.dto.response.CouponSearchResponse;
+import one.theone.server.domain.coupon.dto.request.CouponIssueEventRequest;
+import one.theone.server.domain.coupon.dto.request.CouponIssueAdminRequest;
+import one.theone.server.domain.coupon.dto.response.*;
 import one.theone.server.domain.coupon.entity.Coupon;
 import one.theone.server.domain.coupon.entity.MemberCoupon;
 import one.theone.server.domain.coupon.service.CouponService;
+import one.theone.server.domain.coupon.service.CouponIssueService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
@@ -31,6 +26,7 @@ import java.time.LocalDateTime;
 public class CouponController {
 
     private final CouponService couponService;
+    private final CouponIssueService couponIssueService;
 
     @PostMapping("/api/admin/coupons")
     public ResponseEntity<BaseResponse<CouponCreateResponse>> createCoupon(
@@ -73,5 +69,36 @@ public class CouponController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "내 쿠폰 조회 성공",
                         couponService.getMyCoupons(memberId, status, PageRequest.of(page - 1, size))));
+    }
+
+    @PostMapping("/api/admin/coupons/{couponId}/issue")
+    public ResponseEntity<BaseResponse<CouponIssueResponse>> issueCouponByAdmin(
+            @PathVariable Long couponId,
+            @Valid @RequestBody CouponIssueAdminRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponse.success(HttpStatus.CREATED.name(), "쿠폰 발급 성공",
+                        couponService.issueCouponByAdmin(couponId, request)));
+    }
+
+    @PostMapping("/api/coupons/{couponId}/issue")
+    public ResponseEntity<BaseResponse<CouponIssueResponse>> issueCouponByEvent(
+            @PathVariable Long couponId,
+            @AuthenticationPrincipal Long memberId,
+            @Valid @RequestBody CouponIssueEventRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponse.success(HttpStatus.CREATED.name(), "쿠폰 발급 성공",
+                        couponIssueService.issueCouponWithLock(couponId, memberId, request.eventId())));
+    }
+
+    @PatchMapping("/api/admin/member/{memberId}/coupons/{memberCouponId}/recall")
+    public ResponseEntity<BaseResponse<CouponRecallResponse>> recallCoupon(
+            @PathVariable Long memberId,
+            @PathVariable Long memberCouponId
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "쿠폰 회수 성공",
+                        couponService.recallCoupon(memberId, memberCouponId)));
     }
 }

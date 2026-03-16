@@ -75,7 +75,7 @@ public class Coupon extends BaseEntity {
             throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_EXPIRED);
         }
 
-        if (availQuantity <= 0) {
+        if (availQuantity <= issuedQuantity) {
             throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_AVAILABLE);
         }
     }
@@ -83,7 +83,6 @@ public class Coupon extends BaseEntity {
     // 쿠폰 발급
     public void issueCoupon() {
         validateIssuable();
-        this.availQuantity--;
         this.issuedQuantity++;
     }
 
