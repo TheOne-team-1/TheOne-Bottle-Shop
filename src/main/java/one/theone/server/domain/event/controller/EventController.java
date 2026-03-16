@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -45,11 +46,11 @@ public class EventController {
     public ResponseEntity<BaseResponse<PageResponse<EventsGetResponse>>> getEvents(
             @RequestParam(required = false)Event.EventStatus status,
             @PageableDefault(page = 0, size = 10)Pageable pageable,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            Authentication authentication) {
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "이벤트 목록 조회 성공",
-                eventService.getEvents(status, pageable, userDetails)
+                eventService.getEvents(status, pageable, authentication)
         ));
     }
 }

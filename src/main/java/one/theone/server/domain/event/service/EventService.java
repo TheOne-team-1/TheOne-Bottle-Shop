@@ -12,6 +12,7 @@ import one.theone.server.domain.event.repository.EventDetailRepository;
 import one.theone.server.domain.event.repository.EventRepository;
 import one.theone.server.domain.event.repository.EventRewardRepository;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,8 +64,8 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<EventsGetResponse> getEvents(Event.EventStatus status, Pageable pageable, UserDetails userDetails) {
-        boolean isAdmin = isAdmin(userDetails);
+    public PageResponse<EventsGetResponse> getEvents(Event.EventStatus status, Pageable pageable, Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
 
         if (status == Event.EventStatus.PENDING || status == Event.EventStatus.PAUSE && !isAdmin) {
             throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
@@ -74,8 +75,8 @@ public class EventService {
         return eventRepository.findEventsWithConditions(pageable, statuses);
     }
 
-    private boolean isAdmin(UserDetails userDetails) {
-        return userDetails.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     private List<Event.EventStatus> cleanStatuses(Event.EventStatus status, boolean isAdmin) {
