@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Entity
@@ -28,11 +28,86 @@ public class PointLog extends BaseEntity {
 
     private Long amount;
 
+    private Long remainingAmount;
+
     private Long balanceSnap;
 
-    private LocalDateTime expiredAt;
+    private LocalDate expiresAt;
 
     public enum PointType {
-        EARN, USE, EXPIRED, ADMIN
+        EARN, USE, REFUND, EXPIRED, ADMIN
+    }
+
+    public static PointLog ofAdmin(Long memberId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.type = PointType.ADMIN;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        if (amount > 0) {
+            pointLog.remainingAmount = amount;
+            pointLog.expiresAt = LocalDate.now().plusYears(1);
+        }
+
+        return pointLog;
+    }
+
+    public static PointLog ofUse(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.USE;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
+
+    public static PointLog ofRefund(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.REFUND;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
+
+    public static PointLog ofEarn(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.orderId = orderId;
+        pointLog.type = PointType.EARN;
+        pointLog.amount = amount;
+        pointLog.remainingAmount = amount;
+        pointLog.balanceSnap = balanceSnap;
+        pointLog.expiresAt = LocalDate.now().plusYears(1);
+
+        return pointLog;
+    }
+
+    public static PointLog ofExpired(Long memberId, Long amount, Long balanceSnap) {
+        PointLog pointLog = new PointLog();
+
+        pointLog.memberId = memberId;
+        pointLog.type = PointType.EXPIRED;
+        pointLog.amount = amount;
+        pointLog.balanceSnap = balanceSnap;
+
+        return pointLog;
+    }
+
+    public void deduct(Long amount) {
+        this.remainingAmount -= amount;
+    }
+
+    public void restore(Long amount) {
+        this.remainingAmount += amount;
     }
 }
