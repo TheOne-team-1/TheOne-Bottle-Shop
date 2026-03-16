@@ -3,6 +3,7 @@ package one.theone.server.domain.coupon.dto.request;
 import jakarta.validation.constraints.*;
 import one.theone.server.domain.coupon.entity.Coupon;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record CouponCreateRequest(
@@ -28,7 +29,8 @@ public record CouponCreateRequest(
         LocalDateTime startAt
 
         , @NotNull(message = "쿠폰 사용 종료일은 필수입니다")
-        LocalDateTime endAt
+        @Future(message = "쿠폰 사용 종료일은 내일 이후여야 합니다")
+        LocalDate endAt
 ) {
 
 }

@@ -154,6 +154,20 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
         return new PageImpl<>(content, pageable, total);
     }
 
+    @Override
+    public List<MemberCoupon> findExpiredMemberCoupons(LocalDateTime expiredAt) {
+        return queryFactory
+                .selectFrom(memberCoupon)
+                .join(coupon).on(coupon.id.eq(memberCoupon.couponId))
+                .where(
+                        memberCoupon.status.eq(MemberCoupon.MemberCouponStatus.AVAILABLE)
+                        , coupon.endAt.lt(expiredAt)
+                        , coupon.deleted.isFalse()
+                        , memberCoupon.deleted.isFalse()
+                )
+                .fetch();
+    }
+
     private BooleanExpression useTypeEq(Coupon.CouponUseType useType) {
         return useType != null ? coupon.useType.eq(useType) : null;
     }
