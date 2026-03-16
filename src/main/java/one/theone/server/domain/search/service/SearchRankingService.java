@@ -70,7 +70,7 @@ public class SearchRankingService {
     public List<String> getKeywordRanking() {
         String rankingKey = getWeeklyRankingKey();
         Set<Object> keywords = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, RANKING_LIMIT-1);
-        if (keywords == null) return Collections.emptyList();
+        if (keywords == null) return List.of();
 
         return keywords.stream()
                 .map(k -> k instanceof String s ? s : k.toString())
