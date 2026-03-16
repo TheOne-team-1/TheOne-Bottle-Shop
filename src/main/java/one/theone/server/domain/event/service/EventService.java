@@ -77,6 +77,9 @@ public class EventService {
         return eventRepository.findEventsWithConditions(request, pageable, statuses, isAdmin);
     }
 
+    public EventGetResponse getEvent(Long eventId, Authentication authentication) {
+    }
+
     private boolean isAdmin(Authentication authentication) {
         if (authentication == null) return false;
         return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));

@@ -53,4 +53,15 @@ public class EventController {
                 eventService.getEvents(request, pageable, authentication)
         ));
     }
+
+    @GetMapping("/events/{eventId}")
+    public ResponseEntity<BaseResponse<EventGetResponse>> getEvent(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+        return ResponseEntity.ok(BaseResponse.success(
+                HttpStatus.OK.name(),
+                "이벤트 상세 조회 성공",
+                eventService.getEvent(eventId, authentication)
+        ));
+    }
 }
