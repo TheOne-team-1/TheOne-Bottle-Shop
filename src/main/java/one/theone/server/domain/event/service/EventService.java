@@ -3,6 +3,8 @@ package one.theone.server.domain.event.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.domain.event.dto.EventCreateRequest;
 import one.theone.server.domain.event.dto.EventCreateResponse;
+import one.theone.server.domain.event.dto.EventStatusUpdateRequest;
+import one.theone.server.domain.event.dto.EventStatusUpdateResponse;
 import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.entity.EventDetail;
 import one.theone.server.domain.event.entity.EventReward;
@@ -44,5 +46,9 @@ public class EventService {
         eventRewardRepository.save(eventReward);
 
         return EventCreateResponse.from(event, eventReward);
+    }
+
+    @Transactional
+    public EventStatusUpdateResponse updateEventStatus(EventStatusUpdateRequest request) {
     }
 }
