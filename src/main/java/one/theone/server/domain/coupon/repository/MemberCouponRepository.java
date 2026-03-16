@@ -3,9 +3,11 @@ package one.theone.server.domain.coupon.repository;
 import one.theone.server.domain.coupon.entity.MemberCoupon;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface MemberCouponRepository extends JpaRepository<MemberCoupon, Long> {
-    boolean existsByMemberIdAndCouponIdAndStatus(Long memberId, Long couponId, MemberCoupon.MemberCouponStatus status);
-    Optional<MemberCoupon> findByIdAndMemberId(Long id, Long memberId);
+    boolean existsByMemberIdAndCouponIdAndStatusAndDeletedFalse(Long memberId, Long couponId, MemberCoupon.MemberCouponStatus status);
+    Optional<MemberCoupon> findByIdAndMemberIdAndDeletedFalse(Long id, Long memberId);
+    List<MemberCoupon> findAllByCouponIdAndStatusAndDeletedFalse(Long couponId, MemberCoupon.MemberCouponStatus status);
 }

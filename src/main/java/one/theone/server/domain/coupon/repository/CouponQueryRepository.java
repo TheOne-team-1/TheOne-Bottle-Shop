@@ -9,10 +9,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface CouponQueryRepository {
     Page<CouponSearchResponse> findAllCoupons(Coupon.CouponUseType useType, LocalDateTime startAt, LocalDateTime endAt, Pageable pageable);
     Optional<CouponDetailResponse> findCouponDetail(Long couponId);
     Page<CouponSearchMeResponse> findMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable);
+    List<MemberCoupon> findExpiredMemberCoupons(LocalDateTime now);
 }

@@ -9,12 +9,14 @@ import one.theone.server.domain.coupon.dto.request.CouponIssueEventRequest;
 import one.theone.server.domain.coupon.dto.request.CouponIssueAdminRequest;
 import one.theone.server.domain.coupon.dto.response.CouponCreateResponse;
 import one.theone.server.domain.coupon.dto.response.CouponDetailResponse;
+import one.theone.server.domain.coupon.dto.response.CouponExpireResponse;
 import one.theone.server.domain.coupon.dto.response.CouponIssueResponse;
 import one.theone.server.domain.coupon.dto.response.CouponRecallResponse;
 import one.theone.server.domain.coupon.dto.response.CouponSearchMeResponse;
 import one.theone.server.domain.coupon.dto.response.CouponSearchResponse;
 import one.theone.server.domain.coupon.entity.Coupon;
 import one.theone.server.domain.coupon.entity.MemberCoupon;
+import one.theone.server.domain.coupon.repository.CouponQueryRepository;
 import one.theone.server.domain.coupon.repository.CouponRepository;
 import one.theone.server.domain.coupon.repository.MemberCouponRepository;
 import one.theone.server.domain.member.repository.MemberRepository;
@@ -26,8 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_AMOUNT_COUPON_DISCOUNT_VALUE_MIN;
+import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_COUPON_END_AT_BEFORE_START_AT;
 import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_RATE_COUPON_DISCOUNT_VALUE_MAX;
 
 @Service
@@ -36,6 +40,7 @@ public class CouponService {
 
     private final CouponRepository couponRepository;
     private final MemberCouponRepository memberCouponRepository;
+    private final CouponQueryRepository couponQueryRepository;
     private final MemberRepository memberRepository;
 
     @Transactional
@@ -50,6 +55,10 @@ public class CouponService {
             if(request.discountValue() > 100) {
                 throw new ServiceErrorException(ERR_RATE_COUPON_DISCOUNT_VALUE_MAX);
             }
+        }
+
+        if (!request.endAt().isAfter(request.startAt().toLocalDate())) {
+            throw new ServiceErrorException(ERR_COUPON_END_AT_BEFORE_START_AT);
         }
 
         Coupon coupon = Coupon.register(
@@ -102,7 +111,7 @@ public class CouponService {
         memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceErrorException(ERR_MEMBER_NOT_FOUND));
 
-        if (memberCouponRepository.existsByMemberIdAndCouponIdAndStatus(
+        if (memberCouponRepository.existsByMemberIdAndCouponIdAndStatusAndDeletedFalse(
                 memberId, couponId, MemberCoupon.MemberCouponStatus.AVAILABLE)) {
             throw new ServiceErrorException(ERR_COUPON_ALREADY_ISSUED);
         }
@@ -112,24 +121,36 @@ public class CouponService {
 
     @Transactional(readOnly = true)
     public PageResponse<CouponSearchResponse> getCoupons(Coupon.CouponUseType useType, LocalDateTime startAt, LocalDateTime endAt, Pageable pageable) {
-        Page<CouponSearchResponse> page = couponRepository.findAllCoupons(useType, startAt, endAt, pageable);
+        Page<CouponSearchResponse> page = couponQueryRepository.findAllCoupons(useType, startAt, endAt, pageable);
         return PageResponse.register(page);
     }
 
     @Transactional(readOnly = true)
     public CouponDetailResponse getCouponDetails(Long couponId) {
-        return couponRepository.findCouponDetail(couponId).orElseThrow(() -> new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_FOUND));
+        return couponQueryRepository.findCouponDetail(couponId).orElseThrow(() -> new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_FOUND));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<CouponSearchMeResponse> getMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable) {
-        Page<CouponSearchMeResponse> page = couponRepository.findMyCoupons(memberId, status, pageable);
+        Page<CouponSearchMeResponse> page = couponQueryRepository.findMyCoupons(memberId, status, pageable);
         return PageResponse.register(page);
     }
 
     @Transactional
+    public CouponExpireResponse expireCoupon(Long couponId) {
+        couponRepository.findById(couponId)
+                .orElseThrow(() -> new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_FOUND));
+
+        List<MemberCoupon> memberCouponList = memberCouponRepository.findAllByCouponIdAndStatusAndDeletedFalse(
+                couponId, MemberCoupon.MemberCouponStatus.AVAILABLE);
+        memberCouponList.forEach(memberCoupon -> memberCoupon.expireCoupon());
+
+        return new CouponExpireResponse(couponId, memberCouponList.size());
+    }
+
+    @Transactional
     public CouponRecallResponse recallCoupon(Long memberId, Long memberCouponId) {
-        MemberCoupon memberCoupon = memberCouponRepository.findByIdAndMemberId(memberCouponId, memberId)
+        MemberCoupon memberCoupon = memberCouponRepository.findByIdAndMemberIdAndDeletedFalse(memberCouponId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(CouponExceptionEnum.ERR_MEMBER_COUPON_NOT_FOUND));
 
         memberCoupon.recallByAdmin();

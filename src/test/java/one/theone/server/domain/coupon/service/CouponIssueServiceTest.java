@@ -20,6 +20,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,14 +70,15 @@ public class CouponIssueServiceTest {
     void setUp() {
         // 발급 수량 100개 쿠폰 생성
         Coupon coupon = couponRepository.save(Coupon.register(
-                "TEST_COUPON",
-                Coupon.CouponUseType.AMOUNT,
-                10000L,
-                5000L,
-                100L,
-                LocalDateTime.now().minusDays(1),
-                LocalDateTime.now().plusDays(7)
+                "TEST_COUPON"
+                , Coupon.CouponUseType.AMOUNT
+                , 10000L
+                , 5000L
+                , 100L
+                , LocalDateTime.now().minusDays(1)
+                , LocalDate.now().plusDays(7)
         ));
+
         couponId = coupon.getId();
 
         // 100명 회원 생성

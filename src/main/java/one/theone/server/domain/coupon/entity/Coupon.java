@@ -8,6 +8,7 @@ import one.theone.server.common.entity.BaseEntity;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CouponExceptionEnum;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -50,7 +51,7 @@ public class Coupon extends BaseEntity {
     private LocalDateTime deleted_at;
 
     public static Coupon register(String name, CouponUseType useType, Long minPrice, Long discountValue,
-                                  Long availQuantity, LocalDateTime startAt, LocalDateTime endAt) {
+                                  Long availQuantity, LocalDateTime startAt, LocalDate endAt) {
         Coupon coupon = new Coupon();
         coupon.name = name;
         coupon.useType = useType;
@@ -59,7 +60,7 @@ public class Coupon extends BaseEntity {
         coupon.availQuantity = availQuantity;
         coupon.issuedQuantity = 0L;
         coupon.startAt = startAt;
-        coupon.endAt = endAt;
+        coupon.endAt = endAt.atTime(4, 59, 59);
         coupon.deleted = false;
         return coupon;
     }

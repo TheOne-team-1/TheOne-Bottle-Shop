@@ -92,6 +92,15 @@ public class CouponController {
                         couponIssueService.issueCouponWithLock(couponId, memberId, request.eventId())));
     }
 
+    @PatchMapping("/api/admin/coupons/{couponId}/expire")
+    public ResponseEntity<BaseResponse<CouponExpireResponse>> expireCoupon(
+            @PathVariable Long couponId
+    ) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "쿠폰 만료 처리 성공",
+                        couponService.expireCoupon(couponId)));
+    }
+
     @PatchMapping("/api/admin/member/{memberId}/coupons/{memberCouponId}/recall")
     public ResponseEntity<BaseResponse<CouponRecallResponse>> recallCoupon(
             @PathVariable Long memberId,

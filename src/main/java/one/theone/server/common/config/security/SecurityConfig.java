@@ -33,7 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/signup", "/api/login").permitAll()
 
                         //region 쿠폰 관련
-                        .requestMatchers("/api/admin/coupons").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/coupons/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/member/*/coupons/*/recall").hasRole("ADMIN")
                         //endregion
 
