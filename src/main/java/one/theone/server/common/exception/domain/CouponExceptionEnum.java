@@ -15,6 +15,8 @@ public enum CouponExceptionEnum implements ErrorCode {
     , ERR_MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "회원 쿠폰을 찾을 수 없습니다")
     , ERR_MEMBER_COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "사용 가능한 상태의 쿠폰이 아닙니다")
     , ERR_MEMBER_COUPON_ALREADY_RECALLED(HttpStatus.BAD_REQUEST, "이미 회수된 쿠폰입니다")
+    , ERR_AMOUNT_COUPON_DISCOUNT_VALUE_MIN(HttpStatus.BAD_REQUEST, "금액 할인 쿠폰의 할인 금액은 5000원 이상 부터 가능합니다")
+    , ERR_RATE_COUPON_DISCOUNT_VALUE_MAX(HttpStatus.BAD_REQUEST, "정률 할인 쿠폰의 할인율은 100% 이하여야 합니다")
     , ERR_COUPON_LOCK_FAILED(HttpStatus.CONFLICT, "잠시 후 다시 시도해주세요");
 
     private final HttpStatus httpStatus;

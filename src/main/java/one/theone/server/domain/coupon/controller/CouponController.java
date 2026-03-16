@@ -3,6 +3,8 @@ package one.theone.server.domain.coupon.controller;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
+import one.theone.server.domain.coupon.dto.request.CouponCreateRequest;
+import one.theone.server.domain.coupon.dto.response.CouponCreateResponse;
 import one.theone.server.domain.coupon.dto.response.CouponDetailResponse;
 import one.theone.server.domain.coupon.dto.response.CouponSearchMeResponse;
 import one.theone.server.domain.coupon.dto.response.CouponSearchResponse;
@@ -14,8 +16,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +31,15 @@ import java.time.LocalDateTime;
 public class CouponController {
 
     private final CouponService couponService;
+
+    @PostMapping("/api/admin/coupons")
+    public ResponseEntity<BaseResponse<CouponCreateResponse>> createCoupon(
+            @Valid @RequestBody CouponCreateRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponse.success(HttpStatus.CREATED.name(), "쿠폰 생성 성공",
+                        couponService.createCoupon(request)));
+    }
 
     @GetMapping("/api/admin/coupons")
     public ResponseEntity<BaseResponse<PageResponse<CouponSearchResponse>>> getCoupons(
