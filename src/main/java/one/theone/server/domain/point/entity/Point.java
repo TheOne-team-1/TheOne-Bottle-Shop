@@ -26,4 +26,17 @@ public class Point extends BaseEntity {
 
     private Boolean deleted = Boolean.FALSE;
     private LocalDateTime deletedAt;
+
+    public static Point register(Long memberId) {
+        Point point = new Point();
+
+        point.memberId = memberId;
+        point.balance = 0L;
+
+        return point;
+    }
+
+    public void updateBalance(Long amount) {
+        this.balance += amount;
+    }
 }
