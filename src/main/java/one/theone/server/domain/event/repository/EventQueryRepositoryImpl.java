@@ -42,6 +42,7 @@ public class EventQueryRepositoryImpl implements EventQueryRepository{
                         endAtGoe(request.startAt()),
                         isAdmin ? null : userVisibleCondition()
                 )
+                .orderBy(event.startAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
