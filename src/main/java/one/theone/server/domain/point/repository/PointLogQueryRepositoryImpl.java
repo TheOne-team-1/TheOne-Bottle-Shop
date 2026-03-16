@@ -28,6 +28,7 @@ public class PointLogQueryRepositoryImpl implements PointLogQueryRepository {
                 .select(Projections.constructor(PointLogsGetResponse.class,
                         pointLog.id,
                         pointLog.type,
+                        pointLog.description,
                         pointLog.amount,
                         pointLog.balanceSnap,
                         pointLog.orderId,

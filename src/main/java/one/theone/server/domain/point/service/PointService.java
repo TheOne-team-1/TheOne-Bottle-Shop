@@ -49,11 +49,11 @@ public class PointService {
         Point point = findOrCreatePoint(memberId);
 
         long newBalance = actualBalance + request.amount();
-        PointLog log = PointLog.ofAdmin(memberId, request.amount(), newBalance);
+        PointLog log = PointLog.ofAdmin(memberId, request, newBalance);
         pointLogRepository.save(log);
         point.updateBalance(request.amount());
 
-        return new PointAdjustResponse(memberId, request.amount(), newBalance);
+        return new PointAdjustResponse(memberId, request.description(), request.amount(), newBalance);
     }
 
     @Transactional(readOnly = true)
@@ -86,7 +86,7 @@ public class PointService {
         }
 
         long newBalance = actualBalance - usePoint;
-        PointLog usedPointLog = PointLog.ofUse(memberId, orderId, -usePoint, newBalance);
+        PointLog usedPointLog = PointLog.ofUse(memberId, orderId, order.getOrderNum(), -usePoint, newBalance);
         pointLogRepository.save(usedPointLog);
 
         Point point = findOrCreatePoint(memberId);
@@ -111,7 +111,7 @@ public class PointService {
         }
 
         long newBalance = actualBalance + usedPoint;
-        PointLog refundPointLog = PointLog.ofRefund(memberId, orderId, usedPoint, newBalance);
+        PointLog refundPointLog = PointLog.ofRefund(memberId, orderId, order.getOrderNum(), usedPoint, newBalance);
         pointLogRepository.save(refundPointLog);
 
         Point point = findOrCreatePoint(memberId);
@@ -122,13 +122,15 @@ public class PointService {
     public void earnPoint(Long memberId, Long orderId, Long finalAmount) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
 
         long earnPoint = calculateEarnAmount(member.getGrade(), finalAmount);
         if (earnPoint == 0) return;
 
         Long actualBalance = calculateActualBalance(memberId);
         long newBalance = actualBalance + earnPoint;
-        PointLog earnPointLog = PointLog.ofEarn(memberId, orderId, earnPoint, newBalance);
+        PointLog earnPointLog = PointLog.ofEarn(memberId, orderId, order.getOrderNum(), earnPoint, newBalance);
         pointLogRepository.save(earnPointLog);
 
         Point point = findOrCreatePoint(memberId);

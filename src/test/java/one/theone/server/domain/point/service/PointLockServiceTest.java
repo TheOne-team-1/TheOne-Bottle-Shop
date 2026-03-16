@@ -3,6 +3,7 @@ package one.theone.server.domain.point.service;
 import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.repository.MemberRepository;
+import one.theone.server.domain.point.dto.PointAdjustRequest;
 import one.theone.server.domain.point.entity.Point;
 import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.repository.PointLogRepository;
@@ -80,7 +81,7 @@ public class PointLockServiceTest {
         memberId = member.getId();
 
         // 포인트 10000 세팅
-        PointLog earnLog = PointLog.ofAdmin(memberId, 10000L, 10000L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(10000L, "테스트 지급"), 10000L);
         pointLogRepository.save(earnLog);
         Point point = Point.register(memberId);
         point.updateBalance(10000L);

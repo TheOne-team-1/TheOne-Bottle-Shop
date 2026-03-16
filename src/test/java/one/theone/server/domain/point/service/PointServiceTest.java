@@ -60,7 +60,7 @@ class PointServiceTest {
         given(pointLogRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
         // when
-        pointService.adjustPoint(memberId, new PointAdjustRequest(amount));
+        pointService.adjustPoint(memberId, new PointAdjustRequest(amount, "테스트 지급"));
 
         // then
         assertThat(point.getBalance()).isEqualTo(1000L);
@@ -80,7 +80,7 @@ class PointServiceTest {
 
         // when & then
         assertThatThrownBy(() ->
-                pointService.adjustPoint(memberId, new PointAdjustRequest(-1000L))
+                pointService.adjustPoint(memberId, new PointAdjustRequest(-1000L, "테스트 차감"))
         ).isInstanceOf(ServiceErrorException.class);
     }
 
@@ -96,7 +96,7 @@ class PointServiceTest {
 
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(1000L);
 
-        PointLog earnLog = PointLog.ofAdmin(memberId, 1000L, 1000L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(1000L, "테스트 지급"), 1000L);
         given(pointLogRepository.findAvailablePoints(memberId)).willReturn(List.of(earnLog));
 
         Point point = Point.register(memberId);
@@ -145,7 +145,7 @@ class PointServiceTest {
         PointUseDetail useDetail = PointUseDetail.register(100L, orderId, usedAmount);
         given(pointUseDetailRepository.findByOrderId(orderId)).willReturn(List.of(useDetail));
 
-        PointLog earnLog = PointLog.ofAdmin(memberId, 1000L, 1000L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(1000L, "테스트 지급"), 1000L);
         earnLog.deduct(500L);
         given(pointLogRepository.findById(100L)).willReturn(Optional.of(earnLog));
 
@@ -171,6 +171,8 @@ class PointServiceTest {
         Long orderId = 10L;
         Long finalAmount = 10000L;
 
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+
         Member member = Member.create("test@test.com", "password", "테스트", "20000101", "ABC123");
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
@@ -194,7 +196,7 @@ class PointServiceTest {
         // given
         Long memberId = 1L;
 
-        PointLog earnLog = PointLog.ofAdmin(memberId, 1000L, 1000L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(1000L, "테스트 지급"), 1000L);
         given(pointLogRepository.findExpiredPoints()).willReturn(List.of(earnLog));
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(1000L);
 
