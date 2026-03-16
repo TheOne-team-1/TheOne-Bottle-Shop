@@ -45,7 +45,7 @@ public class EventService {
                 request.rewards());
         eventRewardRepository.save(eventReward);
 
-        return EventCreateResponse.from(event, eventReward);
+        return new EventCreateResponse(event.getId(), eventReward.getId());
     }
 
     @Transactional
