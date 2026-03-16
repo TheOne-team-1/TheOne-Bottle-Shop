@@ -213,4 +213,26 @@ class PointServiceTest {
         assertThat(earnLog.getRemainingAmount()).isEqualTo(0L);
         verify(pointLogRepository).save(any(PointLog.class));
     }
+
+    @Test
+    @DisplayName("이벤트 포인트 적립 성공")
+    void earnEventPoint_success() {
+        // given
+        Long memberId = 1L;
+        Long amount = 1000L;
+        String description = "추천인 보상";
+
+        given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(0L);
+
+        Point point = Point.register(memberId);
+        given(pointRepository.findByMemberId(memberId)).willReturn(Optional.of(point));
+        given(pointLogRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        pointService.earnEventPoint(memberId, amount, description);
+
+        // then
+        assertThat(point.getBalance()).isEqualTo(1000L);
+        verify(pointLogRepository).save(any(PointLog.class));
+    }
 }

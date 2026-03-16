@@ -290,4 +290,59 @@ public class PointLockServiceTest {
         assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 100L);
         System.out.println("레디스 락 최종 적립 잔액: " + point.getBalance());
     }
+
+    @Test
+    @DisplayName("NO_LOCK - earnEventPoint")
+    void withoutLock_earnEvent() throws InterruptedException {
+        int threadCount = 10;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.earnEventPoint(memberId, 1000L, "추천인 보상");
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Point point = pointRepository.findByMemberId(memberId).orElseThrow();
+        assertThat(point.getBalance()).isNotEqualTo(20000L); // 기존 10000 + 10*1000
+        System.out.println("락 없는 최종 이벤트 적립 잔액: " + point.getBalance());
+    }
+
+    @Test
+    @DisplayName("WithRedisLock - earnEventPoint")
+    void withRedisLock_earnEvent() throws InterruptedException {
+        int threadCount = 10;
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointLockService.earnEventPoint(memberId, 1000L, "추천인 보상");
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Point point = pointRepository.findByMemberId(memberId).orElseThrow();
+        assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 1000L);
+        System.out.println("레디스 락 최종 이벤트 적립 잔액: " + point.getBalance());
+    }
 }
