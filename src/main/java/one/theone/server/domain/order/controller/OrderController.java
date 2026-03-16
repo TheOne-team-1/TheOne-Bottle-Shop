@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
-import one.theone.server.domain.order.dto.response.OrderCancelResponse;
-import one.theone.server.domain.order.dto.response.OrderCreateResponse;
-import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
-import one.theone.server.domain.order.dto.response.OrderListGetResponse;
+import one.theone.server.domain.order.dto.response.*;
 import one.theone.server.domain.order.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +23,7 @@ public class OrderController {
             @RequestBody OrderCreateDirectRequest request
     ) {
         OrderCreateResponse response = orderService.createDirectOrder(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "바로 구매 주문 생성 성공", response));
     }
@@ -35,15 +33,19 @@ public class OrderController {
             @RequestBody OrderCreateFromCartRequest request
     ) {
         OrderCreateResponse response = orderService.createOrderFromCart(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "장바구니 주문 생성 성공", response));
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<OrderListGetResponse>>> getOrderList(
-            @RequestParam Long memberId
+    public ResponseEntity<BaseResponse<OrderPageResponse>> getOrderList(
+            @RequestParam Long memberId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        List<OrderListGetResponse> response = orderService.getOrderList(memberId);
+        OrderPageResponse response = orderService.getOrderList(memberId, page, size);
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "주문 목록 조회 성공", response));
     }
@@ -54,6 +56,7 @@ public class OrderController {
             @PathVariable Long orderId
     ) {
         OrderDetailGetResponse response = orderService.getOrderDetail(memberId, orderId);
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "주문 상세 조회 성공", response));
     }

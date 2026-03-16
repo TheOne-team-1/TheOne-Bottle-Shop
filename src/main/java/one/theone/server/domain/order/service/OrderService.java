@@ -7,10 +7,7 @@ import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
-import one.theone.server.domain.order.dto.response.OrderCancelResponse;
-import one.theone.server.domain.order.dto.response.OrderCreateResponse;
-import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
-import one.theone.server.domain.order.dto.response.OrderListGetResponse;
+import one.theone.server.domain.order.dto.response.*;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
 import one.theone.server.domain.order.entity.OrderStatus;
@@ -19,6 +16,9 @@ import one.theone.server.domain.order.repository.OrderQueryRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -155,8 +155,24 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderListGetResponse> getOrderList(Long memeberId) {
-        return orderQueryRepository.findOrderListByMemberId(memeberId);
+    public OrderPageResponse getOrderList(Long memberId, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+
+        Page<Order> orderPage = orderRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+
+        List<OrderListGetResponse> content = orderPage.getContent().stream()
+                .map(OrderListGetResponse::from)
+                .toList();
+
+        return new OrderPageResponse(
+                content,
+                orderPage.getNumber(),
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages(),
+                orderPage.isFirst(),
+                orderPage.isLast()
+        );
     }
 
     @Transactional(readOnly = true)
