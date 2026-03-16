@@ -62,15 +62,15 @@ public class Event extends BaseEntity {
     }
 
     public void updateStatus(EventStatus status) {
-        validateStatus(this.status, status);
+        validateStatus(status);
         this.status = status;
     }
 
-    private void validateStatus(EventStatus current, EventStatus next) {
-        boolean valid = switch (current) {
-            case PENDING -> next == EventStatus.OPEN;
-            case OPEN -> next == EventStatus.PAUSE;
-            case PAUSE -> next == EventStatus.OPEN || next == EventStatus.CLOSE;
+    private void validateStatus(EventStatus status) {
+        boolean valid = switch (this.status) {
+            case PENDING -> status == EventStatus.OPEN;
+            case OPEN -> status == EventStatus.PAUSE;
+            case PAUSE -> status == EventStatus.OPEN || status == EventStatus.CLOSE;
             case CLOSE -> false;
         };
         if (!valid) {
