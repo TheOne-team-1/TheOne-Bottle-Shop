@@ -2,6 +2,8 @@ package one.theone.server.domain.event.repository;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import one.theone.server.domain.event.dto.EventGetResponse;
 import one.theone.server.domain.event.dto.EventsGetRequest;
 import one.theone.server.domain.event.dto.EventsGetResponse;
 import one.theone.server.domain.event.entity.Event;
+import one.theone.server.domain.event.entity.EventReward;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -17,7 +20,11 @@ import org.springframework.data.support.PageableExecutionUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static one.theone.server.domain.coupon.entity.QCoupon.coupon;
 import static one.theone.server.domain.event.entity.QEvent.event;
+import static one.theone.server.domain.event.entity.QEventDetail.eventDetail;
+import static one.theone.server.domain.event.entity.QEventReward.eventReward;
+import static one.theone.server.domain.freebie.entity.QFreebie.freebie;
 
 @RequiredArgsConstructor
 public class EventQueryRepositoryImpl implements EventQueryRepository{
@@ -66,7 +73,39 @@ public class EventQueryRepositoryImpl implements EventQueryRepository{
 
     @Override
     public EventGetResponse findEventInfoById(Long eventId, boolean isAdmin) {
-        return null;
+        return queryFactory
+                .select(Projections.constructor(EventGetResponse.class,
+                        event.id,
+                        event.name,
+                        event.type,
+                        event.status,
+                        event.startAt,
+                        event.endAt,
+                        Projections.constructor(EventGetResponse.EventDetailGetResponse.class,
+                                eventDetail.eventProductId,
+                                eventDetail.minPrice),
+                        Projections.constructor(EventGetResponse.EventRewardGetResponse.class,
+                                eventReward.rewardType,
+                                eventReward.couponId,
+                                eventReward.freebieId,
+                                new CaseBuilder()
+                                        .when(eventReward.rewardType.eq(EventReward.EventRewardType.COUPON))
+                                        .then(coupon.name)
+                                        .otherwise(freebie.name),
+                                isAdmin ? coupon.availQuantity : Expressions.nullExpression(Long.class),
+                                isAdmin ? coupon.issuedQuantity : Expressions.nullExpression(Long.class))))
+                .from(event)
+                .leftJoin(eventDetail).on(eventDetail.eventId.eq(event.id))
+                .leftJoin(eventReward).on(eventReward.eventId.eq(event.id))
+                .leftJoin(coupon).on(coupon.id.eq(eventReward.couponId)
+                        .and(eventReward.rewardType.eq(EventReward.EventRewardType.COUPON)))
+                .leftJoin(freebie).on(freebie.id.eq(eventReward.freebieId)
+                        .and(eventReward.rewardType.eq(EventReward.EventRewardType.FREEBIE)))
+                .where(
+                        event.id.eq(eventId),
+                        event.deleted.isFalse()
+                )
+                .fetchOne();
     }
 
     private BooleanExpression startAtLoe(LocalDateTime endAt) {
