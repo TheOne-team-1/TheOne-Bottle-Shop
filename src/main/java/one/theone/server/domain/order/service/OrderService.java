@@ -8,9 +8,12 @@ import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
+import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
+import one.theone.server.domain.order.dto.response.OrderListGetResponse;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
 import one.theone.server.domain.order.repository.OrderDetailRepository;
+import one.theone.server.domain.order.repository.OrderQueryRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
@@ -31,6 +34,7 @@ public class OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final OrderQueryRepository orderQueryRepository;
 
     @Transactional
     public OrderCreateResponse createDirectOrder(OrderCreateDirectRequest request) {
@@ -146,6 +150,17 @@ public class OrderService {
 
         return OrderCreateResponse.from(savedOrder);
 
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderListGetResponse> getOrderList(Long memeberId) {
+        return orderQueryRepository.findOrderListByMemberId(memeberId);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
+        return orderQueryRepository.findOrderDetailByOrderIdAndMemberId(orderId, memberId)
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
     }
 
     private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
