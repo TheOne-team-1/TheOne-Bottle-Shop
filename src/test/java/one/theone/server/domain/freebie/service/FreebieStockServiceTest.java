@@ -1,10 +1,8 @@
-package one.theone.server.common;
-
-// 테스트 코드 -> 현재는 미작동
-// 스프링 컨텍스트가 있어야 테스트가 가능한 AOP를 사용 했으므로 SpringBootTest 사용해야함
+package one.theone.server.domain.freebie.service;
 
 import com.redis.testcontainers.RedisContainer;
-import one.theone.server.domain.product.entity.Product;
+import one.theone.server.domain.freebie.entity.Freebie;
+import one.theone.server.domain.freebie.repository.FreebieRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,14 +19,15 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/*
+
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-public class RedisLockTest {
+public class FreebieStockServiceTest {
     // withExposedPorts(6379) : 랜덤 포트로 Redis 실행
     @Container
     static final RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
@@ -42,23 +41,26 @@ public class RedisLockTest {
     }
 
     @Autowired
-    private ProductService productService;
+    private FreebieService freebieService;
 
     @Autowired
-    private ProductRepository productRepository;
+    private FreebieStockService freebieStockService;
 
-    private Long productId;
+    @Autowired
+    private FreebieRepository freebieRepository;
+
+    private Long freebieId;
 
     @BeforeEach
     void beforeSetUp() {
         // 재고 100개 상품 생성
-        Product product = productRepository.save(Product.register("test", 100, 1000L));
-        productId = product.getId();
+        Freebie freebie = freebieRepository.save(Freebie.register(1L, "test",100L));
+        freebieId = freebie.getId();
     }
 
     @AfterEach
     void tearDown() {
-        productRepository.deleteAll();
+        freebieRepository.deleteById(freebieId);
     }
 
     @Test
@@ -74,7 +76,7 @@ public class RedisLockTest {
             executorService.submit(() -> {
                 try {
                     // 락 없는 재고 감소
-                    productService.decreaseStockWithNoLock(productId, 1);
+                    freebieService.decreaseStock(freebieId, 1L);
                 } finally {
                     latch.countDown(); // 스레드 완료 카운트 감소
                 }
@@ -84,17 +86,18 @@ public class RedisLockTest {
         latch.await(); // 모든 스레드 완료까지 대기
         executorService.shutdown();
 
-        Product product = productRepository.findById(productId).orElseThrow();
+        Freebie freebie = freebieRepository.findById(freebieId).orElseThrow();
 
         // 동시성 문제로 재고가 0이 아님
-        assertThat(product.getQuantity()).isNotEqualTo(0);
-        System.out.println("락 없는 최종 재고 : " + product.getQuantity());
+        assertThat(freebie.getQuantity()).isNotEqualTo(0);
+        System.out.println("락 없는 최종 재고 : " + freebie.getQuantity());
     }
 
     @Test
     @DisplayName("WithRedisLock")
     void withSpinLock() throws InterruptedException {
         int threadCount = 100;
+        AtomicInteger failCount = new AtomicInteger();
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -102,21 +105,21 @@ public class RedisLockTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productService.decreaseStock(productId, 1);
+                    freebieStockService.decreaseStockWithLock(freebieId, 1L);
+                } catch (Exception e) {
+                    failCount.getAndIncrement();
                 } finally {
-                    latch.countDown();
-                }
-            });
+                        latch.countDown();
+                    }
+                });
         }
 
         latch.await();
         executorService.shutdown();
 
-        Product product = productRepository.findById(productId).orElseThrow();
+        Freebie freebie = freebieRepository.findById(freebieId).orElseThrow();
 
-        assertThat(product.getQuantity()).isEqualTo(0);
-        System.out.println("레디스 락 최종 재고 : " + product.getQuantity());
+        assertThat(freebie.getQuantity()).isEqualTo(failCount.get());
+        System.out.println("레디스 락 최종 재고 : " + freebie.getQuantity());
     }
 }
-*/
-
