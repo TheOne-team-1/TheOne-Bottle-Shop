@@ -1,16 +1,22 @@
 package one.theone.server.domain.event.service;
 
 import lombok.RequiredArgsConstructor;
-import one.theone.server.domain.event.dto.EventCreateRequest;
-import one.theone.server.domain.event.dto.EventCreateResponse;
+import one.theone.server.common.dto.PageResponse;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.EventExceptionEnum;
+import one.theone.server.domain.event.dto.*;
 import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.entity.EventDetail;
 import one.theone.server.domain.event.entity.EventReward;
 import one.theone.server.domain.event.repository.EventDetailRepository;
 import one.theone.server.domain.event.repository.EventRepository;
 import one.theone.server.domain.event.repository.EventRewardRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +49,74 @@ public class EventService {
                 request.rewards());
         eventRewardRepository.save(eventReward);
 
-        return EventCreateResponse.from(event, eventReward);
+        return new EventCreateResponse(event.getId(), eventReward.getId());
+    }
+
+    @Transactional
+    public EventStatusUpdateResponse updateEventStatus(Long eventId, EventStatusUpdateRequest request) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        event.updateStatus(request.status());
+
+        return new EventStatusUpdateResponse(event.getId(), event.getName());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, Pageable pageable, Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
+
+        validateStatusAccess(request.status(), isAdmin);
+
+        if (request.startAt() != null && request.endAt() != null && !request.endAt().isAfter(request.startAt())) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
+        }
+        List<Event.EventStatus> statuses = cleanStatuses(request.status(), isAdmin);
+
+        return eventRepository.findEventsWithConditions(request, pageable, statuses, isAdmin);
+    }
+
+    @Transactional(readOnly = true)
+    public EventGetResponse getEvent(Long eventId, Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
+
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        validateStatusAccess(event.getStatus(), isAdmin);
+
+        return eventRepository.findEventInfoById(event.getId(), isAdmin);
+    }
+
+    @Transactional
+    public EventDeleteResponse deleteEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        event.delete();
+        return new EventDeleteResponse(
+                event.getId(),
+                event.getName(),
+                event.getDeleted(),
+                event.getDeletedAt()
+        );
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private void validateStatusAccess(Event.EventStatus status, boolean isAdmin) {
+        if ((status == Event.EventStatus.PENDING || status == Event.EventStatus.PAUSE) && !isAdmin) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
+        }
+    }
+
+    private List<Event.EventStatus> cleanStatuses(Event.EventStatus status, boolean isAdmin) {
+        if (status != null) {
+            return List.of(status);
+        }
+        return isAdmin ? List.of(Event.EventStatus.values()) : List.of(Event.EventStatus.OPEN, Event.EventStatus.CLOSE);
     }
 }
