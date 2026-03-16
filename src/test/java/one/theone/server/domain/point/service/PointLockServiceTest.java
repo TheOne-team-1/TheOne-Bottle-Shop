@@ -9,8 +9,8 @@ import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.repository.PointLogRepository;
 import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
-import one.theone.server.order.entity.Order;
-import one.theone.server.order.repository.OrderRepository;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.repository.OrderRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +27,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,8 +77,11 @@ public class PointLockServiceTest {
     @BeforeEach
     void beforeSetUp() {
         // 회원 생성
+        String email = UUID.randomUUID() + "@test.com";
+        String recommendCode = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
         Member member = memberRepository.save(
-                Member.create("test@test.com", "password", "테스트", "20000101", "ABC123"));
+                Member.create(email, "password", "테스트", "20000101", recommendCode));
         memberId = member.getId();
 
         // 포인트 10000 세팅
@@ -91,9 +95,9 @@ public class PointLockServiceTest {
         for (int i = 0; i < 100; i++) {
             Order order = Order.create(
                     memberId, null, "ORDER-" + i,
-                    BigDecimal.valueOf(100),
-                    BigDecimal.valueOf(10000), BigDecimal.ZERO,
-                    BigDecimal.valueOf(9900), "주소", "상세주소");
+                    100L,
+                    10000L, 0L,
+                    9900L, "주소", "상세주소");
             orderIds.add(orderRepository.save(order).getId());
         }
     }

@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,8 +58,11 @@ public class PointPubSubTest {
 
     @BeforeEach
     void setUp() {
+        String email = UUID.randomUUID() + "@test.com";
+        String recommendCode = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+
         Member member = memberRepository.save(
-                Member.create("test@test.com", "password", "테스트", "20000101", "ABC123"));
+                Member.create(email, "password", "테스트", "20000101", recommendCode));
         memberId = member.getId();
 
         PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(0L, "초기화"), 0L);
