@@ -85,7 +85,7 @@ public class EventService {
         );
         validateStatusAccess(event.getStatus(), isAdmin);
 
-        return eventRepository.findEventInfoById(eventId, isAdmin);
+        return eventRepository.findEventInfoById(event.getId(), isAdmin);
     }
 
     private boolean isAdmin(Authentication authentication) {
