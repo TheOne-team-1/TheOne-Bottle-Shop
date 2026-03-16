@@ -59,4 +59,8 @@ public class PointLockService {
     public void earnPoint(Long memberId, Long orderId, Long finalAmount) {
         executeWithLock(memberId, () -> pointService.earnPoint(memberId, orderId, finalAmount));
     }
+
+    public void earnEventPoint(Long memberId, Long amount, String description) {
+        executeWithLock(memberId, () -> pointService.earnEventPoint(memberId, amount, description));
+    }
 }

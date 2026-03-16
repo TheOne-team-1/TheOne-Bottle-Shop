@@ -158,6 +158,18 @@ public class PointService {
         }
     }
 
+    @Transactional
+    public void earnEventPoint(Long memberId, Long amount, String description) {
+        Long actualBalance = calculateActualBalance(memberId);
+        long newBalance = actualBalance + amount;
+
+        PointLog pointLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(amount, description), newBalance);
+        pointLogRepository.save(pointLog);
+
+        Point point = findOrCreatePoint(memberId);
+        point.updateBalance(amount);
+    }
+
     private Point findOrCreatePoint(Long memberId) {
         return pointRepository.findByMemberId(memberId)
                 .orElseGet(() -> pointRepository.save(Point.register(memberId)));
