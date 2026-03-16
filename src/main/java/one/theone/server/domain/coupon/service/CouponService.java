@@ -35,8 +35,8 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<CouponSearchMeResponse> getMyCoupons(MemberCoupon.MemberCouponStatus status, Pageable pageable) {
-        Page<CouponSearchMeResponse> page = couponRepository.findMyCoupons(status, pageable);
+    public PageResponse<CouponSearchMeResponse> getMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable) {
+        Page<CouponSearchMeResponse> page = couponRepository.findMyCoupons(memberId, status, pageable);
         return PageResponse.register(page);
     }
 }

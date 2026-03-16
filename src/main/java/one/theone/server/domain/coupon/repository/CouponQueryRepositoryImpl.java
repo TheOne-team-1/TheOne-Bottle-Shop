@@ -115,7 +115,7 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
     }
 
     @Override
-    public Page<CouponSearchMeResponse> findMyCoupons(MemberCoupon.MemberCouponStatus status, Pageable pageable) {
+    public Page<CouponSearchMeResponse> findMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable) {
         List<CouponSearchMeResponse> content = queryFactory
                 .select(Projections.constructor(CouponSearchMeResponse.class,
                         coupon.id
@@ -130,7 +130,8 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                 .innerJoin(memberCoupon)
                 .on(coupon.id.eq(memberCoupon.couponId))
                 .where(
-                        memberCoupon.status.eq(status)
+                        statusEq(status)
+                        , memberCoupon.memberId.eq(memberId)
                 )
                 .orderBy(coupon.id.desc())
                 .offset(pageable.getOffset())
@@ -141,7 +142,8 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                 .select(memberCoupon.count())
                 .from(memberCoupon)
                 .where(
-                        memberCoupon.status.eq(status)
+                        statusEq(status)
+                        , memberCoupon.memberId.eq(memberId)
                 )
                 .fetchOne();
 
@@ -154,6 +156,10 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
 
     private BooleanExpression useTypeEq(Coupon.CouponUseType useType) {
         return useType != null ? coupon.useType.eq(useType) : null;
+    }
+
+    private BooleanExpression statusEq(MemberCoupon.MemberCouponStatus status) {
+        return status != null ? memberCoupon.status.eq(status) : null;
     }
 
     private BooleanExpression startAtGoe(LocalDateTime startAt) {

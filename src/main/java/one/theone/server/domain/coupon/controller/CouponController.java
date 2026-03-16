@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,7 +27,6 @@ public class CouponController {
 
     private final CouponService couponService;
 
-    // TODO : 관리자만 조회되도록 수정 필요
     @GetMapping("/api/admin/coupons")
     public ResponseEntity<BaseResponse<PageResponse<CouponSearchResponse>>> getCoupons(
             @RequestParam(required = false) Coupon.CouponUseType useType
@@ -40,7 +40,6 @@ public class CouponController {
                         couponService.getCoupons(useType, startAt, endAt, PageRequest.of(page - 1, size))));
     }
 
-    // TODO : 관리자만 조회되도록 수정 필요
     @GetMapping("/api/admin/coupons/{couponId}")
     public ResponseEntity<BaseResponse<CouponDetailResponse>> getCouponDetails(
             @PathVariable Long couponId
@@ -55,9 +54,10 @@ public class CouponController {
             @RequestParam(required = false) MemberCoupon.MemberCouponStatus status
             , @RequestParam(defaultValue = "1") int page
             , @RequestParam(defaultValue = "10") int size
+            , @AuthenticationPrincipal Long memberId
     ) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "내 쿠폰 조회 성공",
-                        couponService.getMyCoupons(status, PageRequest.of(page - 1, size))));
+                        couponService.getMyCoupons(memberId, status, PageRequest.of(page - 1, size))));
     }
 }

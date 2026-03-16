@@ -14,5 +14,5 @@ import java.util.Optional;
 public interface CouponQueryRepository {
     Page<CouponSearchResponse> findAllCoupons(Coupon.CouponUseType useType, LocalDateTime startAt, LocalDateTime endAt, Pageable pageable);
     Optional<CouponDetailResponse> findCouponDetail(Long couponId);
-    Page<CouponSearchMeResponse> findMyCoupons(MemberCoupon.MemberCouponStatus status, Pageable pageable);
+    Page<CouponSearchMeResponse> findMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable);
 }
