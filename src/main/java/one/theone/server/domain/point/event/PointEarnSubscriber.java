@@ -32,6 +32,5 @@ public class PointEarnSubscriber implements MessageListener {
         } catch (Exception e) {
             throw new ServiceErrorException(PointExceptionEnum.ERR_POINT_EVENT_EARN_FAILED);
         }
-
     }
 }

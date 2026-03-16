@@ -160,7 +160,7 @@ public class PointService {
 
     @Transactional
     public void earnEventPoint(Long memberId, Long amount, String description) {
-        Member member = memberRepository.findById(memberId)
+        memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
 
         Long actualBalance = calculateActualBalance(memberId);
