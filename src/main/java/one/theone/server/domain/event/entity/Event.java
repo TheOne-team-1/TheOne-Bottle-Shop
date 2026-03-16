@@ -61,11 +61,28 @@ public class Event extends BaseEntity {
         }
     }
 
+    public void updateStatus(EventStatus status) {
+        validateStatus(this.status, status);
+        this.status = status;
+    }
+
+    private void validateStatus(EventStatus current, EventStatus next) {
+        boolean valid = switch (current) {
+            case PENDING -> next == EventStatus.OPEN;
+            case OPEN -> next == EventStatus.PAUSE;
+            case PAUSE -> next == EventStatus.OPEN || next == EventStatus.CLOSE;
+            case CLOSE -> false;
+        };
+        if (!valid) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_STATUS_INVALID);
+        }
+    }
+
     public enum EventType {
         PRODUCT_BUY, AMOUNT_BUY, FIRST
     }
 
     public enum EventStatus {
-        OPEN, PENDING, CLOSE
+        PENDING, OPEN, PAUSE, CLOSE
     }
 }

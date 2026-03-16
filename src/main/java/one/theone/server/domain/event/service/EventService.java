@@ -1,6 +1,8 @@
 package one.theone.server.domain.event.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.EventExceptionEnum;
 import one.theone.server.domain.event.dto.EventCreateRequest;
 import one.theone.server.domain.event.dto.EventCreateResponse;
 import one.theone.server.domain.event.dto.EventStatusUpdateRequest;
@@ -49,6 +51,12 @@ public class EventService {
     }
 
     @Transactional
-    public EventStatusUpdateResponse updateEventStatus(EventStatusUpdateRequest request) {
+    public EventStatusUpdateResponse updateEventStatus(Long eventId, EventStatusUpdateRequest request) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        event.updateStatus(request.status());
+
+        return new EventStatusUpdateResponse(event.getId(), event.getName());
     }
 }

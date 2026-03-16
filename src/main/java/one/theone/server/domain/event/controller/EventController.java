@@ -35,6 +35,6 @@ public class EventController {
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "이벤트 상태 변경 성공",
-                eventService.updateEventStatus(request)));
+                eventService.updateEventStatus(eventId, request)));
     }
 }
