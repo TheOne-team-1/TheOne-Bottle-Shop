@@ -66,7 +66,7 @@ public class EventService {
     public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, Pageable pageable, Authentication authentication) {
         boolean isAdmin = isAdmin(authentication);
 
-        if (request.status() == Event.EventStatus.PENDING || request.status() == Event.EventStatus.PAUSE && !isAdmin) {
+        if ((request.status() == Event.EventStatus.PENDING || request.status() == Event.EventStatus.PAUSE) && !isAdmin) {
             throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
         }
         if (request.startAt() != null && request.endAt() != null && !request.endAt().isAfter(request.startAt())) {
