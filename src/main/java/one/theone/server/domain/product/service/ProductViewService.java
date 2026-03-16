@@ -3,10 +3,13 @@ package one.theone.server.domain.product.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.domain.product.dto.BestProductsGetResponse;
+import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -24,6 +27,10 @@ public class ProductViewService {
     private static final long DEDUP_TTL = 60 * 60 * 24 * 7; // 7일
 
     private static final String VIEW_COUNT_KEY = "product:viewCount";
+    private static final int BEST_PRODUCTS_LIMIT = 4;
+    private static final int BEST_PRODUCTS_BUFFER = 4*2;
+
+    private final ProductRepository productRepository;
 
     public void record(Long productId, String clientIp) {
         String lockKey = LOCK_PREFIX + productId + ":" + clientIp;
@@ -56,5 +63,14 @@ public class ProductViewService {
     }
 
     public List<BestProductsGetResponse> getBestProducts() {
+        Set<Object> productIds = redisTemplate.opsForZSet().reverseRange(VIEW_COUNT_KEY, 0, BEST_PRODUCTS_BUFFER);
+        return productIds.stream()
+                .map(id -> Long.parseLong((String) id))
+                .map(productRepository::findById)
+                .filter(Optional::isPresent)
+                .limit(BEST_PRODUCTS_LIMIT)
+                .map(Optional::get)
+                .map(BestProductsGetResponse::from)
+                .toList();
     }
 }
