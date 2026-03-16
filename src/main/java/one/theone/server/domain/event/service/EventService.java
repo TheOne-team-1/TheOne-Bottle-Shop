@@ -88,6 +88,20 @@ public class EventService {
         return eventRepository.findEventInfoById(event.getId(), isAdmin);
     }
 
+    @Transactional
+    public EventDeleteResponse deleteEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        event.delete();
+        return new EventDeleteResponse(
+                event.getId(),
+                event.getName(),
+                event.getDeleted(),
+                event.getDeletedAt()
+        );
+    }
+
     private boolean isAdmin(Authentication authentication) {
         if (authentication == null) return false;
         return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));

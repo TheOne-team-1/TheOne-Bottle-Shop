@@ -78,6 +78,14 @@ public class Event extends BaseEntity {
         }
     }
 
+    public void delete() {
+        if (this.deleted) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ALREADY_DELETED);
+        }
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
     public enum EventType {
         PRODUCT_BUY, AMOUNT_BUY, FIRST
     }

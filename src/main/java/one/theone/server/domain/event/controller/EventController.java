@@ -64,4 +64,14 @@ public class EventController {
                 eventService.getEvent(eventId, authentication)
         ));
     }
+
+    @DeleteMapping("/admin/events/{eventId}")
+    public ResponseEntity<BaseResponse<EventDeleteResponse>> deleteEvent(
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(BaseResponse.success(
+                HttpStatus.OK.name(),
+                "이벤트 삭제 성공",
+                eventService.deleteEvent(eventId)
+        ));
+    }
 }
