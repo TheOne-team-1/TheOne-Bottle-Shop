@@ -4,22 +4,26 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
+import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
 import one.theone.server.domain.order.repository.OrderDetailRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
+    private final RedisTemplate<String, Object> redisTemplate;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
 
@@ -67,6 +71,14 @@ public class OrderService {
         return OrderCreateResponse.from(savedOrder);
     }
 
+    @Transactional
+    public OrderCreateResponse createOrderFromCart(OrderCreateFromCartRequest request) {
+        String cartKey = generateCartKey(request.memberId());
+
+        Map<Object, Object> cartEntries = redisTemplate.opsForHash().entries(cartKey);
+
+    }
+
     private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
         if (request.orderItems() == null || request.orderItems().isEmpty()) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_EMPTY);
@@ -91,5 +103,9 @@ public class OrderService {
 
     private String generateOrderNum() {
         return "order_" + UUID.randomUUID();
+    }
+
+    private String generateCartKey(Long memberId) {
+        return "cart:member:" + memberId;
     }
 }
