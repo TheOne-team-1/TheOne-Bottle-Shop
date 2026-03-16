@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.domain.point.dto.PointAdjustRequest;
 
 import java.time.LocalDate;
 
@@ -26,6 +27,8 @@ public class PointLog extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PointType type;
 
+    private String description;
+
     private Long amount;
 
     private Long remainingAmount;
@@ -38,52 +41,56 @@ public class PointLog extends BaseEntity {
         EARN, USE, REFUND, EXPIRED, ADMIN
     }
 
-    public static PointLog ofAdmin(Long memberId, Long amount, Long balanceSnap) {
+    public static PointLog ofAdmin(Long memberId, PointAdjustRequest request, Long balanceSnap) {
         PointLog pointLog = new PointLog();
 
         pointLog.memberId = memberId;
         pointLog.type = PointType.ADMIN;
-        pointLog.amount = amount;
+        pointLog.amount = request.amount();
+        pointLog.description = request.description();
         pointLog.balanceSnap = balanceSnap;
 
-        if (amount > 0) {
-            pointLog.remainingAmount = amount;
+        if (request.amount() > 0) {
+            pointLog.remainingAmount = request.amount();
             pointLog.expiresAt = LocalDate.now().plusYears(1);
         }
 
         return pointLog;
     }
 
-    public static PointLog ofUse(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+    public static PointLog ofUse(Long memberId, Long orderId, String orderNum, Long amount, Long balanceSnap) {
         PointLog pointLog = new PointLog();
 
         pointLog.memberId = memberId;
         pointLog.orderId = orderId;
         pointLog.type = PointType.USE;
+        pointLog.description = orderNum + " 사용";
         pointLog.amount = amount;
         pointLog.balanceSnap = balanceSnap;
 
         return pointLog;
     }
 
-    public static PointLog ofRefund(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+    public static PointLog ofRefund(Long memberId, Long orderId, String orderNum, Long amount, Long balanceSnap) {
         PointLog pointLog = new PointLog();
 
         pointLog.memberId = memberId;
         pointLog.orderId = orderId;
         pointLog.type = PointType.REFUND;
+        pointLog.description = orderNum + " 환불";
         pointLog.amount = amount;
         pointLog.balanceSnap = balanceSnap;
 
         return pointLog;
     }
 
-    public static PointLog ofEarn(Long memberId, Long orderId, Long amount, Long balanceSnap) {
+    public static PointLog ofEarn(Long memberId, Long orderId, String orderNum, Long amount, Long balanceSnap) {
         PointLog pointLog = new PointLog();
 
         pointLog.memberId = memberId;
         pointLog.orderId = orderId;
         pointLog.type = PointType.EARN;
+        pointLog.description = orderNum + " 적립";
         pointLog.amount = amount;
         pointLog.remainingAmount = amount;
         pointLog.balanceSnap = balanceSnap;
@@ -97,6 +104,7 @@ public class PointLog extends BaseEntity {
 
         pointLog.memberId = memberId;
         pointLog.type = PointType.EXPIRED;
+        pointLog.description = "포인트 만료";
         pointLog.amount = amount;
         pointLog.balanceSnap = balanceSnap;
 

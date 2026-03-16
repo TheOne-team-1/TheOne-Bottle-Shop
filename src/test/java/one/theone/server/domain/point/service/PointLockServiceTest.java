@@ -3,6 +3,7 @@ package one.theone.server.domain.point.service;
 import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.repository.MemberRepository;
+import one.theone.server.domain.point.dto.PointAdjustRequest;
 import one.theone.server.domain.point.entity.Point;
 import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.repository.PointLogRepository;
@@ -80,7 +81,7 @@ public class PointLockServiceTest {
         memberId = member.getId();
 
         // 포인트 10000 세팅
-        PointLog earnLog = PointLog.ofAdmin(memberId, 10000L, 10000L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(10000L, "테스트 지급"), 10000L);
         pointLogRepository.save(earnLog);
         Point point = Point.register(memberId);
         point.updateBalance(10000L);
@@ -288,5 +289,60 @@ public class PointLockServiceTest {
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
         assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 100L);
         System.out.println("레디스 락 최종 적립 잔액: " + point.getBalance());
+    }
+
+    @Test
+    @DisplayName("NO_LOCK - earnEventPoint")
+    void withoutLock_earnEvent() throws InterruptedException {
+        int threadCount = 10;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointService.earnEventPoint(memberId, 1000L, "추천인 보상");
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Point point = pointRepository.findByMemberId(memberId).orElseThrow();
+        assertThat(point.getBalance()).isNotEqualTo(20000L); // 기존 10000 + 10*1000
+        System.out.println("락 없는 최종 이벤트 적립 잔액: " + point.getBalance());
+    }
+
+    @Test
+    @DisplayName("WithRedisLock - earnEventPoint")
+    void withRedisLock_earnEvent() throws InterruptedException {
+        int threadCount = 10;
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    pointLockService.earnEventPoint(memberId, 1000L, "추천인 보상");
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Point point = pointRepository.findByMemberId(memberId).orElseThrow();
+        assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 1000L);
+        System.out.println("레디스 락 최종 이벤트 적립 잔액: " + point.getBalance());
     }
 }
