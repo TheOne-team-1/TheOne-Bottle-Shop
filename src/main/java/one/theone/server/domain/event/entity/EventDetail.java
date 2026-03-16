@@ -5,6 +5,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.EventExceptionEnum;
+import one.theone.server.domain.event.dto.EventDetailRequest;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -23,23 +28,58 @@ public class EventDetail extends BaseEntity {
 
     private Long eventProductId;
 
-    public static EventDetail amountBuyEvent(Long eventId, Long minPrice) {
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deletedAt;
+
+    public static EventDetail registerByEventType(Long eventId, Event.EventType type, EventDetailRequest details) {
+        return switch (type) {
+            case PRODUCT_BUY -> {
+                if (details == null || details.eventProductId() == null) {
+                    throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_PRODUCT_REQUIRED);
+                }
+                yield productBuyEvent(eventId, details.eventProductId());
+            }
+            case AMOUNT_BUY -> {
+                if (details == null || details.minPrice() == null) {
+                    throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_MIN_PRICE_REQUIRED);
+                }
+                yield amountBuyEvent(eventId, details.minPrice());
+            }
+            case FIRST -> firstEvent(eventId, details.minPrice(), details.eventProductId());
+            default -> throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_TYPE_INVALID);
+        };
+    }
+
+    private static EventDetail amountBuyEvent(Long eventId, Long minPrice) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
         eventDetail.minPrice = minPrice;
+        eventDetail.deleted = false;
         return eventDetail;
     }
 
-    public static EventDetail productBuyEvent(Long eventId, Long eventProductId) {
+    private static EventDetail productBuyEvent(Long eventId, Long eventProductId) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
         eventDetail.eventProductId = eventProductId;
+        eventDetail.deleted = false;
         return eventDetail;
     }
 
-    public static EventDetail noBuyEvent(Long eventId) {
+    private static EventDetail firstEvent(Long eventId, Long minPrice, Long eventProductId) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
+        eventDetail.minPrice = minPrice;
+        eventDetail.eventProductId = eventProductId;
+        eventDetail.deleted = false;
         return eventDetail;
+    }
+
+    public static void validateDetails(EventDetailRequest details) {
+        if (details != null && details.eventProductId() != null && details.minPrice() != null) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_DETAIL_INVALID);
+        }
     }
 }

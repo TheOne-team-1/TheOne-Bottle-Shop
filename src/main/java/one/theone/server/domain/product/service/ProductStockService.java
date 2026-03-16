@@ -7,6 +7,7 @@ import one.theone.server.common.exception.domain.CommonExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -17,37 +18,34 @@ public class ProductStockService {
     private final ProductService productService;
 
     private static final String LOCK_PREFIX = "product:stock:lock:";
-    private static final long LOCK_WAIT = 3L;
+    private static final long LOCK_WAIT = 10;
     private static final long LOCK_LEASE = 5L;
-    private static final int MAX_RETRY = 3;
 
     private void executeWithLock(Long productId, Runnable task) {
         String lockKey = LOCK_PREFIX + productId;
-        int retry = 0;
+        String lockValue = null;
+        ScheduledFuture<?> watchDog = null;
 
-        while (retry < MAX_RETRY) {
-            String lockValue = null;
-            try {
-                lockValue = redisLockService.tryLock(lockKey, LOCK_WAIT, LOCK_LEASE, TimeUnit.SECONDS);
+        try {
+            lockValue = redisLockService.tryLock(lockKey, LOCK_WAIT, LOCK_LEASE, TimeUnit.SECONDS);
 
-                if (lockValue == null) {
-                    retry++;
-                    continue;
-                }
+            if(lockValue == null) {
+                throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_LOCK_FAILED);
+            }
 
-                task.run();
-                return;
-
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new ServiceErrorException(CommonExceptionEnum.ERR_GET_REDIS_LOCK_FAIL);
-            } finally {
-                if (lockValue != null) {
-                    redisLockService.unLock(lockKey, lockValue);
-                }
+            watchDog = redisLockService.setWatchDog(lockKey, lockValue, LOCK_LEASE, TimeUnit.SECONDS);
+            task.run();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ServiceErrorException(CommonExceptionEnum.ERR_GET_REDIS_LOCK_FAIL);
+        } finally {
+            if (watchDog != null) {
+                watchDog.cancel(true);
+            }
+            if (lockValue != null) {
+                redisLockService.unLock(lockKey, lockValue);
             }
         }
-        throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_LOCK_FAILED);
     }
 
     public void decreaseStock(Long productId, Long quantity) {
