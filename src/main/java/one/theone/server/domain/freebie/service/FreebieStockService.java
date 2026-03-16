@@ -31,7 +31,7 @@ public class FreebieStockService {
 
             if(lockValue == null) {
                 log.error("사은품 재고 락 획득 실패");
-                throw new ServiceErrorException(FreebieExceptionEnum.ERR_PRODUCT_LOCK_FAILED);
+                throw new ServiceErrorException(FreebieExceptionEnum.ERR_FREEBIE_LOCK_FAILED);
             }
 
             watchDog = redisLockService.setWatchDog(key, lockValue, FREEBIE_LOCK_WATCH_DOG_LEASE_TIME, TimeUnit.SECONDS);

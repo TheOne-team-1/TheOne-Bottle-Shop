@@ -61,11 +61,36 @@ public class Event extends BaseEntity {
         }
     }
 
+    public void updateStatus(EventStatus status) {
+        validateStatus(status);
+        this.status = status;
+    }
+
+    private void validateStatus(EventStatus status) {
+        boolean valid = switch (this.status) {
+            case PENDING -> status == EventStatus.OPEN;
+            case OPEN -> status == EventStatus.PAUSE;
+            case PAUSE -> status == EventStatus.OPEN || status == EventStatus.CLOSE;
+            case CLOSE -> false;
+        };
+        if (!valid) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_STATUS_INVALID);
+        }
+    }
+
+    public void delete() {
+        if (this.deleted) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ALREADY_DELETED);
+        }
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
     public enum EventType {
         PRODUCT_BUY, AMOUNT_BUY, FIRST
     }
 
     public enum EventStatus {
-        OPEN, PENDING, CLOSE
+        PENDING, OPEN, PAUSE, CLOSE
     }
 }

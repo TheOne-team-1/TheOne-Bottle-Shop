@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.CouponExceptionEnum;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -43,8 +45,13 @@ public class Coupon extends BaseEntity {
 
     private LocalDateTime endAt;
 
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deleted_at;
+
     public static Coupon register(String name, CouponUseType useType, Long minPrice, Long discountValue,
-                                  Long availQuantity, LocalDateTime startAt, LocalDateTime endAt) {
+                                  Long availQuantity, LocalDateTime startAt, LocalDate endAt) {
         Coupon coupon = new Coupon();
         coupon.name = name;
         coupon.useType = useType;
@@ -53,8 +60,44 @@ public class Coupon extends BaseEntity {
         coupon.availQuantity = availQuantity;
         coupon.issuedQuantity = 0L;
         coupon.startAt = startAt;
-        coupon.endAt = endAt;
+        coupon.endAt = endAt.atTime(4, 59, 59);
+        coupon.deleted = false;
         return coupon;
+    }
+
+    // 발급 가능 여부 검증
+    public void validateIssuable() {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(startAt)) {
+            throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_STARTED);
+        }
+
+        if (endAt != null && now.isAfter(endAt)) {
+            throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_EXPIRED);
+        }
+
+        if (availQuantity <= issuedQuantity) {
+            throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_NOT_AVAILABLE);
+        }
+    }
+
+    // 쿠폰 발급
+    public void issueCoupon() {
+        validateIssuable();
+        this.issuedQuantity++;
+    }
+
+    // 할인 금액 계산
+    public Long calculateDiscount(Long price) {
+        if (price < this.minPrice) {
+            throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_MIN_PRICE);
+        }
+
+        // TODO : 반올림 처리 필요할지도
+        return switch (this.useType) {
+            case AMOUNT -> Math.min(this.discountValue, price);
+            case RATE -> price * this.discountValue / 100;
+        };
     }
 
     public enum CouponUseType {

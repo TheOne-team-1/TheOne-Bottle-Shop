@@ -1,7 +1,7 @@
 package one.theone.server.domain.event.dto;
 
-public record EventCreateResponse(
+public record EventStatusUpdateResponse(
         Long eventId,
-        Long eventRewardId
+        String name
 ) {
 }
