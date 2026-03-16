@@ -1,12 +1,10 @@
-package one.theone.server.order.entity;
+package one.theone.server.domain.order.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
-
-import java.math.BigDecimal;
 
 @Getter
 @Entity
@@ -17,9 +15,8 @@ public class OrderDetail extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
@@ -28,32 +25,30 @@ public class OrderDetail extends BaseEntity {
     private String productNameSnap;
 
     @Column(name = "product_price_snap", nullable = false, precision = 15, scale = 2)
-    private BigDecimal productPriceSnap;
+    private Long productPriceSnap;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     @Column(name = "line_amount", nullable = false, precision = 15, scale = 2)
-    private BigDecimal lineAmount;
+    private Long lineAmount;
 
     public static OrderDetail create(
+            Long orderId,
             Long productId,
             String productNameSnap,
-            BigDecimal productPriceSnap,
+            Long productPriceSnap,
             Integer quantity
     ) {
         OrderDetail detail = new OrderDetail();
 
+        detail.orderId = orderId;
         detail.productId = productId;
         detail.productNameSnap = productNameSnap;
         detail.productPriceSnap = productPriceSnap;
         detail.quantity = quantity;
-        detail.lineAmount = productPriceSnap.multiply(BigDecimal.valueOf(quantity));
+        detail.lineAmount = productPriceSnap * quantity;
 
         return detail;
-    }
-
-    public void assignOrder(Order order) {
-        this.order = order;
     }
 }

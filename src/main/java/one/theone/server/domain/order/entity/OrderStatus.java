@@ -1,4 +1,4 @@
-package one.theone.server.order.entity;
+package one.theone.server.domain.order.entity;
 
 public enum OrderStatus {
     PENDING_PAYMENT,
