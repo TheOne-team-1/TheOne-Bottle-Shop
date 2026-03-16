@@ -6,6 +6,7 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
+import one.theone.server.domain.event.dto.EventGetResponse;
 import one.theone.server.domain.event.dto.EventsGetRequest;
 import one.theone.server.domain.event.dto.EventsGetResponse;
 import one.theone.server.domain.event.entity.Event;
@@ -61,6 +62,11 @@ public class EventQueryRepositoryImpl implements EventQueryRepository{
         Page<EventsGetResponse> page = PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
 
         return PageResponse.register(page);
+    }
+
+    @Override
+    public EventGetResponse findEventInfoById(Long eventId, boolean isAdmin) {
+        return null;
     }
 
     private BooleanExpression startAtLoe(LocalDateTime endAt) {

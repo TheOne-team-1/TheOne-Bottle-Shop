@@ -66,9 +66,8 @@ public class EventService {
     public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, Pageable pageable, Authentication authentication) {
         boolean isAdmin = isAdmin(authentication);
 
-        if ((request.status() == Event.EventStatus.PENDING || request.status() == Event.EventStatus.PAUSE) && !isAdmin) {
-            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
-        }
+        validateStatusAccess(request.status(), isAdmin);
+
         if (request.startAt() != null && request.endAt() != null && !request.endAt().isAfter(request.startAt())) {
             throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
         }
@@ -77,12 +76,27 @@ public class EventService {
         return eventRepository.findEventsWithConditions(request, pageable, statuses, isAdmin);
     }
 
+    @Transactional(readOnly = true)
     public EventGetResponse getEvent(Long eventId, Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
+
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
+        );
+        validateStatusAccess(event.getStatus(), isAdmin);
+
+        return eventRepository.findEventInfoById(eventId, isAdmin);
     }
 
     private boolean isAdmin(Authentication authentication) {
         if (authentication == null) return false;
         return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private void validateStatusAccess(Event.EventStatus status, boolean isAdmin) {
+        if ((status == Event.EventStatus.PENDING || status == Event.EventStatus.PAUSE) && !isAdmin) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
+        }
     }
 
     private List<Event.EventStatus> cleanStatuses(Event.EventStatus status, boolean isAdmin) {
