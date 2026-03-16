@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
+import one.theone.server.domain.order.dto.response.OrderCancelResponse;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
 import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
 import one.theone.server.domain.order.dto.response.OrderListGetResponse;
@@ -55,5 +56,16 @@ public class OrderController {
         OrderDetailGetResponse response = orderService.getOrderDetail(memberId, orderId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "주문 상세 조회 성공", response));
+    }
+
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<BaseResponse<OrderCancelResponse>> cancelOrder(
+            @PathVariable Long orderId,
+            @RequestParam Long memberId
+    ) {
+        OrderCancelResponse response = orderService.cancelOrder(memberId, orderId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "주문 취소 성공", response));
     }
 }

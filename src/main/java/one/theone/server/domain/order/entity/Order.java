@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Getter
 @Entity
 @Table(name = "orders")

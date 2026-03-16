@@ -7,11 +7,13 @@ import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
+import one.theone.server.domain.order.dto.response.OrderCancelResponse;
 import one.theone.server.domain.order.dto.response.OrderCreateResponse;
 import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
 import one.theone.server.domain.order.dto.response.OrderListGetResponse;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
+import one.theone.server.domain.order.entity.OrderStatus;
 import one.theone.server.domain.order.repository.OrderDetailRepository;
 import one.theone.server.domain.order.repository.OrderQueryRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
@@ -161,6 +163,23 @@ public class OrderService {
     public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
         return orderQueryRepository.findOrderDetailByOrderIdAndMemberId(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+    }
+
+    @Transactional
+    public OrderCancelResponse cancelOrder(Long orderId, Long memberId) {
+        Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ALREADY_CANCELLED);
+        }
+
+        order.markCancelled();
+
+        return new OrderCancelResponse(
+                order.getId(),
+                order.getStatus()
+        );
     }
 
     private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
