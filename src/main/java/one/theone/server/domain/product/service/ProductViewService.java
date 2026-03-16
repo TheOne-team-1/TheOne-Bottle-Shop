@@ -2,9 +2,11 @@ package one.theone.server.domain.product.service;
 
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.config.redis.RedisLockService;
+import one.theone.server.domain.product.dto.BestProductsGetResponse;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -51,5 +53,8 @@ public class ProductViewService {
     public Long getViewCount(Long productId) {
         Double score = redisTemplate.opsForZSet().score(VIEW_COUNT_KEY, productId.toString());
         return score != null ? score.longValue() : 0L;
+    }
+
+    public List<BestProductsGetResponse> getBestProducts() {
     }
 }

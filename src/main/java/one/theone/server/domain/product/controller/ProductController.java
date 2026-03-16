@@ -7,11 +7,14 @@ import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.service.ProductService;
+import one.theone.server.domain.product.service.ProductViewService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductViewService productViewService;
 
     // 관리자 전용 -----------------------------------------------------------------------------------------
     @PostMapping("/admin/products")
@@ -71,5 +75,10 @@ public class ProductController {
             clientIp = request.getRemoteAddr();
         }
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id, clientIp)));
+    }
+
+    @GetMapping("/best/products")
+    public ResponseEntity<BaseResponse<List<BestProductsGetResponse>>> getBestProducts() {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "베스트 상품 조회 성공", productViewService.getBestProducts()));
     }
 }
