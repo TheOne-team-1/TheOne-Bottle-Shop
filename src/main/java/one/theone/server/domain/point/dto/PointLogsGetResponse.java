@@ -11,5 +11,5 @@ public record PointLogsGetResponse(
         Long balanceSnap,
         Long orderId,
         LocalDateTime createdAt,
-        LocalDateTime expiredAt
+        LocalDateTime expiresAt
 ) {}

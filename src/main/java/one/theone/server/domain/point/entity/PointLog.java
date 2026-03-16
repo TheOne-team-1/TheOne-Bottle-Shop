@@ -32,7 +32,7 @@ public class PointLog extends BaseEntity {
 
     private Long balanceSnap;
 
-    private LocalDate expiredAt;
+    private LocalDate expiresAt;
 
     public enum PointType {
         EARN, USE, REFUND, EXPIRED, ADMIN
@@ -48,7 +48,7 @@ public class PointLog extends BaseEntity {
 
         if (amount > 0) {
             pointLog.remainingAmount = amount;
-            pointLog.expiredAt = LocalDate.now().plusYears(1);
+            pointLog.expiresAt = LocalDate.now().plusYears(1);
         }
 
         return pointLog;
@@ -87,7 +87,7 @@ public class PointLog extends BaseEntity {
         pointLog.amount = amount;
         pointLog.remainingAmount = amount;
         pointLog.balanceSnap = balanceSnap;
-        pointLog.expiredAt = LocalDate.now().plusYears(1);
+        pointLog.expiresAt = LocalDate.now().plusYears(1);
 
         return pointLog;
     }

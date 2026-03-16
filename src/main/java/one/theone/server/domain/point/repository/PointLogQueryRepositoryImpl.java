@@ -32,7 +32,7 @@ public class PointLogQueryRepositoryImpl implements PointLogQueryRepository {
                         pointLog.balanceSnap,
                         pointLog.orderId,
                         pointLog.createdAt,
-                        pointLog.expiredAt))
+                        pointLog.expiresAt))
                 .from(pointLog)
                 .where(
                         pointLog.memberId.eq(memberId),
