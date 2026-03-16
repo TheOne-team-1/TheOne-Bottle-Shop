@@ -16,6 +16,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class EventService {
@@ -62,5 +64,25 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public PageResponse<EventsGetResponse> getEvents(Event.EventStatus status, Pageable pageable, UserDetails userDetails) {
+        boolean isAdmin = isAdmin(userDetails);
+
+        if (status == Event.EventStatus.PENDING || status == Event.EventStatus.PAUSE && !isAdmin) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
+        }
+        List<Event.EventStatus> statuses = cleanStatuses(status, isAdmin);
+
+        return eventRepository.findEventsWithConditions(pageable, statuses);
+    }
+
+    private boolean isAdmin(UserDetails userDetails) {
+        return userDetails.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private List<Event.EventStatus> cleanStatuses(Event.EventStatus status, boolean isAdmin) {
+        if (status != null) {
+            return List.of(status);
+        }
+
+        return isAdmin ? List.of(Event.EventStatus.values()) : List.of(Event.EventStatus.OPEN, Event.EventStatus.CLOSE);
     }
 }
