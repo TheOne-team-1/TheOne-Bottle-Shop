@@ -13,7 +13,6 @@ import one.theone.server.domain.event.repository.EventRepository;
 import one.theone.server.domain.event.repository.EventRewardRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,15 +63,18 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<EventsGetResponse> getEvents(Event.EventStatus status, Pageable pageable, Authentication authentication) {
+    public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, Pageable pageable, Authentication authentication) {
         boolean isAdmin = isAdmin(authentication);
 
-        if (status == Event.EventStatus.PENDING || status == Event.EventStatus.PAUSE && !isAdmin) {
+        if (request.status() == Event.EventStatus.PENDING || request.status() == Event.EventStatus.PAUSE && !isAdmin) {
             throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_ACCESS_DENIED);
         }
-        List<Event.EventStatus> statuses = cleanStatuses(status, isAdmin);
+        if (request.startAt() != null && request.endAt() != null && !request.endAt().isAfter(request.startAt())) {
+            throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_END_BEFORE_START);
+        }
+        List<Event.EventStatus> statuses = cleanStatuses(request.status(), isAdmin);
 
-        return eventRepository.findEventsWithConditions(pageable, statuses);
+        return eventRepository.findEventsWithConditions(request, pageable, statuses, isAdmin);
     }
 
     private boolean isAdmin(Authentication authentication) {
@@ -83,7 +85,6 @@ public class EventService {
         if (status != null) {
             return List.of(status);
         }
-
         return isAdmin ? List.of(Event.EventStatus.values()) : List.of(Event.EventStatus.OPEN, Event.EventStatus.CLOSE);
     }
 }

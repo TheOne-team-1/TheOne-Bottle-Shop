@@ -44,13 +44,13 @@ public class EventController {
 
     @GetMapping("/events")
     public ResponseEntity<BaseResponse<PageResponse<EventsGetResponse>>> getEvents(
-            @RequestParam(required = false)Event.EventStatus status,
+            EventsGetRequest request,
             @PageableDefault(page = 0, size = 10)Pageable pageable,
             Authentication authentication) {
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "이벤트 목록 조회 성공",
-                eventService.getEvents(status, pageable, authentication)
+                eventService.getEvents(request, pageable, authentication)
         ));
     }
 }
