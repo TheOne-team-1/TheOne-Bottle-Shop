@@ -40,8 +40,8 @@ public class PointService {
 
     @Transactional
     public PointAdjustResponse adjustPoint(Long memberId, PointAdjustRequest request) {
-//        memberRepository.findById(memberID)
-//                .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
+        memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
 
         Long actualBalance = calculateActualBalance(memberId);
         validateBalance(actualBalance, request.amount());
