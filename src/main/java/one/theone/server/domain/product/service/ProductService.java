@@ -43,6 +43,12 @@ public class ProductService {
         return ProductCreateResponse.from(product);
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<AdminProductsGetResponse> getAdminProducts(AdminProductsGetRequest request, Pageable pageable) {
+        Page<AdminProductsGetResponse> page = productRepository.findAdminProductWithConditions(pageable, request);
+        return PageResponse.register(page);
+    }
+
     @CacheEvict(value = "productCache", allEntries = true)
     @Transactional
     public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
