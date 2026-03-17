@@ -1,16 +1,16 @@
 package one.theone.server.domain.product.repository;
 
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
-import one.theone.server.domain.product.dto.ProductGetResponse;
-import one.theone.server.domain.product.dto.ProductsGetRequest;
-import one.theone.server.domain.product.dto.ProductsGetResponse;
+import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.search.dto.ProductSearchResponse;
 import org.springframework.data.domain.Page;
@@ -128,6 +128,49 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
     }
 
     @Override
+    public Page<AdminProductsGetResponse> findAdminProductWithConditions(Pageable pageable, AdminProductsGetRequest request) {
+        List<AdminProductsGetResponse> result = queryFactory
+                .select(Projections.constructor(AdminProductsGetResponse.class,
+                        product.id,
+                        product.name,
+                        product.price,
+                        adminProductStatusExpression(),
+                        product.quantity,
+                        product.rating,
+                        product.createdAt))
+                .from(product)
+                .where(
+                        categoryIn(request.categoryIds()),
+                        abvBetween(request.abvMin(), request.abvMax()),
+                        priceBetween(request.priceMin(), request.priceMax()),
+                        volumeIn(request.volumeMl()),
+                        statusEq(request.status())
+                )
+                .orderBy(getAdminOrderSpecifier(request.sortType()))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(product.count())
+                .from(product)
+                .where(
+                        categoryIn(request.categoryIds()),
+                        abvBetween(request.abvMin(), request.abvMax()),
+                        priceBetween(request.priceMin(), request.priceMax()),
+                        volumeIn(request.volumeMl()),
+                        statusEq(request.status())
+                )
+                .fetchOne();
+
+        if (total == null) {
+            total = 0L;
+        }
+
+        return new PageImpl<>(result, pageable, total);
+    }
+
+    @Override
     public ProductGetResponse findProductById(Long id) {
         return queryFactory
                 .select(Projections.constructor(ProductGetResponse.class,
@@ -186,6 +229,37 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
             case PRICE_ASC -> product.price.asc();
             case PRICE_DESC -> product.price.desc();
             case RATING_DESC -> product.rating.desc();
+        };
+    }
+
+    private OrderSpecifier<?> getAdminOrderSpecifier(AdminProductsGetRequest.ProductSortType sortType) {
+        return switch (sortType) {
+            case LATEST -> product.createdAt.desc();
+            case PRICE_ASC -> product.price.asc();
+            case PRICE_DESC -> product.price.desc();
+            case RATING_DESC -> product.rating.desc();
+        };
+    }
+
+    private Expression<AdminProductsGetResponse.AdminProductsStatus> adminProductStatusExpression() {
+        return new CaseBuilder()
+                .when(product.deleted.isTrue())
+                .then(AdminProductsGetResponse.AdminProductsStatus.DELETED)
+                .when(product.status.eq(Product.ProductStatus.SALES))
+                .then(AdminProductsGetResponse.AdminProductsStatus.SALES)
+                .when(product.status.eq(Product.ProductStatus.SOLD_OUT))
+                .then(AdminProductsGetResponse.AdminProductsStatus.SOLD_OUT)
+                .otherwise(AdminProductsGetResponse.AdminProductsStatus.DISCONTINUE);
+    }
+
+    private BooleanExpression statusEq(AdminProductsGetResponse.AdminProductsStatus status) {
+        if (status == null) return null;
+
+        return switch (status) {
+            case SALES -> product.deleted.isFalse().and(product.status.eq(Product.ProductStatus.SALES));
+            case SOLD_OUT -> product.deleted.isFalse().and(product.status.eq(Product.ProductStatus.SOLD_OUT));
+            case DISCONTINUE -> product.deleted.isFalse().and(product.status.eq(Product.ProductStatus.DISCONTINUE));
+            case DELETED -> product.deleted.isTrue();
         };
     }
 }

@@ -14,4 +14,5 @@ public interface ReviewRepositoryCustom {
     Page<ReviewResponse> findReviewsByCondition(ReviewSearchCondition condition, Pageable pageable);
     List<ReviewResponse> findTop3ByLikes(); // 상위 3개 노출 요구사항
     Optional<ReviewDetailResponse> findReviewDetail(Long id);
+    List<ReviewResponse> findTop3ByProductIdAndLikes(Long productId);
 }
