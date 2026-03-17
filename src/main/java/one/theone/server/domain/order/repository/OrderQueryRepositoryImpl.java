@@ -38,7 +38,7 @@ public class OrderQueryRepositoryImpl implements OrderQueryRepository {
     }
 
     @Override
-    public Optional<OrderDetailGetResponse> findOrderDetailByOrderIdAndMemberId(Long orderId, Long memberId) {
+    public Optional<OrderDetailGetResponse> findOrderDetail(Long orderId, Long memberId) {
         List<OrderDetailGetResponse> result = queryFactory
                 .from(order)
                 .leftJoin(orderDetail).on(order.id.eq(orderDetail.orderId))

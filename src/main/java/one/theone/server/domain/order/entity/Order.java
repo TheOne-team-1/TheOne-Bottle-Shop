@@ -76,4 +76,8 @@ public class Order extends BaseEntity {
     public void markCompleted() {
         this.status = OrderStatus.COMPLETED;
     }
+
+    public void markConfirmed() {
+        this.status = OrderStatus.CONFIRMED;
+    }
 }

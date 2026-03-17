@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CartExceptionEnum;
 import one.theone.server.common.exception.domain.OrderExceptionEnum;
-import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
 import one.theone.server.domain.order.dto.response.*;
@@ -99,7 +98,7 @@ public class OrderService {
         List<Product> products = productRepository.findAllById(productIds);
 
         if (products.size() != productIds.size()) {
-            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
         }
 
         Long totalAmount = calculateTotalAmountFromCart(products, cartEntries);
@@ -177,7 +176,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
-        return orderQueryRepository.findOrderDetailByOrderIdAndMemberId(orderId, memberId)
+        return orderQueryRepository.findOrderDetail(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
     }
 
@@ -190,6 +189,10 @@ public class OrderService {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ALREADY_CANCELLED);
         }
 
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCELLED_NOT_ALLOWED);
+        }
+
         order.markCancelled();
 
         return new OrderCancelResponse(
@@ -200,7 +203,7 @@ public class OrderService {
 
     private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
         if (request.orderItems() == null || request.orderItems().isEmpty()) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_EMPTY);
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
         }
 
         for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {

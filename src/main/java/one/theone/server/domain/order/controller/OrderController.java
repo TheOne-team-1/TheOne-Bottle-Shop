@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/orders")
@@ -51,7 +49,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<BaseResponse<OrderDetailGetResponse>> getOrderList(
+    public ResponseEntity<BaseResponse<OrderDetailGetResponse>> getOrderDetail(
             @RequestParam Long memberId,
             @PathVariable Long orderId
     ) {
