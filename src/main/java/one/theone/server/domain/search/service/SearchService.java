@@ -24,22 +24,22 @@ public class SearchService {
     private final EngToKorCorrector engToKorCorrector;
 
     @Transactional(readOnly = true)
-    public SearchResultResponse searchByKeywordV1(String keyword, Pageable pageable) {
+    public SearchResultResponse searchByKeywordV1(String keyword, Pageable pageable, Long userId, String clientIp, String userAgent) {
         String normalizedKeyword = keyword.trim().toLowerCase();
         List<String> keywordMorphemes = komoranCorrector.extractMorphemes(normalizedKeyword);
-        return searchResult(productRepository.findProductByKeyword(keywordMorphemes, normalizedKeyword, pageable), normalizedKeyword);
+        return searchResult(productRepository.findProductByKeyword(keywordMorphemes, normalizedKeyword, pageable), normalizedKeyword, userId, clientIp, userAgent);
     }
 
-    public SearchResultResponse searchByKeywordV2(String keyword, Pageable pageable) {
+    public SearchResultResponse searchByKeywordV2(String keyword, Pageable pageable, Long userId, String clientIp, String userAgent) {
         String normalizedKeyword = keyword.trim().toLowerCase();
         List<String> keywordMorphemes = komoranCorrector.extractMorphemes(normalizedKeyword);
-        return searchResult(searchCacheService.getOrCache(keywordMorphemes, normalizedKeyword, pageable), normalizedKeyword);
+        return searchResult(searchCacheService.getOrCache(keywordMorphemes, normalizedKeyword, pageable), normalizedKeyword, userId, clientIp, userAgent);
 
     }
 
-    private SearchResultResponse searchResult(PageResponse<ProductSearchResponse> page, String keyword) {
+    private SearchResultResponse searchResult(PageResponse<ProductSearchResponse> page, String keyword, Long userId, String clientIp, String userAgent) {
         if (!page.content().isEmpty()) {
-            searchRankingService.record(keyword);
+            searchRankingService.record(keyword, userId, clientIp, userAgent);
             return new SearchResultResponse(page, null);
         }
 
