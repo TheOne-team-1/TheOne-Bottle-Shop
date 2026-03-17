@@ -71,6 +71,21 @@ public class ReviewRepositoryImpl implements ReviewRepositoryCustom {
                 .fetchOne());
     }
 
+    @Override
+    public List<ReviewResponse> findTop3ByProductIdAndLikes(Long productId) {
+        return queryFactory
+                .select(Projections.constructor(ReviewResponse.class,
+                        review.id, review.orderDetailId, member.name, product.name,
+                        review.rating, review.content, review.likeCount, review.viewCount, review.createdAt))
+                .from(review)
+                .leftJoin(member).on(review.memberId.eq(member.id))
+                .leftJoin(product).on(review.productId.eq(product.id))
+                .where(review.deleted.isFalse(), review.productId.eq(productId))
+                .orderBy(review.likeCount.desc(), review.createdAt.desc())
+                .limit(3)
+                .fetch();
+    }
+
     private OrderSpecifier<?> getSortOrder(ReviewSearchCondition condition) {
         boolean isAsc = "asc".equalsIgnoreCase(condition.sortOrder());
         return switch (condition.sortBy() != null ? condition.sortBy() : "createdAt") {
