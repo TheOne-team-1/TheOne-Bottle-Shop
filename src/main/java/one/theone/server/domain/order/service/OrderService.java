@@ -23,6 +23,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
+    private static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter ORDER_DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
+
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ProductRepository productRepository;
@@ -230,7 +237,18 @@ public class OrderService {
     }
 
     private String generateOrderNum() {
-        return "order_" + UUID.randomUUID();
+        LocalDate today = LocalDate.now(SEOUL_ZONE_ID);
+        String date = today.format(ORDER_DATE_FORMATTER);
+
+        String sequenceKey = "order:seq:" + date;
+        Long sequence = redisTemplate.opsForValue().increment(sequenceKey);
+
+        if (sequence == null) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CREATE_FAILED);
+        }
+
+        redisTemplate.expire(sequenceKey, Duration.ofDays(2));
+        return "%s-%08d".formatted(date, sequence);
     }
 
     private String generateCartKey(Long memberId) {
