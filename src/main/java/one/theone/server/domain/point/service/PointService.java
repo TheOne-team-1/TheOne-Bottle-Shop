@@ -67,7 +67,7 @@ public class PointService {
     public void usePoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
-        Long usePoint = order.getUsedPoint().longValue();
+        Long usePoint = order.getUsedPoint();
 
         Long actualBalance = calculateActualBalance(memberId);
         validateBalance(actualBalance, -usePoint);
@@ -98,7 +98,7 @@ public class PointService {
     public void refundPoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
-        Long usedPoint = order.getUsedPoint().longValue();
+        Long usedPoint = order.getUsedPoint();
 
         Long actualBalance = calculateActualBalance(memberId);
 
