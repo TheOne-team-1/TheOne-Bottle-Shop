@@ -20,7 +20,8 @@ import one.theone.server.domain.coupon.repository.CouponQueryRepository;
 import one.theone.server.domain.coupon.repository.CouponRepository;
 import one.theone.server.domain.coupon.repository.MemberCouponRepository;
 import one.theone.server.domain.member.repository.MemberRepository;
-import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_COUPON_ALREADY_ISSUED;
+
+import static one.theone.server.common.exception.domain.CouponExceptionEnum.*;
 import static one.theone.server.common.exception.domain.MemberExceptionEnum.ERR_MEMBER_NOT_FOUND;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_AMOUNT_COUPON_DISCOUNT_VALUE_MIN;
-import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_COUPON_END_AT_BEFORE_START_AT;
-import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_RATE_COUPON_DISCOUNT_VALUE_MAX;
 
 @Service
 @RequiredArgsConstructor
@@ -82,26 +79,35 @@ public class CouponService {
         memberCouponRepository.save(memberCoupon);
 
         return new CouponIssueResponse(
-                memberCoupon.getId(),
-                memberCoupon.getMemberId(),
-                memberCoupon.getCouponId(),
-                memberCoupon.getIssueWay()
+                memberCoupon.getId()
+                , memberCoupon.getMemberId()
+                , memberCoupon.getCouponId()
+                , memberCoupon.getIssueWay()
         );
     }
 
     @Transactional
-    public CouponIssueResponse issueCouponByEvent(Long couponId, Long memberId, CouponIssueEventRequest request) {
+    public CouponIssueResponse issueCouponByEvent(Long couponId, Long memberId, Long eventId) {
         Coupon coupon = ValidateIssueCoupon(couponId, memberId);
         coupon.issueCoupon();
-        MemberCoupon memberCoupon = MemberCoupon.issuedByEvent(memberId, couponId, request.eventId());
+        MemberCoupon memberCoupon = MemberCoupon.issuedByEvent(memberId, couponId, eventId);
         memberCouponRepository.save(memberCoupon);
 
         return new CouponIssueResponse(
-                memberCoupon.getId(),
-                memberCoupon.getMemberId(),
-                memberCoupon.getCouponId(),
-                memberCoupon.getIssueWay()
+                memberCoupon.getId()
+                , memberCoupon.getMemberId()
+                , memberCoupon.getCouponId()
+                , memberCoupon.getIssueWay()
         );
+    }
+
+    @Transactional
+    public void issueCancelCouponByEvent(Long memberCouponId) {
+        MemberCoupon memberCoupon = memberCouponRepository.findByIdAndDeletedFalse(memberCouponId).orElseThrow(() -> new ServiceErrorException(ERR_MEMBER_COUPON_NOT_FOUND));
+        Coupon coupon = couponRepository.findById(memberCoupon.getCouponId()).orElseThrow(() -> new ServiceErrorException(ERR_COUPON_NOT_FOUND));
+
+        coupon.issueCancelCoupon();
+        memberCoupon.delete(); //FIXME 우선은 삭제처리, RECALL 이 맞는지는 좀 더 생각
     }
 
     private Coupon ValidateIssueCoupon(Long couponId, Long memberId) {
