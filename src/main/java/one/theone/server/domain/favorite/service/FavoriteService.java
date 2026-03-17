@@ -5,7 +5,6 @@ import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.FavoriteExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
-import one.theone.server.domain.favorite.dto.FavoriteRegisterResponse;
 import one.theone.server.domain.favorite.dto.FavoritesGetResponse;
 import one.theone.server.domain.favorite.entity.Favorite;
 import one.theone.server.domain.favorite.repository.FavoriteRepository;
@@ -23,7 +22,7 @@ public class FavoriteService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public FavoriteRegisterResponse registerFavorite(Long memberId, Long productId) {
+    public Void registerFavorite(Long memberId, Long productId) {
         productRepository.findById(productId)
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
 
@@ -34,7 +33,7 @@ public class FavoriteService {
         Favorite favorite = Favorite.register(memberId, productId);
         favoriteRepository.save(favorite);
 
-        return new FavoriteRegisterResponse(favorite.getMemberId(), favorite.getProductId());
+        return null;
     }
 
     @Transactional

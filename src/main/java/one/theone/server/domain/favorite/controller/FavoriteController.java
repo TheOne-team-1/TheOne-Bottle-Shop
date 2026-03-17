@@ -3,7 +3,6 @@ package one.theone.server.domain.favorite.controller;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
-import one.theone.server.domain.favorite.dto.FavoriteRegisterResponse;
 import one.theone.server.domain.favorite.dto.FavoritesGetResponse;
 import one.theone.server.domain.favorite.service.FavoriteService;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +20,7 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @PostMapping("/{productId}")
-    public ResponseEntity<BaseResponse<FavoriteRegisterResponse>> registerFavorite(
+    public ResponseEntity<BaseResponse<Void>> registerFavorite(
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId
     ) {

@@ -2,7 +2,6 @@ package one.theone.server.domain.favorite.service;
 
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
-import one.theone.server.domain.favorite.dto.FavoriteRegisterResponse;
 import one.theone.server.domain.favorite.dto.FavoritesGetResponse;
 import one.theone.server.domain.favorite.entity.Favorite;
 import one.theone.server.domain.favorite.repository.FavoriteRepository;
@@ -50,11 +49,9 @@ class FavoriteServiceTest {
         given(favoriteRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
 
         // when
-        FavoriteRegisterResponse response = favoriteService.registerFavorite(memberId, productId);
+        favoriteService.registerFavorite(memberId, productId);
 
         // then
-        assertThat(response.memberId()).isEqualTo(memberId);
-        assertThat(response.productId()).isEqualTo(productId);
         verify(favoriteRepository).save(any(Favorite.class));
     }
 

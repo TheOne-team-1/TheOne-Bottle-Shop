@@ -1,7 +1,6 @@
 package one.theone.server.domain.favorite.controller;
 
 import one.theone.server.common.dto.PageResponse;
-import one.theone.server.domain.favorite.dto.FavoriteRegisterResponse;
 import one.theone.server.domain.favorite.dto.FavoritesGetResponse;
 import one.theone.server.domain.favorite.service.FavoriteService;
 import org.junit.jupiter.api.DisplayName;
@@ -40,10 +39,7 @@ class FavoriteControllerTest {
     @WithMockUser
     void registerFavorite_success() throws Exception {
         // given
-        Long memberId = 1L;
         Long productId = 10L;
-        given(favoriteService.registerFavorite(any(), eq(productId)))
-                .willReturn(new FavoriteRegisterResponse(memberId, productId));
 
         // when & then
         mockMvc.perform(post("/api/favorites/{productId}", productId)
