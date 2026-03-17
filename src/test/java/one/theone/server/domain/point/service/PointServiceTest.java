@@ -10,8 +10,8 @@ import one.theone.server.domain.point.entity.PointUseDetail;
 import one.theone.server.domain.point.repository.PointLogRepository;
 import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
-import one.theone.server.order.entity.Order;
-import one.theone.server.order.repository.OrderRepository;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.repository.OrderRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,7 +91,7 @@ class PointServiceTest {
         Long orderId = 10L;
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(order.getUsedPoint()).willReturn(BigDecimal.valueOf(500));
+        given(order.getUsedPoint()).willReturn(500L);
 
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(1000L);
 
@@ -122,7 +121,7 @@ class PointServiceTest {
         Long orderId = 10L;
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(order.getUsedPoint()).willReturn(BigDecimal.valueOf(2000));
+        given(order.getUsedPoint()).willReturn(2000L);
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(1000L);
 
         // when & then
@@ -139,7 +138,7 @@ class PointServiceTest {
         Long usedAmount = 500L;
 
         given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
-        given(order.getUsedPoint()).willReturn(BigDecimal.valueOf(usedAmount));
+        given(order.getUsedPoint()).willReturn(usedAmount);
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(500L);
 
         PointUseDetail useDetail = PointUseDetail.register(100L, orderId, usedAmount);
@@ -221,6 +220,9 @@ class PointServiceTest {
         Long memberId = 1L;
         Long amount = 1000L;
         String description = "추천인 보상";
+
+        Member member = Member.create("test@test.com", "password", "테스트", "20000101", "ABC123");
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
         given(pointLogRepository.sumAmountByMemberId(memberId)).willReturn(0L);
 

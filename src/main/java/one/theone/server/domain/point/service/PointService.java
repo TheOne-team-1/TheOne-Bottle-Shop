@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.MemberExceptionEnum;
+import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.common.exception.domain.PointExceptionEnum;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.entity.MemberGrade;
@@ -18,8 +19,8 @@ import one.theone.server.domain.point.entity.PointUseDetail;
 import one.theone.server.domain.point.repository.PointLogRepository;
 import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
-import one.theone.server.order.entity.Order;
-import one.theone.server.order.repository.OrderRepository;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.repository.OrderRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -65,8 +66,8 @@ public class PointService {
     @Transactional
     public void usePoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
-        Long usePoint = order.getUsedPoint().longValue();
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+        Long usePoint = order.getUsedPoint();
 
         Long actualBalance = calculateActualBalance(memberId);
         validateBalance(actualBalance, -usePoint);
@@ -96,8 +97,8 @@ public class PointService {
     @Transactional
     public void refundPoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
-        Long usedPoint = order.getUsedPoint().longValue();
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+        Long usedPoint = order.getUsedPoint();
 
         Long actualBalance = calculateActualBalance(memberId);
 
@@ -123,7 +124,7 @@ public class PointService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
 
         long earnPoint = calculateEarnAmount(member.getGrade(), finalAmount);
         if (earnPoint == 0) return;
