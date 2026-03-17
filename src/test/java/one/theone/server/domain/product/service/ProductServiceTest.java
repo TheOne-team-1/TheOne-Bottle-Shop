@@ -7,6 +7,8 @@ import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import one.theone.server.domain.review.dto.ReviewResponse;
+import one.theone.server.domain.review.repository.ReviewRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +36,7 @@ class ProductServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private CategoryDetailRepository categoryDetailRepository;
     @Mock private ProductViewService productViewService;
+    @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks private ProductService productService;
 
@@ -326,14 +329,20 @@ class ProductServiceTest {
                 1L, "테스트 상품", 10000L, Product.ProductStatus.SALES,
                 BigDecimal.valueOf(13.5), 750, 1L, 1L, 100L, BigDecimal.valueOf(4.5), 0L
         );
+        List<ReviewResponse> top3Reviews = List.of(
+                new ReviewResponse(1L, 1L, "테스터", "테스트 상품", 5, "최고예요", LocalDateTime.now())
+        );
         given(productRepository.findProductById(productId)).willReturn(response);
         given(productViewService.getViewCount(productId)).willReturn(10L);
+        given(reviewRepository.findTop3ByProductIdAndLikes(productId)).willReturn(top3Reviews);
 
         // when
         ProductGetResponse result = productService.getProduct(productId, "127.0.0.1");
 
         // then
         assertThat(result.viewCount()).isEqualTo(10L);
+        assertThat(result.top3Reviews()).hasSize(1);                                       // 추가
+        assertThat(result.top3Reviews().get(0).memberName()).isEqualTo("테스터");
         verify(productViewService).record(productId, "127.0.0.1");
     }
 
