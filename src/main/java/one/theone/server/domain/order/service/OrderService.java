@@ -27,10 +27,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,6 +107,7 @@ public class OrderService {
                 .toList();
 
         List<Product> products = productRepository.findAllById(productIds);
+        removeStaleCartItems(cartKey, productIds, products);
 
         if (products.size() != productIds.size()) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
@@ -258,6 +257,22 @@ public class OrderService {
     private void validateOrderStock(Long stockQuantity, long requestedQuantity) {
         if (stockQuantity == null || stockQuantity < requestedQuantity) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_STOCK_EXCEEDED);
+        }
+    }
+
+    private void removeStaleCartItems(String cartKey, List<Long> productIds, List<Product> products) {
+        Set<Long> foundIds = products.stream()
+                .map(Product::getId)
+                .collect(Collectors.toSet());
+
+        List<Object> staleFields = productIds.stream()
+                .filter(productId -> !foundIds.contains(productId))
+                .map(String::valueOf)
+                .map(field -> (Object) field)
+                .toList();
+
+        if (!staleFields.isEmpty()) {
+            redisTemplate.opsForHash().delete(cartKey, staleFields.toArray());
         }
     }
 }
