@@ -24,4 +24,13 @@ public class Favorite {
 
     @Column(nullable = false)
     private Long productId;
+
+    public static Favorite register(Long memberId, Long productId) {
+        Favorite favorite = new Favorite();
+
+        favorite.memberId = memberId;
+        favorite.productId = productId;
+
+        return favorite;
+    }
 }
