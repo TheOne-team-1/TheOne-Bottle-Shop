@@ -30,6 +30,19 @@ public class FavoriteService {
         Favorite favorite = Favorite.register(memberId, productId);
         favoriteRepository.save(favorite);
 
-        return new FavoriteRegisterResponse(favorite.getId(), favorite.getMemberId(), favorite.getProductId());
+        return new FavoriteRegisterResponse(favorite.getMemberId(), favorite.getProductId());
+    }
+
+    @Transactional
+    public Void deleteFavorite(Long memberId, Long productId) {
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        Favorite favorite = favoriteRepository.findByMemberIdAndProductId(memberId, productId)
+                .orElseThrow(() -> new ServiceErrorException(FavoriteExceptionEnum.ERR_FAVORITE_NOT_FOUND));
+
+        favoriteRepository.delete(favorite);
+
+        return null;
     }
 }
