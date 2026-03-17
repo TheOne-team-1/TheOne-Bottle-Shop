@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.MemberExceptionEnum;
+import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.common.exception.domain.PointExceptionEnum;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.entity.MemberGrade;
@@ -65,7 +66,7 @@ public class PointService {
     @Transactional
     public void usePoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
         Long usePoint = order.getUsedPoint().longValue();
 
         Long actualBalance = calculateActualBalance(memberId);
@@ -96,7 +97,7 @@ public class PointService {
     @Transactional
     public void refundPoint(Long memberId, Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
         Long usedPoint = order.getUsedPoint().longValue();
 
         Long actualBalance = calculateActualBalance(memberId);
@@ -123,7 +124,7 @@ public class PointService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다"));
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
 
         long earnPoint = calculateEarnAmount(member.getGrade(), finalAmount);
         if (earnPoint == 0) return;
