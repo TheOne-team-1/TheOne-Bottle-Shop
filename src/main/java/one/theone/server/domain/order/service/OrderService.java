@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CartExceptionEnum;
 import one.theone.server.common.exception.domain.OrderExceptionEnum;
+import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
 import one.theone.server.domain.order.dto.response.*;
@@ -39,9 +40,18 @@ public class OrderService {
 
     @Transactional
     public OrderCreateResponse createDirectOrder(OrderCreateDirectRequest request) {
-        validateCreateOrderRequest(request);
 
-        Long totalAmount = calculateTotalAmount(request);
+        Product product = productRepository.findById(request.productId()).orElseThrow(
+                () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
+        );
+
+        if (request.quantity() == null || request.quantity() < 1) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_QUANTITY);
+        }
+
+        validateOrderStock(product.getQuantity(), request.quantity());
+
+        Long totalAmount = product.getPrice() * request.quantity();
         Long discountAmount = 0L;
         Long usedPoint = request.usedPoint() == null ? 0L : request.usedPoint();
         Long finalAmount = totalAmount - discountAmount - usedPoint;
@@ -64,19 +74,15 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderDetail> details = new ArrayList<>();
+        OrderDetail detail =  OrderDetail.create(
+                savedOrder.getId(),
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                request.quantity()
+        );
 
-        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
-            details.add(OrderDetail.create(
-                    savedOrder.getId(),
-                    item.productId(),
-                    item.productNameSnap(),
-                    item.productPriceSnap(),
-                    item.quantity()
-            ));
-        }
-
-        orderDetailRepository.saveAll(details);
+        orderDetailRepository.save(detail);
 
         return OrderCreateResponse.from(savedOrder);
     }
@@ -135,15 +141,17 @@ public class OrderService {
 
             Integer quantity = Integer.valueOf(quantityValue.toString());
 
-            OrderDetail detail = (OrderDetail.create(
+            details.add(OrderDetail.create(
                     savedOrder.getId(),
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
                     quantity
             ));
+        }
 
-            details.add(detail);
+        if (details.isEmpty()) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
         }
 
         orderDetailRepository.saveAll(details);
@@ -190,7 +198,7 @@ public class OrderService {
         }
 
         if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCELLED_NOT_ALLOWED);
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCEL_NOT_ALLOWED);
         }
 
         order.markCancelled();
@@ -199,28 +207,6 @@ public class OrderService {
                 order.getId(),
                 order.getStatus()
         );
-    }
-
-    private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
-        if (request.orderItems() == null || request.orderItems().isEmpty()) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
-        }
-
-        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
-            if (item.quantity() == null || item.quantity() < 1) {
-                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_QUANTITY);
-            }
-
-            if (item.productPriceSnap() == null || item.productPriceSnap() < 0) {
-                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_PRICE);
-            }
-        }
-    }
-
-    private Long calculateTotalAmount(OrderCreateDirectRequest request) {
-        return request.orderItems().stream()
-                .mapToLong(item -> item.productPriceSnap() * item.quantity())
-                .sum();
     }
 
     private Long calculateTotalAmountFromCart(List<Product> products, Map<Object, Object> cartEntries) {
@@ -234,6 +220,9 @@ public class OrderService {
             }
 
             Integer quantity = Integer.valueOf(quantityValue.toString());
+
+            validateOrderStock(product.getQuantity(), quantity.longValue());
+
             totalAmount += product.getPrice() * quantity;
         }
 
@@ -246,5 +235,11 @@ public class OrderService {
 
     private String generateCartKey(Long memberId) {
         return "cart:member:" + memberId;
+    }
+
+    private void validateOrderStock(Long stockQuantity, long requestedQuantity) {
+        if (stockQuantity == null || stockQuantity < requestedQuantity) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_STOCK_EXCEEDED);
+        }
     }
 }
