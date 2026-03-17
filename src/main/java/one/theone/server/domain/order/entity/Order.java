@@ -76,4 +76,9 @@ public class Order extends BaseEntity {
     public void markCompleted() {
         this.status = OrderStatus.COMPLETED;
     }
+
+    public void calculateFinalAmount(Long discountAmount) {
+        this.discountAmount = discountAmount;
+        this.finalAmount = this.totalAmount - discountAmount - this.usedPoint;
+    }
 }

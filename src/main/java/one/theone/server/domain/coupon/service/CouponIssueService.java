@@ -5,13 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CommonExceptionEnum;
-import one.theone.server.domain.coupon.dto.request.CouponIssueEventRequest;
 import one.theone.server.domain.coupon.dto.response.CouponIssueResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static one.theone.server.common.exception.domain.CouponExceptionEnum.ERR_COUPON_LOCK_FAILED;
 import static one.theone.server.common.util.Constants.*;
@@ -23,14 +22,7 @@ public class CouponIssueService {
     private final CouponService couponService;
     private final RedisLockService redisLockService;
 
-    public CouponIssueResponse issueCouponWithLock(Long couponId, Long memberId, Long eventId) {
-        AtomicReference<CouponIssueResponse> result = new AtomicReference<>();
-        CouponIssueEventRequest request = new CouponIssueEventRequest(eventId);
-        executeWithLock(couponId, () -> result.set(couponService.issueCouponByEvent(couponId, memberId, request)));
-        return result.get();
-    }
-
-    private void executeWithLock(Long couponId, Runnable runnable) {
+    private <T> T executeWithLock(Long couponId, Supplier<T> task) {
         String key = COUPON_LOCK_KEY + couponId;
 
         String lockValue = null;
@@ -46,7 +38,7 @@ public class CouponIssueService {
 
             watchDog = redisLockService.setWatchDog(key, lockValue, COUPON_LOCK_WATCH_DOG_LEASE_TIME, TimeUnit.SECONDS);
 
-            runnable.run();
+            return task.get();
         } catch (InterruptedException e) {
             log.error("쿠폰 발급 락 작동 오류 : {}", e.getMessage());
             Thread.currentThread().interrupt();
@@ -59,5 +51,16 @@ public class CouponIssueService {
                 redisLockService.unLock(key, lockValue);
             }
         }
+    }
+
+    public CouponIssueResponse issueCouponWithLock(Long couponId, Long memberId, Long eventId) {
+        return executeWithLock(couponId, () -> couponService.issueCouponByEvent(couponId, memberId, eventId));
+    }
+
+    public void cancelIssuanceWithLock(Long couponId, Long memberCouponId) {
+        executeWithLock(couponId, () -> {
+            couponService.issueCancelCouponByEvent(memberCouponId);
+            return null;
+        });
     }
 }

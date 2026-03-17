@@ -73,6 +73,11 @@ public class MemberCoupon extends BaseEntity {
         this.status = MemberCouponStatus.RECALL;
     }
 
+    public void delete() {
+        this.deleted = true;
+        this.deleted_at = LocalDateTime.now();
+    }
+
     // 사용 처리
     public void useCoupon() {
         if (this.status != MemberCouponStatus.AVAILABLE) {
