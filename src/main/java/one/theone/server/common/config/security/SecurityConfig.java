@@ -3,6 +3,7 @@ package one.theone.server.common.config.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -30,6 +31,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/signup", "/api/login").permitAll()
+
+                        //region 쿠폰 관련
+                        .requestMatchers("/api/admin/coupons/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/member/*/coupons/*/recall").hasRole("ADMIN")
+                        //endregion
+
                         .anyRequest().authenticated()
                 )
                 // JWT 필터를 ID/PW 필터 앞에 배치하여 토큰이 있으면 먼저 인증되도록 함

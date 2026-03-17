@@ -37,7 +37,7 @@ public class SearchRankingService {
 
     @Async("asyncExecutor")
     @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "localCacheManager")
-    public void record(String keyword) {
+    public void record(String keyword, Long userId, String clientIp, String userAgent) {
         String lockKey = LOCK_PREFIX + keyword;
         String lockValue = null;
 
@@ -47,7 +47,8 @@ public class SearchRankingService {
             if (lockValue == null) {
                 return;
             }
-            String dedupKey = DEDUP_PREFIX + keyword;
+            String identifier = (userId != null) ? "user:" + userId : "guest:" + clientIp + ":" + userAgent;
+            String dedupKey = DEDUP_PREFIX + keyword + ":" + identifier;
             Boolean isFirstSearch = redisTemplate.opsForValue().setIfAbsent(dedupKey, "locked", DEDUP_TTL, TimeUnit.SECONDS);
 
             if (Boolean.TRUE.equals(isFirstSearch)) {
@@ -70,7 +71,7 @@ public class SearchRankingService {
     public List<String> getKeywordRanking() {
         String rankingKey = getWeeklyRankingKey();
         Set<Object> keywords = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, RANKING_LIMIT-1);
-        if (keywords == null) return Collections.emptyList();
+        if (keywords == null) return List.of();
 
         return keywords.stream()
                 .map(k -> k instanceof String s ? s : k.toString())

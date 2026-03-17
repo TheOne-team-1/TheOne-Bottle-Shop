@@ -51,6 +51,11 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private Long totalPayAmount = 0L;
 
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    private LocalDateTime deleted_at;
+
 
     //정적 팩토리 메서드를 통한 객체 생성
     public static Member create(String email, String encodedPassword, String name, String birthAt, String recommendCode) {
@@ -61,6 +66,7 @@ public class Member extends BaseEntity {
         member.birthAt = birthAt;
         member.role = UserRole.USER;
         member.recommendCode = recommendCode;
+        member.deleted = false;
         return member;
     }
     public void updatePassword(String encodedPassword) {

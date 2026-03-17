@@ -11,7 +11,7 @@ public enum FreebieExceptionEnum implements ErrorCode {
     , ERR_FREEBIE_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "제공 불가 상태의 사은품입니다")
     , ERR_FREEBIE_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "사은품 재고가 부족합니다")
     , ERR_FREEBIE_INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "사은품 수량은 1 이상이어야 합니다")
-    , ERR_PRODUCT_LOCK_FAILED(HttpStatus.CONFLICT, "잠시 후 다시 시도해주세요");
+    , ERR_FREEBIE_LOCK_FAILED(HttpStatus.CONFLICT, "잠시 후 다시 시도해주세요");
 
     private final HttpStatus httpStatus;
     private final String message;
