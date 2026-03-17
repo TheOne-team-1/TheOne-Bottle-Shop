@@ -94,8 +94,8 @@ public class ProductStockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock")
-    void withSpinLock() throws InterruptedException {
+    @DisplayName("WithRedisLock - decreaseStock")
+    void withSpinLock_decreaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -120,6 +120,36 @@ public class ProductStockServiceTest {
         Product product = productRepository.findById(productId).orElseThrow();
 
         assertThat(product.getQuantity()).isEqualTo(failCount.get());
+        System.out.println("레디스 락 최종 재고 : " + product.getQuantity());
+    }
+
+    @Test
+    @DisplayName("WithRedisLock - increaseStock")
+    void withSpinLock_increaseStock() throws InterruptedException {
+        int threadCount = 100;
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    productStockService.increaseStock(productId, 1L);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Product product = productRepository.findById(productId).orElseThrow();
+
+        assertThat(product.getQuantity()).isEqualTo(200L - failCount.get());
         System.out.println("레디스 락 최종 재고 : " + product.getQuantity());
     }
 }
