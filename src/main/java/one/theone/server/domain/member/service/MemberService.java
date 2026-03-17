@@ -10,6 +10,8 @@ import one.theone.server.domain.member.entity.MemberRecommendLog;
 import one.theone.server.domain.member.repository.MemberAddressRepository;
 import one.theone.server.domain.member.repository.MemberRecommendLogRepository;
 import one.theone.server.domain.member.repository.MemberRepository;
+import one.theone.server.domain.point.event.PointEarnPublisher;
+import one.theone.server.domain.point.event.RedisPointEarnEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class MemberService {
     private final MemberAddressRepository memberAddressRepository;
     private final MemberRecommendLogRepository memberRecommendLogRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PointEarnPublisher pointEarnPublisher;
+
 
     //회원가입 통합 로직
     //성인인증, 추천인코드, 연관관계 없는 로그 저장
@@ -62,7 +66,8 @@ public class MemberService {
         // 5. 추천인 코드 입력 시 로그 기록 처리 (ID 직접 참조 방식)
         if (request.invitedCode() != null && !request.invitedCode().isBlank()) {
             processRecommendation(savedMember.getId(), request.invitedCode());
-            //pointService.addPoint(inviter.getId(), 500L, "추천인 보상"); 영재님 코드보고 메서드 맞추기
+            Member inviter = processRecommendation(savedMember.getId(), request.invitedCode());
+            pointEarnPublisher.publish(new RedisPointEarnEvent(inviter.getId(), 500L, "추천인 보상"));
         }
 
         return MemberResponse.from(savedMember);
@@ -147,7 +152,7 @@ public class MemberService {
     }
 
     //추천인 로그 저장 로직 (ID 직접 참조)
-    private void processRecommendation(Long newMemberId, String invitedCode) {
+    private Member processRecommendation(Long newMemberId, String invitedCode) {
         //이미 누군가를 추천한 이력이 있는지 확인 (중복 추천 방지)
         if (memberRecommendLogRepository.existsByVoteMemberId(newMemberId)) {
             throw new ServiceErrorException(MemberExceptionEnum.ERR_ALREADY_RECOMMENDED);
@@ -162,5 +167,7 @@ public class MemberService {
 
         MemberRecommendLog log = MemberRecommendLog.create(newMemberId, targetMember.getId());
         memberRecommendLogRepository.save(log);
+
+        return targetMember;
     }
 }

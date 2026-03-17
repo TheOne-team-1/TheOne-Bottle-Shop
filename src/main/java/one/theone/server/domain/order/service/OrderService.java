@@ -23,6 +23,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -238,7 +240,24 @@ public class OrderService {
     }
 
     private String generateOrderNum() {
-        return "order_" + UUID.randomUUID();
+
+        // 1. 오늘 날짜 접두어 (예: 20260317)
+        String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 2. Redis 키 설정 (예: order:count:20260317)
+        String redisKey = "order:count:" + datePrefix;
+
+        // 3. Redis에서 카운트 1 증가 (키가 없으면 1로 시작)
+        Long count = redisTemplate.opsForValue().increment(redisKey);
+
+        // 4. (선택) 하루가 지나면 이 키는 필요 없으니 24시간 뒤 만료되게 설정
+        if (count != null && count == 1) {
+            redisTemplate.expire(redisKey, java.time.Duration.ofDays(1));
+        }
+
+        // 5. 8자리 숫자로 포맷팅 (예: 00000001) 및 결합
+        // 결과: 20260317-00000001 (총 17자)
+        return String.format("%s-%08d", datePrefix, count);
     }
 
     private String generateCartKey(Long memberId) {
