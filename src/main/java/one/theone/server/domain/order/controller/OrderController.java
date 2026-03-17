@@ -8,6 +8,7 @@ import one.theone.server.domain.order.dto.response.*;
 import one.theone.server.domain.order.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,9 +19,10 @@ public class OrderController {
 
     @PostMapping("/direct")
     public ResponseEntity<BaseResponse<OrderCreateResponse>> createDirectOrder(
+            @AuthenticationPrincipal Long memberId,
             @RequestBody OrderCreateDirectRequest request
     ) {
-        OrderCreateResponse response = orderService.createDirectOrder(request);
+        OrderCreateResponse response = orderService.createDirectOrder(memberId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "바로 구매 주문 생성 성공", response));
@@ -28,9 +30,10 @@ public class OrderController {
 
     @PostMapping("/cart")
     public ResponseEntity<BaseResponse<OrderCreateResponse>> createOrderFromCart(
+            @AuthenticationPrincipal Long memberId,
             @RequestBody OrderCreateFromCartRequest request
     ) {
-        OrderCreateResponse response = orderService.createOrderFromCart(request);
+        OrderCreateResponse response = orderService.createOrderFromCart(memberId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "장바구니 주문 생성 성공", response));
@@ -38,7 +41,7 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<OrderPageResponse>> getOrderList(
-            @RequestParam Long memberId,
+            @AuthenticationPrincipal Long memberId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -50,7 +53,7 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     public ResponseEntity<BaseResponse<OrderDetailGetResponse>> getOrderDetail(
-            @RequestParam Long memberId,
+            @AuthenticationPrincipal Long memberId,
             @PathVariable Long orderId
     ) {
         OrderDetailGetResponse response = orderService.getOrderDetail(memberId, orderId);
@@ -61,8 +64,8 @@ public class OrderController {
 
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<BaseResponse<OrderCancelResponse>> cancelOrder(
-            @PathVariable Long orderId,
-            @RequestParam Long memberId
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long orderId
     ) {
         OrderCancelResponse response = orderService.cancelOrder(memberId, orderId);
 

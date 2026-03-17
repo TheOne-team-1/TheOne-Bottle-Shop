@@ -39,7 +39,7 @@ public class OrderService {
     private final OrderQueryRepository orderQueryRepository;
 
     @Transactional
-    public OrderCreateResponse createDirectOrder(OrderCreateDirectRequest request) {
+    public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateDirectRequest request) {
 
         Product product = productRepository.findById(request.productId()).orElseThrow(
                 () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
@@ -61,7 +61,7 @@ public class OrderService {
         }
 
         Order order = Order.create(
-                request.memberId(),
+                memberId,
                 request.memberCouponId(),
                 generateOrderNum(),
                 usedPoint,
@@ -88,8 +88,8 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderCreateResponse createOrderFromCart(OrderCreateFromCartRequest request) {
-        String cartKey = generateCartKey(request.memberId());
+    public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
+        String cartKey = generateCartKey(memberId);
 
         Map<Object, Object> cartEntries = redisTemplate.opsForHash().entries(cartKey);
 
@@ -117,7 +117,7 @@ public class OrderService {
         }
 
         Order order = Order.create(
-                request.memberId(),
+                memberId,
                 request.memberCouponId(),
                 generateOrderNum(),
                 usedPoint,
@@ -189,7 +189,7 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderCancelResponse cancelOrder(Long orderId, Long memberId) {
+    public OrderCancelResponse cancelOrder(Long memberId, Long orderId) {
         Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
 

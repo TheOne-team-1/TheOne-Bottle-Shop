@@ -8,6 +8,7 @@ import one.theone.server.domain.cart.dto.response.*;
 import one.theone.server.domain.cart.service.CartService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,7 +19,7 @@ public class CartController {
 
     @PostMapping("/items")
     public ResponseEntity<BaseResponse<CartAddResponse>> addItem(
-            @RequestParam Long memberId,
+            @AuthenticationPrincipal Long memberId,
             @RequestBody CartAddRequest request
     ) {
         CartAddResponse response = cartService.addItem(memberId, request);
@@ -28,7 +29,7 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<CartResponse>> getCart(
-            @RequestParam Long memberId
+            @AuthenticationPrincipal Long memberId
     ) {
         CartResponse response = cartService.getCart(memberId);
         return ResponseEntity.status(HttpStatus.OK)
@@ -37,7 +38,7 @@ public class CartController {
 
     @PatchMapping("/items/{productId}")
     public ResponseEntity<BaseResponse<CartUpdateQuantityResponse>> updateCart(
-            @RequestParam Long memberId,
+            @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId,
             @RequestBody CartUpdateQuantityRequest request
     ) {
@@ -49,7 +50,7 @@ public class CartController {
 
     @DeleteMapping("/items/{productId}")
     public ResponseEntity<BaseResponse<CartRemoveItemResponse>> removeItem(
-            @RequestParam Long memberId,
+            @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId
     ) {
         CartRemoveItemResponse response = cartService.removeItem(memberId, productId);
@@ -60,7 +61,7 @@ public class CartController {
 
     @DeleteMapping
     public ResponseEntity<BaseResponse<CartRemoveResponse>> removeCart(
-            @RequestParam Long memberId
+            @AuthenticationPrincipal Long memberId
     ) {
         CartRemoveResponse response = cartService.removeCart(memberId);
 
