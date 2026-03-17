@@ -67,25 +67,31 @@ public class ProductViewServiceTest {
     @Test
     @DisplayName("같은 IP는 조회수 중복 카운트 안됨")
     void record_dedup() {
+        // given
         Long productId = 1L;
         String clientIp = "127.0.0.1";
 
+        // when
         productViewService.record(productId, clientIp);
         productViewService.record(productId, clientIp);
         productViewService.record(productId, clientIp);
 
+        // then
         assertThat(productViewService.getViewCount(productId)).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("다른 IP는 각각 조회수 카운트")
     void record_different_ip() {
+        // given
         Long productId = 1L;
 
+        // when
         productViewService.record(productId, "1.1.1.1");
         productViewService.record(productId, "2.2.2.2");
         productViewService.record(productId, "3.3.3.3");
 
+        // then
         assertThat(productViewService.getViewCount(productId)).isEqualTo(3L);
     }
 

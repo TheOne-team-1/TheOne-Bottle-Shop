@@ -341,7 +341,7 @@ class ProductServiceTest {
 
         // then
         assertThat(result.viewCount()).isEqualTo(10L);
-        assertThat(result.top3Reviews()).hasSize(1);                                       // 추가
+        assertThat(result.top3Reviews()).hasSize(1);
         assertThat(result.top3Reviews().get(0).memberName()).isEqualTo("테스터");
         verify(productViewService).record(productId, "127.0.0.1");
     }
