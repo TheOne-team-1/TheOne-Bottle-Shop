@@ -8,7 +8,12 @@ import one.theone.server.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "order_details")
+@Table(
+        name = "order_details",
+        indexes = {
+                @Index(name = "idx_order_details_order_id", columnList = "order_id")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderDetail extends BaseEntity {
     @Id
