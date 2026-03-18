@@ -21,6 +21,7 @@ import one.theone.server.domain.payment.entity.Payment;
 import one.theone.server.domain.payment.repository.PaymentRepository;
 import one.theone.server.domain.point.service.PointService;
 import one.theone.server.domain.product.service.ProductService;
+import one.theone.server.domain.refund.dto.request.AdminRefundCreateRequest;
 import one.theone.server.domain.refund.dto.request.RefundCreateRequest;
 import one.theone.server.domain.refund.dto.response.RefundCreateResponse;
 import one.theone.server.domain.refund.entity.Refund;
@@ -56,30 +57,20 @@ public class RefundService {
     private final EventLogRepository eventLogRepository;
     private final EventRewardRepository eventRewardRepository;
 
+    // 회원 환불 - 소유권 확인 + 이벤트 쿠폰 사전 검증 (사용됐으면 환불 불가)
     public RefundCreateResponse processRefund(Long memberId, RefundCreateRequest request) {
-        // 주문 검증
-        Order order = orderRepository.findById(request.orderId()).orElseThrow(() -> new ServiceErrorException(ERR_ORDER_NOT_FOUND));
+        Order order = findAndValidateOrder(request.orderId());
 
         if (!order.getMemberId().equals(memberId)) {
             throw new ServiceErrorException(ERR_NOT_MY_ORDER);
         }
 
-        if (order.getStatus() != OrderStatus.COMPLETED) {
-            throw new ServiceErrorException(ERR_ORDER_NOT_REFUNDABLE);
-        }
-
-        if (refundRepository.existsByOrderIdAndStatusAndDeletedFalse(order.getId(), Refund.RefundStatus.COMPLETED)) {
-            throw new ServiceErrorException(ERR_REFUND_ALREADY_COMPLETED);
-        }
-
-        // 이벤트 보상 목록 조회
         List<EventLog> completedEventLogs = eventLogRepository.findByOrderIdAndStatus(order.getId(), EventLog.EventLogStatus.COMPLETE);
 
-        // 이벤트 지급 쿠폰 사용 여부 사전 검증
         for (EventLog eventLog : completedEventLogs) {
             eventRewardRepository.findById(eventLog.getEventRewardId())
                 .filter(eventReward -> eventReward.getRewardType() == EventReward.EventRewardType.COUPON)
-                .ifPresent(eventReward -> memberCouponRepository.findByMemberIdAndCouponIdAndEventIdAndDeletedFalse(order.getMemberId(), eventReward.getCouponId(),eventReward.getEventId())
+                .ifPresent(eventReward -> memberCouponRepository.findByMemberIdAndCouponIdAndEventIdAndDeletedFalse(order.getMemberId(), eventReward.getCouponId(), eventReward.getEventId())
                         .ifPresent(memberCoupon -> {
                             if (!memberCoupon.isAvailable()) {
                                 throw new ServiceErrorException(ERR_USE_EVENT_COUPON_NOT_REFUND);
@@ -88,11 +79,22 @@ public class RefundService {
                 );
         }
 
-        // 결제 조회
+        return doRefund(order, Refund.RefundReason.MEMBER_REQUEST, request.reasonDescription(), completedEventLogs);
+    }
+
+    // 관리자 환불 - 쿠폰 사용 여부는 체크하지 않음
+    public RefundCreateResponse processAdminRefund(AdminRefundCreateRequest request) {
+        Order order = findAndValidateOrder(request.orderId());
+
+        List<EventLog> completedEventLogs = eventLogRepository.findByOrderIdAndStatus(order.getId(), EventLog.EventLogStatus.COMPLETE);
+
+        return doRefund(order, request.reason(), request.reasonDescription(), completedEventLogs);
+    }
+
+    private RefundCreateResponse doRefund(Order order, Refund.RefundReason reason, String reasonDescription, List<EventLog> completedEventLogs) {
         Payment payment = paymentRepository.findByOrderId(order.getId()).orElseThrow(() -> new ServiceErrorException(ERR_PAYMENT_NOT_FOUND));
 
-        // 환불 생성
-        Refund refund = Refund.register(order.getId(), payment.getId(), order.getFinalAmount(), Refund.RefundReason.MEMBER_REQUEST, request.reasonDescription());
+        Refund refund = Refund.register(order.getId(), payment.getId(), order.getFinalAmount(), reason, reasonDescription);
         refundRepository.save(refund);
 
         // 사용한 쿠폰 복구
@@ -106,7 +108,7 @@ public class RefundService {
 
         // 포인트 복구
         if (order.getUsedPoint() > 0) {
-            pointService.refundPoint(memberId, order.getId());
+            pointService.refundPoint(order.getMemberId(), order.getId());
         }
 
         // 상품 재고 복구
@@ -127,19 +129,19 @@ public class RefundService {
             if (eventReward.getRewardType() == EventReward.EventRewardType.COUPON) {
                 memberCouponRepository.findByMemberIdAndCouponIdAndEventIdAndDeletedFalse(
                                 order.getMemberId(), eventReward.getCouponId(), eventReward.getEventId())
-                        .ifPresent(MemberCoupon::recallByAdmin);
+                        .ifPresent(memberCoupon -> {
+                            // AVAILABLE인 경우만 회수
+                            if (memberCoupon.isAvailable()) {
+                                memberCoupon.recallByAdmin();
+                            }
+                        });
             }
 
             eventLogRepository.save(EventLog.registerFail(eventLog.getEventId(), eventLog.getEventRewardId(), eventLog.getMemberId(), eventLog.getOrderId()));
         }
 
-        // 주문 취소
         order.markCancelled();
-
-        // 결제 환불 처리
         payment.updateRefund();
-
-        // 환불 완료
         refund.updateComplete();
 
         return new RefundCreateResponse(
@@ -148,5 +150,20 @@ public class RefundService {
                 , payment.getId()
                 , refund.getRefundAt()
         );
+    }
+
+    // 검증부
+    private Order findAndValidateOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new ServiceErrorException(ERR_ORDER_NOT_FOUND));
+
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new ServiceErrorException(ERR_ORDER_NOT_REFUNDABLE);
+        }
+
+        if (refundRepository.existsByOrderIdAndStatusAndDeletedFalse(order.getId(), Refund.RefundStatus.COMPLETED)) {
+            throw new ServiceErrorException(ERR_REFUND_ALREADY_COMPLETED);
+        }
+
+        return order;
     }
 }

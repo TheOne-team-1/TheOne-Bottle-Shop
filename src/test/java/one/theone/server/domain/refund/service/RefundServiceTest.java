@@ -3,10 +3,6 @@ package one.theone.server.domain.refund.service;
 import one.theone.server.common.config.jpa.JpaAuditingConfig;
 import one.theone.server.common.config.querydsl.QueryDslConfig;
 import one.theone.server.common.exception.ServiceErrorException;
-import one.theone.server.domain.category.entity.Category;
-import one.theone.server.domain.category.entity.CategoryDetail;
-import one.theone.server.domain.category.repository.CategoryDetailRepository;
-import one.theone.server.domain.category.repository.CategoryRepository;
 import one.theone.server.domain.coupon.entity.Coupon;
 import one.theone.server.domain.coupon.entity.MemberCoupon;
 import one.theone.server.domain.coupon.repository.CouponRepository;
@@ -20,68 +16,45 @@ import one.theone.server.domain.freebie.entity.Freebie;
 import one.theone.server.domain.freebie.repository.FreebieRepository;
 import one.theone.server.domain.freebie.service.FreebieService;
 import one.theone.server.domain.member.entity.Member;
-import one.theone.server.domain.member.repository.MemberRepository;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
 import one.theone.server.domain.order.entity.OrderStatus;
-import one.theone.server.domain.order.repository.OrderDetailRepository;
-import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.payment.entity.Payment;
-import one.theone.server.domain.payment.repository.PaymentRepository;
 import one.theone.server.domain.point.entity.Point;
 import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.entity.PointUseDetail;
-import one.theone.server.domain.point.repository.PointLogRepository;
-import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
 import one.theone.server.domain.point.service.PointService;
-import one.theone.server.domain.product.entity.Product;
-import one.theone.server.domain.product.repository.ProductRepository;
 import one.theone.server.domain.product.service.ProductService;
 import one.theone.server.domain.product.service.ProductViewService;
 import one.theone.server.domain.refund.dto.request.RefundCreateRequest;
 import one.theone.server.domain.refund.dto.response.RefundCreateResponse;
 import one.theone.server.domain.refund.entity.Refund;
 import one.theone.server.domain.refund.repository.RefundRepository;
+import one.theone.server.fixture.PaymentAndRefundTestFixture;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
 @Import({QueryDslConfig.class, JpaAuditingConfig.class, RefundService.class, PointService.class, ProductService.class, FreebieService.class})
-@ActiveProfiles("test")
-class RefundServiceTest {
+class RefundServiceTest extends PaymentAndRefundTestFixture {
 
     @Autowired private RefundService refundService;
 
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private CategoryRepository categoryRepository;
-    @Autowired private CategoryDetailRepository categoryDetailRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private OrderDetailRepository orderDetailRepository;
-    @Autowired private PaymentRepository paymentRepository;
     @Autowired private RefundRepository refundRepository;
     @Autowired private CouponRepository couponRepository;
     @Autowired private MemberCouponRepository memberCouponRepository;
-    @Autowired private PointRepository pointRepository;
-    @Autowired private PointLogRepository pointLogRepository;
     @Autowired private PointUseDetailRepository pointUseDetailRepository;
     @Autowired private FreebieRepository freebieRepository;
     @Autowired private EventRewardRepository eventRewardRepository;
@@ -89,71 +62,22 @@ class RefundServiceTest {
 
     @MockitoBean private ProductViewService productViewService;
 
-    private Long commonCategoryId;
-    private Long commonCategoryDetailId;
-    private Long commonProductId;
-
-    private final List<Long> memberIdList  = new ArrayList<>();
-    private final List<Long> orderIdList   = new ArrayList<>();
-    private final List<Long> productIdList = new ArrayList<>();
-
-    @BeforeEach
-    void setUp() {
-        Category category = categoryRepository.save(Category.register("Whiskey", 1));
-        commonCategoryId = category.getId();
-
-        CategoryDetail detail = categoryDetailRepository.save(CategoryDetail.register(category.getId(), "Islay", 1));
-        commonCategoryDetailId = detail.getId();
-
-        Product product = productRepository.save(
-                Product.register("testWhiskey", 100000L, new BigDecimal("75.000"), 700, commonCategoryDetailId, 10L));
-        commonProductId = product.getId();
-        productIdList.add(product.getId());
-    }
-
     @AfterEach
     void tearDown() {
         pointUseDetailRepository.deleteAll();
-        pointLogRepository.deleteAll();
-        memberIdList.forEach(id -> pointRepository.findByMemberId(id).ifPresent(pointRepository::delete));
-
         eventLogRepository.deleteAll();
         eventRewardRepository.deleteAll();
-
         memberCouponRepository.deleteAll();
         couponRepository.deleteAll();
         freebieRepository.deleteAll();
-
         refundRepository.deleteAll();
-        orderIdList.forEach(orderId -> {
-            paymentRepository.findByOrderId(orderId).ifPresent(paymentRepository::delete);
-            orderDetailRepository.deleteAll(orderDetailRepository.findByOrderId(orderId));
-            orderRepository.deleteById(orderId);
-        });
-
-        productIdList.forEach(id -> productRepository.deleteById(id));
-        categoryDetailRepository.deleteById(commonCategoryDetailId);
-        categoryRepository.deleteById(commonCategoryId);
-        memberIdList.forEach(memberRepository::deleteById);
-
-        memberIdList.clear();
-        orderIdList.clear();
-        productIdList.clear();
     }
 
-    private Member createMember() {
-        Member member = memberRepository.save(Member.create(
-                UUID.randomUUID() + "@test.com", "pwd", "TEST",
-                "99990101", UUID.randomUUID().toString().substring(0, 8)));
-        memberIdList.add(member.getId());
-        return member;
+    private CompleteOrderPaymentFixture createCompletedOrderAndPayment(Long memberId) {
+        return createCompletedOrderAndPayment(memberId, 100000L);
     }
 
-    private RefundFixture createCompletedOrderAndPayment(Long memberId) {
-        return createCompletedOrderAndPayment(memberId, null, 0L, 100000L);
-    }
-
-    private RefundFixture createCompletedOrderAndPayment(
+    private CompleteOrderPaymentFixture createCompletedOrderAndPayment(
             Long memberId, Long memberCouponId, Long usedPoint, Long finalAmount) {
         Order order = Order.create(
                 memberId, memberCouponId,
@@ -171,17 +95,15 @@ class RefundServiceTest {
         payment.updateComplete();
         paymentRepository.save(payment);
 
-        return new RefundFixture(order, payment);
+        return new CompleteOrderPaymentFixture(order, payment);
     }
-
-    private record RefundFixture(Order order, Payment payment) {}
 
     @Test
     @DisplayName("환불 성공 - 주문 취소, 결제 환불, 환불 완료 전환")
     void processRefund_success() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         // when
         RefundCreateResponse response = refundService.processRefund(
@@ -209,7 +131,7 @@ class RefundServiceTest {
     void processRefund_productStockRestored() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         long beforeStock = productRepository.findById(commonProductId).orElseThrow().getQuantity();
 
@@ -218,8 +140,8 @@ class RefundServiceTest {
                 new RefundCreateRequest(fixture.order().getId(), "단순 변심"));
 
         // then - 주문 상품 재고 증가
-        Product afterRefund = productRepository.findById(commonProductId).orElseThrow();
-        assertThat(afterRefund.getQuantity()).isEqualTo(beforeStock + 1);
+        assertThat(productRepository.findById(commonProductId).orElseThrow().getQuantity())
+                .isEqualTo(beforeStock + 1);
     }
 
     @Test
@@ -236,7 +158,7 @@ class RefundServiceTest {
         mc.useCoupon();
         memberCouponRepository.save(mc);
 
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId(), mc.getId(), 0L, 90000L);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), mc.getId(), 0L, 90000L);
 
         // when
         refundService.processRefund(member.getId(),
@@ -261,7 +183,7 @@ class RefundServiceTest {
         memberCoupon.useCoupon();
         memberCouponRepository.save(memberCoupon);
 
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId(), memberCoupon.getId(), 0L, 90000L);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), memberCoupon.getId(), 0L, 90000L);
 
         // when
         refundService.processRefund(member.getId(),
@@ -278,7 +200,7 @@ class RefundServiceTest {
         // given
         Member member = createMember();
         long usedPoint = 5000L;
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId(), null, usedPoint, 95000L);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), null, usedPoint, 95000L);
 
         // 이전 구매에서 적립된 포인트 로그 (보유 포인트 10000)
         PointLog earnLog = pointLogRepository.save(
@@ -322,7 +244,7 @@ class RefundServiceTest {
     void processRefund_freebieRestored_andEventLogFail() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         Freebie freebie = freebieRepository.save(Freebie.register(1L, "testFreebie", 5L));
 
@@ -350,7 +272,7 @@ class RefundServiceTest {
     void processRefund_eventCouponRecalled() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         long eventId = 200L;
         Coupon eventCoupon = couponRepository.save(Coupon.register(
@@ -397,7 +319,7 @@ class RefundServiceTest {
         // given
         Member owner = createMember();
         Member other  = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(owner.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(owner.getId());
 
         // when & then
         assertThatThrownBy(() -> refundService.processRefund(other.getId(), new RefundCreateRequest(fixture.order().getId(), "testReason")))
@@ -457,7 +379,7 @@ class RefundServiceTest {
     void processRefund_alreadyRefunded() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         // 이미 완료 상태인 환불 케이스 생성
         Refund refund = Refund.register(
@@ -476,7 +398,7 @@ class RefundServiceTest {
     void processRefund_eventCouponAlreadyUsed() {
         // given
         Member member = createMember();
-        RefundFixture fixture = createCompletedOrderAndPayment(member.getId());
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId());
 
         long eventId = 999L;
         Coupon eventCoupon = couponRepository.save(Coupon.register(

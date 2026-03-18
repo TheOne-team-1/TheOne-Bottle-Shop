@@ -54,7 +54,7 @@ public class Refund extends BaseEntity {
     }
 
     public enum RefundReason {
-        MEMBER_REQUEST, OUT_OF_STOCK, ADMIN_REQUEST, PROCESS_FAIL
+        MEMBER_REQUEST, OUT_OF_STOCK, ADMIN_REQUEST
     }
 
     public static Refund register(long orderId, long paymentId, long price, RefundReason reason, String reasonDescription) {
