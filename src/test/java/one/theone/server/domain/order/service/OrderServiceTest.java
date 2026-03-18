@@ -1,5 +1,6 @@
 package one.theone.server.domain.order.service;
 
+import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
 import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
@@ -36,6 +37,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +64,9 @@ class OrderServiceTest {
     private OrderQueryRepository orderQueryRepository;
 
     @Mock
+    private RedisLockService redisLockService;
+
+    @Mock
     private HashOperations<String, Object, Object> hashOperations;
 
     @Mock
@@ -69,7 +74,6 @@ class OrderServiceTest {
 
     @InjectMocks
     private OrderService orderService;
-
 
     private Product createProduct(Long id, String name, Long price, Long quantity) {
         Product product = Product.register(
@@ -101,12 +105,19 @@ class OrderServiceTest {
         return order;
     }
 
+    private void stubLockSuccess() throws InterruptedException {
+        given(redisLockService.tryLock(anyString(), anyLong(), anyLong(), any(TimeUnit.class)))
+                .willReturn("lock-token");
+    }
+
     @Nested
     class CreateDirectOrderTest {
 
         @Test
         @DisplayName("바로구매 주문 생성에 성공한다")
-        void createDirectOrder_success() {
+        void createDirectOrder_success() throws Exception {
+            stubLockSuccess();
+
             Product product = createProduct(10L, "와인", 10000L, 100L);
 
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
@@ -131,6 +142,7 @@ class OrderServiceTest {
             OrderCreateResponse response = orderService.createDirectOrder(1L, request);
 
             then(orderDetailRepository).should().save(any(OrderDetail.class));
+            then(redisLockService).should().unLock(startsWith("lock:order:direct:"), eq("lock-token"));
             assertThat(response.orderId()).isEqualTo(1L);
             assertThat(response.totalAmount()).isEqualTo(20000L);
             assertThat(response.finalAmount()).isEqualTo(20000L);
@@ -139,7 +151,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("주문번호는 yyyyMMdd-00000001 형식으로 생성된다")
-        void createDirectOrder_orderNumFormat() {
+        void createDirectOrder_orderNumFormat() throws Exception {
+            stubLockSuccess();
+
             Product product = createProduct(10L, "와인", 10000L, 100L);
 
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
@@ -166,8 +180,26 @@ class OrderServiceTest {
         }
 
         @Test
+        @DisplayName("락 획득에 실패하면 주문 생성에 실패한다")
+        void createDirectOrder_fail_lockConflict() throws Exception {
+            given(redisLockService.tryLock(anyString(), anyLong(), anyLong(), any(TimeUnit.class)))
+                    .willReturn(null);
+
+            OrderCreateDirectRequest request = new OrderCreateDirectRequest(
+                    10L, 1, null, 0L, "서울시", "101동"
+            );
+
+            assertThatThrownBy(() -> orderService.createDirectOrder(1L, request))
+                    .isInstanceOf(ServiceErrorException.class);
+
+            then(redisLockService).should(never()).unLock(anyString(), anyString());
+            then(productRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
         @DisplayName("상품이 없으면 실패한다")
-        void createDirectOrder_fail_productNotFound() {
+        void createDirectOrder_fail_productNotFound() throws Exception {
+            stubLockSuccess();
             given(productRepository.findById(10L)).willReturn(Optional.empty());
 
             OrderCreateDirectRequest request = new OrderCreateDirectRequest(
@@ -176,11 +208,15 @@ class OrderServiceTest {
 
             assertThatThrownBy(() -> orderService.createDirectOrder(1L, request))
                     .isInstanceOf(ServiceErrorException.class);
+
+            then(redisLockService).should().unLock(startsWith("lock:order:direct:"), eq("lock-token"));
         }
 
         @Test
         @DisplayName("수량이 잘못되면 실패한다")
-        void createDirectOrder_fail_invalidQuantity() {
+        void createDirectOrder_fail_invalidQuantity() throws Exception {
+            stubLockSuccess();
+
             Product product = createProduct(10L, "와인", 10000L, 100L);
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
 
@@ -194,7 +230,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("재고를 초과하면 실패한다")
-        void createDirectOrder_fail_stockExceeded() {
+        void createDirectOrder_fail_stockExceeded() throws Exception {
+            stubLockSuccess();
+
             Product product = createProduct(10L, "와인", 10000L, 1L);
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
 
@@ -208,7 +246,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("최종 금액이 0 미만이면 실패한다")
-        void createDirectOrder_fail_invalidAmount() {
+        void createDirectOrder_fail_invalidAmount() throws Exception {
+            stubLockSuccess();
+
             Product product = createProduct(10L, "와인", 10000L, 100L);
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
 
@@ -222,9 +262,10 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("주문번호 생성 카운트가 null이면 실패한다")
-        void createDirectOrder_fail_orderNumGeneration() {
-            Product product = createProduct(10L, "와인", 10000L, 100L);
+        void createDirectOrder_fail_orderNumGeneration() throws Exception {
+            stubLockSuccess();
 
+            Product product = createProduct(10L, "와인", 10000L, 100L);
             given(productRepository.findById(10L)).willReturn(Optional.of(product));
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.increment(anyString())).willReturn(null);
@@ -243,7 +284,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("장바구니가 비어 있으면 실패한다")
-        void createOrderFromCart_fail_emptyCart() {
+        void createOrderFromCart_fail_emptyCart() throws Exception {
+            stubLockSuccess();
+
             given(redisTemplate.opsForHash()).willReturn(hashOperations);
             given(hashOperations.entries("cart:member:1")).willReturn(Map.of());
 
@@ -257,7 +300,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("장바구니 주문 생성에 성공하면 상세를 저장하고 장바구니를 비운다")
-        void createOrderFromCart_success() {
+        void createOrderFromCart_success() throws Exception {
+            stubLockSuccess();
+
             String cartKey = "cart:member:1";
             given(redisTemplate.opsForHash()).willReturn(hashOperations);
             given(hashOperations.entries(cartKey)).willReturn(Map.of("10", "2"));
@@ -282,13 +327,32 @@ class OrderServiceTest {
 
             then(orderDetailRepository).should().saveAll(anyList());
             then(redisTemplate).should().delete(cartKey);
+            then(redisLockService).should().unLock(startsWith("lock:order:cart:"), eq("lock-token"));
             assertThat(response.orderId()).isEqualTo(1L);
             assertThat(response.totalAmount()).isEqualTo(20000L);
         }
 
         @Test
+        @DisplayName("락 획득에 실패하면 장바구니 주문 생성에 실패한다")
+        void createOrderFromCart_fail_lockConflict() throws Exception {
+            given(redisLockService.tryLock(anyString(), anyLong(), anyLong(), any(TimeUnit.class)))
+                    .willReturn(null);
+
+            OrderCreateFromCartRequest request = new OrderCreateFromCartRequest(
+                    null, 0L, "서울시", "101동"
+            );
+
+            assertThatThrownBy(() -> orderService.createOrderFromCart(1L, request))
+                    .isInstanceOf(ServiceErrorException.class);
+
+            then(redisTemplate).should(never()).opsForHash();
+        }
+
+        @Test
         @DisplayName("stale item이 섞여 있으면 삭제 후 실패한다")
-        void createOrderFromCart_fail_staleItem() {
+        void createOrderFromCart_fail_staleItem() throws Exception {
+            stubLockSuccess();
+
             String cartKey = "cart:member:1";
             given(redisTemplate.opsForHash()).willReturn(hashOperations);
             given(hashOperations.entries(cartKey)).willReturn(Map.of("10", "2", "999", "1"));
@@ -308,7 +372,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("장바구니 상품 재고가 부족하면 실패한다")
-        void createOrderFromCart_fail_stockExceeded() {
+        void createOrderFromCart_fail_stockExceeded() throws Exception {
+            stubLockSuccess();
+
             String cartKey = "cart:member:1";
             given(redisTemplate.opsForHash()).willReturn(hashOperations);
             given(hashOperations.entries(cartKey)).willReturn(Map.of("10", "2"));
@@ -326,7 +392,9 @@ class OrderServiceTest {
 
         @Test
         @DisplayName("최종 금액이 0 미만이면 실패한다")
-        void createOrderFromCart_fail_invalidAmount() {
+        void createOrderFromCart_fail_invalidAmount() throws Exception {
+            stubLockSuccess();
+
             String cartKey = "cart:member:1";
             given(redisTemplate.opsForHash()).willReturn(hashOperations);
             given(hashOperations.entries(cartKey)).willReturn(Map.of("10", "1"));

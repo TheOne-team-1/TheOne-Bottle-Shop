@@ -4,7 +4,6 @@ import com.querydsl.core.group.GroupBy;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
-import one.theone.server.domain.order.dto.response.OrderListGetResponse;
 import one.theone.server.domain.order.entity.QOrder;
 import one.theone.server.domain.order.entity.QOrderDetail;
 import org.springframework.stereotype.Repository;
