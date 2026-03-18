@@ -1,5 +1,6 @@
 package one.theone.server.domain.order.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
@@ -20,7 +21,7 @@ public class OrderController {
     @PostMapping("/direct")
     public ResponseEntity<BaseResponse<OrderCreateResponse>> createDirectOrder(
             @AuthenticationPrincipal Long memberId,
-            @RequestBody OrderCreateDirectRequest request
+            @Valid @RequestBody OrderCreateDirectRequest request
     ) {
         OrderCreateResponse response = orderService.createDirectOrder(memberId, request);
 
@@ -31,7 +32,7 @@ public class OrderController {
     @PostMapping("/cart")
     public ResponseEntity<BaseResponse<OrderCreateResponse>> createOrderFromCart(
             @AuthenticationPrincipal Long memberId,
-            @RequestBody OrderCreateFromCartRequest request
+            @Valid @RequestBody OrderCreateFromCartRequest request
     ) {
         OrderCreateResponse response = orderService.createOrderFromCart(memberId, request);
 

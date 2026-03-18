@@ -1,5 +1,6 @@
 package one.theone.server.domain.cart.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.cart.dto.request.CartAddRequest;
@@ -20,7 +21,7 @@ public class CartController {
     @PostMapping("/items")
     public ResponseEntity<BaseResponse<CartAddResponse>> addItem(
             @AuthenticationPrincipal Long memberId,
-            @RequestBody CartAddRequest request
+            @Valid @RequestBody CartAddRequest request
     ) {
         CartAddResponse response = cartService.addItem(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -40,7 +41,7 @@ public class CartController {
     public ResponseEntity<BaseResponse<CartUpdateQuantityResponse>> updateCart(
             @AuthenticationPrincipal Long memberId,
             @PathVariable Long productId,
-            @RequestBody CartUpdateQuantityRequest request
+            @Valid @RequestBody CartUpdateQuantityRequest request
     ) {
         CartUpdateQuantityResponse response = cartService.updateQuantity(memberId, productId, request);
 
