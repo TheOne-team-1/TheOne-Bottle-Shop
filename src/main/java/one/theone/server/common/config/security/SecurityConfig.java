@@ -41,6 +41,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/member/*/coupons/*/recall").hasRole("ADMIN")
                         //endregion
 
+                        //region 환불 관련
+                        .requestMatchers("/api/admin/refunds").hasRole("ADMIN")
+                        //endregion
+
                         .anyRequest().authenticated()
                 )
                 // 핸들러 등록

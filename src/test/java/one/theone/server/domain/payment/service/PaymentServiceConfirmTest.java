@@ -1,149 +1,38 @@
 package one.theone.server.domain.payment.service;
 
-import one.theone.server.common.exception.ServiceErrorException;
-import one.theone.server.domain.category.entity.Category;
-import one.theone.server.domain.category.entity.CategoryDetail;
-import one.theone.server.domain.category.repository.CategoryDetailRepository;
-import one.theone.server.domain.category.repository.CategoryRepository;
-import one.theone.server.domain.member.entity.Member;
-import one.theone.server.domain.member.entity.MemberGrade;
-import one.theone.server.domain.member.repository.MemberRepository;
-import one.theone.server.domain.order.entity.Order;
-import one.theone.server.domain.order.entity.OrderDetail;
-import one.theone.server.domain.order.entity.OrderStatus;
-import one.theone.server.domain.order.repository.OrderDetailRepository;
-import one.theone.server.domain.order.repository.OrderRepository;
-import one.theone.server.domain.payment.dto.response.PaymentConfirmResponse;
-import one.theone.server.domain.payment.entity.Payment;
-import one.theone.server.domain.payment.repository.PaymentRepository;
-import one.theone.server.domain.point.entity.Point;
-import one.theone.server.domain.point.repository.PointLogRepository;
-import one.theone.server.domain.point.repository.PointRepository;
-import one.theone.server.domain.point.service.PointService;
-import one.theone.server.domain.product.entity.Product;
-import one.theone.server.domain.product.repository.ProductRepository;
 import one.theone.server.common.config.jpa.JpaAuditingConfig;
 import one.theone.server.common.config.querydsl.QueryDslConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.domain.member.entity.Member;
+import one.theone.server.domain.member.entity.MemberGrade;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.entity.OrderStatus;
+import one.theone.server.domain.payment.dto.response.PaymentConfirmResponse;
+import one.theone.server.domain.payment.entity.Payment;
+import one.theone.server.domain.point.entity.Point;
+import one.theone.server.domain.point.service.PointService;
+import one.theone.server.fixture.PaymentAndRefundTestFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
 @Import({QueryDslConfig.class, JpaAuditingConfig.class, PaymentService.class, PointService.class})
-@ActiveProfiles("test")
-class PaymentServiceConfirmTest {
+class PaymentServiceConfirmTest extends PaymentAndRefundTestFixture {
+
     @Autowired private PaymentService paymentService;
-
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private CategoryRepository categoryRepository;
-    @Autowired private CategoryDetailRepository categoryDetailRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private OrderDetailRepository orderDetailRepository;
-    @Autowired private PaymentRepository paymentRepository;
-    @Autowired private PointRepository pointRepository;
-    @Autowired private PointLogRepository pointLogRepository;
-
-    private final List<Long> memberIdList  = new ArrayList<>();
-    private final List<Long> orderIdList   = new ArrayList<>();
-    private final List<Long> productIdList = new ArrayList<>();
-
-    private Long commonCategoryDetailId;
-    private Long commonProductId;
-    private Long commonCategoryId;
-
-    @BeforeEach
-    void setUp() {
-        Category category = categoryRepository.save(Category.register("Whiskey", 1));
-        commonCategoryId = category.getId();
-
-        CategoryDetail detail = categoryDetailRepository.save(CategoryDetail.register(category.getId(), "Islay", 1));
-        commonCategoryDetailId = detail.getId();
-
-        Product product = productRepository.save(
-                Product.register("testWhiskey", 100000L, new BigDecimal("75.000"), 700, commonCategoryDetailId, 100L)
-        );
-        commonProductId = product.getId();
-        productIdList.add(product.getId());
-    }
-
-    @AfterEach
-    void tearDown() {
-        // PointLog, Point 삭제
-        pointLogRepository.findAll().stream().filter(log -> memberIdList.contains(log.getMemberId()))
-                .forEach(pointLog -> pointLogRepository.delete(pointLog));
-        memberIdList.forEach(memberId -> pointRepository.findByMemberId(memberId).ifPresent(entity -> pointRepository.delete(entity)));
-
-        // Payment, OrderDetail, Order 삭제
-        paymentRepository.findAll().stream()
-                .filter(payment_1 -> orderIdList.contains(payment_1.getOrderId()))
-                .forEach(payment_2 -> paymentRepository.delete(payment_2));
-
-        orderIdList.forEach(orderId -> {
-            orderDetailRepository.deleteAll(orderDetailRepository.findByOrderId(orderId));
-            orderRepository.deleteById(orderId);
-        });
-
-        productIdList.forEach(id -> productRepository.deleteById(id));
-        categoryDetailRepository.deleteById(commonCategoryDetailId);
-        categoryRepository.deleteById(commonCategoryId);
-
-        memberIdList.forEach(id -> memberRepository.deleteById(id));
-
-        memberIdList.clear();
-        orderIdList.clear();
-        productIdList.clear();
-    }
-
-    private Member createMember() {
-        Member member = memberRepository.save(Member.create(
-                UUID.randomUUID() + "@test.com", "pwd", "TEST",
-                "99990101", UUID.randomUUID().toString().substring(0, 8)));
-        memberIdList.add(member.getId());
-        return member;
-    }
-
-    private PaymentFixture createCompletedPayment(Long memberId, Long finalAmount) {
-        Order order = Order.create(
-                memberId, null,
-                UUID.randomUUID().toString().replace("-", "").substring(0, 20),
-                0L, finalAmount, 0L, finalAmount,
-                "testAddress1", "testAddress2");
-        order.markCompleted();
-        orderRepository.save(order);
-        orderIdList.add(order.getId());
-
-        orderDetailRepository.save(
-                OrderDetail.create(order.getId(), commonProductId, "testWhiskey", finalAmount, 1));
-
-        Payment payment = Payment.register(order.getId(), finalAmount);
-        payment.updateComplete();
-        paymentRepository.save(payment);
-
-        return new PaymentFixture(order, payment);
-    }
-
-    private record PaymentFixture(Order order, Payment payment) {}
 
     @Test
     @DisplayName("구매 확정 성공 - 주문 확정 전환")
     void processConfirm_success() {
         // given
         Member member = createMember();
-        PaymentFixture fixture = createCompletedPayment(member.getId(), 100000L);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), 100000L);
 
         // when
         PaymentConfirmResponse response = paymentService.processConfirm(
@@ -165,7 +54,7 @@ class PaymentServiceConfirmTest {
         Member member = createMember();
         long finalAmount = 100000L;
         long expectedEarn = (long) Math.floor((double) finalAmount / 100);
-        PaymentFixture fixture = createCompletedPayment(member.getId(), finalAmount);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), finalAmount);
 
         // when
         paymentService.processConfirm(fixture.payment().getId(), member.getId());
@@ -189,7 +78,7 @@ class PaymentServiceConfirmTest {
         memberRepository.save(member);
 
         long finalAmount = 50000L; // 확정 후 실버
-        PaymentFixture fixture = createCompletedPayment(member.getId(), finalAmount);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(member.getId(), finalAmount);
 
         // earnPoint는 아직 브론즈 기준 적립
         long expectedEarn = (long) Math.floor((double) finalAmount / 100);
@@ -222,7 +111,7 @@ class PaymentServiceConfirmTest {
         // given
         Member owner = createMember();
         Member other = createMember();
-        PaymentFixture fixture = createCompletedPayment(owner.getId(), 100000L);
+        CompleteOrderPaymentFixture fixture = createCompletedOrderAndPayment(owner.getId(), 100000L);
 
         // when & then
         assertThatThrownBy(() ->

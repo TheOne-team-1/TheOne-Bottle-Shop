@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import one.theone.server.common.entity.BaseEntity;
 import one.theone.server.common.exception.ServiceErrorException;
 
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 import static one.theone.server.common.exception.domain.RefundExceptionEnum.ERR_INVALID_PENDING;
@@ -41,17 +40,21 @@ public class Refund extends BaseEntity {
     @Column(name = "reason_description")
     private String reasonDescription;
 
-    @Column(nullable = false)
-    private LocalDateTime request_at;
+    @Column(name = "refund_at")
+    private LocalDateTime refundAt;
 
-    private LocalDateTime refund_at;
+    @Column(nullable = false)
+    private Boolean deleted;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public enum RefundStatus {
-        PENDING, COMPLETED, FAILED
+        PENDING, COMPLETED
     }
 
     public enum RefundReason {
-        MEMBER_REQUEST, OUT_OF_STOCK, ADMIN_REQUEST, PROCESS_FAIL
+        MEMBER_REQUEST, OUT_OF_STOCK, ADMIN_REQUEST
     }
 
     public static Refund register(long orderId, long paymentId, long price, RefundReason reason, String reasonDescription) {
@@ -62,7 +65,7 @@ public class Refund extends BaseEntity {
         refund.status = RefundStatus.PENDING;
         refund.reason = reason;
         refund.reasonDescription = reasonDescription;
-        refund.request_at = LocalDateTime.now();
+        refund.deleted = false;
         return refund;
     }
 
@@ -75,12 +78,6 @@ public class Refund extends BaseEntity {
     public void updateComplete() {
         validatePending();
         this.status = RefundStatus.COMPLETED;
-        this.refund_at = LocalDateTime.now();
-    }
-
-    public void updateFailed() {
-        validatePending();
-        this.status = RefundStatus.FAILED;
-        this.refund_at = LocalDateTime.now();
+        this.refundAt = LocalDateTime.now();
     }
 }

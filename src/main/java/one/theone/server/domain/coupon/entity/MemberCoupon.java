@@ -98,7 +98,7 @@ public class MemberCoupon extends BaseEntity {
 
     // 환불 시 복구
     public void refundCoupon(LocalDateTime endAt) {
-        if (endAt == null || LocalDateTime.now().isBefore(endAt)) {
+        if (LocalDateTime.now().isBefore(endAt)) {
             this.status = MemberCouponStatus.AVAILABLE;
         } else {
             this.status = MemberCouponStatus.EXPIRED;
