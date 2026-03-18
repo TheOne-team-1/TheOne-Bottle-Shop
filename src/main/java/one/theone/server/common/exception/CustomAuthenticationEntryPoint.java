@@ -21,9 +21,17 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
+        AuthExceptionEnum exceptionEnum = (AuthExceptionEnum) request.getAttribute("exception");
+
+        // 배달된 게 없으면 기본값(A001) 사용
+        if (exceptionEnum == null) {
+            exceptionEnum = AuthExceptionEnum.ERR_UNAUTHORIZED;
+        }
+
+        // 고정값이 아닌 변수(exceptionEnum)를 사용해서 응답 생성
         BaseResponse<Void> errorResponse = BaseResponse.fail(
-                AuthExceptionEnum.ERR_UNAUTHORIZED.getCode(),
-                AuthExceptionEnum.ERR_UNAUTHORIZED.getMessage()
+                exceptionEnum.getCode(),
+                exceptionEnum.getMessage()
         );
 
         response.setContentType("application/json;charset=UTF-8");
