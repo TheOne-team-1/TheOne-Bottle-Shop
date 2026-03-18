@@ -32,13 +32,13 @@ public class Order extends BaseEntity {
     @Column(name = "used_point", nullable = false)
     private Long usedPoint;
 
-    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "total_amount", nullable = false)
     private Long totalAmount;
 
-    @Column(name = "discount_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "discount_amount", nullable = false)
     private Long discountAmount;
 
-    @Column(name = "final_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "final_amount", nullable = false)
     private Long finalAmount;
 
     @Column(name = "member_address_snap", nullable = false, length = 500)
@@ -75,6 +75,10 @@ public class Order extends BaseEntity {
 
     public void markCompleted() {
         this.status = OrderStatus.COMPLETED;
+    }
+
+    public void markConfirmed() {
+        this.status = OrderStatus.CONFIRMED;
     }
 
     public void calculateFinalAmount(Long discountAmount) {

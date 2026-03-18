@@ -29,12 +29,17 @@ public class CartService {
     public CartAddResponse addItem(Long memberId, CartAddRequest request) {
         validateAddRequest(request);
 
-        if (!productRepository.existsById(request.productId())) {
-            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
-        }
+        Product product = productRepository.findById(request.productId()).orElseThrow(
+                () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
+        );
 
         String cartKey = generateCartKey(memberId);
         String field = generateCartField(request.productId());
+
+        int currentQuantity = getCurrentCartQuantity(cartKey, field);
+        int newQuantity = currentQuantity + request.quantity();
+
+        validateStock(product.getQuantity(), (long) newQuantity);
 
         redisTemplate.opsForHash().increment(
                 cartKey,
@@ -53,14 +58,10 @@ public class CartService {
     @Transactional(readOnly = true)
     public CartResponse getCart(Long memberId) {
         String cartKey = generateCartKey(memberId);
-
         Map<Object, Object> cartEntries = redisTemplate.opsForHash().entries(cartKey);
 
         if (cartEntries.isEmpty()) {
-            return new CartResponse(
-                    Collections.emptyList(),
-                    0L
-            );
+            return new CartResponse(Collections.emptyList(), 0L);
         }
 
         List<Long> productIds = cartEntries.keySet().stream()
@@ -68,6 +69,18 @@ public class CartService {
                 .toList();
 
         List<Product> products = productRepository.findAllById(productIds);
+
+        List<Long> foundProductIds = products.stream()
+                .map(Product::getId)
+                .toList();
+
+        List<Object> staleFields = cartEntries.keySet().stream()
+                .filter(key -> !foundProductIds.contains(Long.valueOf(key.toString())))
+                .toList();
+
+        if (!staleFields.isEmpty()) {
+            redisTemplate.opsForHash().delete(cartKey, staleFields.toArray());
+        }
 
         List<CartItemResponse> items = new ArrayList<>();
 
@@ -104,6 +117,12 @@ public class CartService {
             Long memberId, Long productId, CartUpdateQuantityRequest request
     ) {
         validateUpdateQuantityRequest(productId, request);
+
+        Product product =  productRepository.findById(productId).orElseThrow(
+                () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
+        );
+
+        validateStock(product.getQuantity(), request.quantity().longValue());
 
         String cartKey = generateCartKey(memberId);
         String field = generateCartField(productId);
@@ -168,6 +187,17 @@ public class CartService {
 
         if (!Boolean.TRUE.equals(exists)) {
             throw new ServiceErrorException(CartExceptionEnum.ERR_CART_ITEM_NOT_FOUND);
+        }
+    }
+
+    private int getCurrentCartQuantity(String cartKey, String field) {
+        Object value = redisTemplate.opsForHash().get(cartKey, field);
+        return value == null ? 0 : Integer.valueOf(value.toString());
+    }
+
+    private void validateStock(Long stockQuantity, Long requestQuantity) {
+        if (stockQuantity == null || stockQuantity < requestQuantity) {
+            throw new ServiceErrorException(CartExceptionEnum.ERR_CART_STOCK_EXCEEDED);
         }
     }
 

@@ -23,12 +23,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,10 +40,19 @@ public class OrderService {
     private final OrderQueryRepository orderQueryRepository;
 
     @Transactional
-    public OrderCreateResponse createDirectOrder(OrderCreateDirectRequest request) {
-        validateCreateOrderRequest(request);
+    public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateDirectRequest request) {
 
-        Long totalAmount = calculateTotalAmount(request);
+        Product product = productRepository.findById(request.productId()).orElseThrow(
+                () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
+        );
+
+        if (request.quantity() == null || request.quantity() < 1) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_QUANTITY);
+        }
+
+        validateOrderStock(product.getQuantity(), request.quantity());
+
+        Long totalAmount = product.getPrice() * request.quantity();
         Long discountAmount = 0L;
         Long usedPoint = request.usedPoint() == null ? 0L : request.usedPoint();
         Long finalAmount = totalAmount - discountAmount - usedPoint;
@@ -54,7 +62,7 @@ public class OrderService {
         }
 
         Order order = Order.create(
-                request.memberId(),
+                memberId,
                 request.memberCouponId(),
                 generateOrderNum(),
                 usedPoint,
@@ -67,26 +75,22 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderDetail> details = new ArrayList<>();
+        OrderDetail detail =  OrderDetail.create(
+                savedOrder.getId(),
+                product.getId(),
+                product.getName(),
+                product.getPrice(),
+                request.quantity()
+        );
 
-        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
-            details.add(OrderDetail.create(
-                    savedOrder.getId(),
-                    item.productId(),
-                    item.productNameSnap(),
-                    item.productPriceSnap(),
-                    item.quantity()
-            ));
-        }
-
-        orderDetailRepository.saveAll(details);
+        orderDetailRepository.save(detail);
 
         return OrderCreateResponse.from(savedOrder);
     }
 
     @Transactional
-    public OrderCreateResponse createOrderFromCart(OrderCreateFromCartRequest request) {
-        String cartKey = generateCartKey(request.memberId());
+    public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
+        String cartKey = generateCartKey(memberId);
 
         Map<Object, Object> cartEntries = redisTemplate.opsForHash().entries(cartKey);
 
@@ -99,9 +103,10 @@ public class OrderService {
                 .toList();
 
         List<Product> products = productRepository.findAllById(productIds);
+        removeStaleCartItems(cartKey, productIds, products);
 
         if (products.size() != productIds.size()) {
-            throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
         }
 
         Long totalAmount = calculateTotalAmountFromCart(products, cartEntries);
@@ -114,7 +119,7 @@ public class OrderService {
         }
 
         Order order = Order.create(
-                request.memberId(),
+                memberId,
                 request.memberCouponId(),
                 generateOrderNum(),
                 usedPoint,
@@ -138,15 +143,17 @@ public class OrderService {
 
             Integer quantity = Integer.valueOf(quantityValue.toString());
 
-            OrderDetail detail = (OrderDetail.create(
+            details.add(OrderDetail.create(
                     savedOrder.getId(),
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
                     quantity
             ));
+        }
 
-            details.add(detail);
+        if (details.isEmpty()) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_NOT_FOUND);
         }
 
         orderDetailRepository.saveAll(details);
@@ -179,17 +186,21 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
-        return orderQueryRepository.findOrderDetailByOrderIdAndMemberId(orderId, memberId)
+        return orderQueryRepository.findOrderDetail(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
     }
 
     @Transactional
-    public OrderCancelResponse cancelOrder(Long orderId, Long memberId) {
+    public OrderCancelResponse cancelOrder(Long memberId, Long orderId) {
         Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ALREADY_CANCELLED);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCEL_NOT_ALLOWED);
         }
 
         order.markCancelled();
@@ -198,28 +209,6 @@ public class OrderService {
                 order.getId(),
                 order.getStatus()
         );
-    }
-
-    private void validateCreateOrderRequest(OrderCreateDirectRequest request) {
-        if (request.orderItems() == null || request.orderItems().isEmpty()) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ITEM_EMPTY);
-        }
-
-        for (OrderCreateDirectRequest.OrderItemRequest item : request.orderItems()) {
-            if (item.quantity() == null || item.quantity() < 1) {
-                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_QUANTITY);
-            }
-
-            if (item.productPriceSnap() == null || item.productPriceSnap() < 0) {
-                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_INVALID_PRICE);
-            }
-        }
-    }
-
-    private Long calculateTotalAmount(OrderCreateDirectRequest request) {
-        return request.orderItems().stream()
-                .mapToLong(item -> item.productPriceSnap() * item.quantity())
-                .sum();
     }
 
     private Long calculateTotalAmountFromCart(List<Product> products, Map<Object, Object> cartEntries) {
@@ -233,6 +222,9 @@ public class OrderService {
             }
 
             Integer quantity = Integer.valueOf(quantityValue.toString());
+
+            validateOrderStock(product.getQuantity(), quantity.longValue());
+
             totalAmount += product.getPrice() * quantity;
         }
 
@@ -262,5 +254,27 @@ public class OrderService {
 
     private String generateCartKey(Long memberId) {
         return "cart:member:" + memberId;
+    }
+
+    private void validateOrderStock(Long stockQuantity, long requestedQuantity) {
+        if (stockQuantity == null || stockQuantity < requestedQuantity) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_STOCK_EXCEEDED);
+        }
+    }
+
+    private void removeStaleCartItems(String cartKey, List<Long> productIds, List<Product> products) {
+        Set<Long> foundIds = products.stream()
+                .map(Product::getId)
+                .collect(Collectors.toSet());
+
+        List<Object> staleFields = productIds.stream()
+                .filter(productId -> !foundIds.contains(productId))
+                .map(String::valueOf)
+                .map(field -> (Object) field)
+                .toList();
+
+        if (!staleFields.isEmpty()) {
+            redisTemplate.opsForHash().delete(cartKey, staleFields.toArray());
+        }
     }
 }

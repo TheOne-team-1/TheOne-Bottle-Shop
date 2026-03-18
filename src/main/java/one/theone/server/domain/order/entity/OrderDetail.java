@@ -24,13 +24,13 @@ public class OrderDetail extends BaseEntity {
     @Column(name = "product_name_snap", nullable = false, length = 255)
     private String productNameSnap;
 
-    @Column(name = "product_price_snap", nullable = false, precision = 15, scale = 2)
+    @Column(name = "product_price_snap", nullable = false)
     private Long productPriceSnap;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    @Column(name = "line_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "line_amount", nullable = false)
     private Long lineAmount;
 
     public static OrderDetail create(
