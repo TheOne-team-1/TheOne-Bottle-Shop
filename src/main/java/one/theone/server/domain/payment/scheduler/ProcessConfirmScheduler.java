@@ -27,25 +27,30 @@ public class ProcessConfirmScheduler {
     public void ProcessingConfirm() {
         log.info("구매 확정 스케줄러 작동");
 
-        List<Order> orderList = orderRepository.findByStatusAndUpdatedAtBefore(OrderStatus.COMPLETED, LocalDateTime.now().minusDays(7));
+        List<Payment> paymentList = paymentRepository.findByStatusAndPayAtBefore(Payment.PaymentStatus.COMPLETED, LocalDateTime.now().minusDays(7));
 
-        if (orderList.isEmpty()) {
+        if (paymentList.isEmpty()) {
             return;
         }
 
-        log.info("구매 확정 스케줄러 - {}건 확정 처리 시작", orderList.size());
+        log.info("구매 확정 스케줄러 - {}건 확정 처리 시작", paymentList.size());
 
         int successCount = 0;
         int failCount = 0;
 
-        for (Order order : orderList) {
+        for (Payment payment : paymentList) {
             try {
-                Payment payment = paymentRepository.findByOrderId(order.getId()).orElseThrow(() -> new IllegalStateException("결제 정보 없음 - orderId: " + order.getId()));
+                Order order = orderRepository.findById(payment.getOrderId()).orElseThrow(() -> new IllegalStateException("주문 정보 없음 - orderId: " + payment.getOrderId()));
+
+                if (order.getStatus() != OrderStatus.COMPLETED) {
+                    continue;
+                }
+
                 paymentService.processConfirm(payment.getId(), order.getMemberId());
                 successCount++;
             } catch (Exception e) {
                 failCount++;
-                log.error("구매 확정 실패 - orderId : {}, cause : {}", order.getId(), e.getMessage());
+                log.error("구매 확정 실패 - paymentId : {}, cause : {}", payment.getId(), e.getMessage());
             }
         }
 
