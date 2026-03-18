@@ -43,7 +43,7 @@ public class Payment extends BaseEntity {
     private LocalDateTime deletedAt;
 
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, REFUNDED
+        PENDING, COMPLETED, REFUNDED
     }
 
     public static Payment register(Long orderId, Long price_snap) {
@@ -79,11 +79,6 @@ public class Payment extends BaseEntity {
         validatePending();
         this.status = PaymentStatus.COMPLETED;
         this.payAt = LocalDateTime.now();
-    }
-
-    public void updateFail() {
-        validatePending();
-        this.status = PaymentStatus.FAILED;
     }
 
     public void updateRefund() {
