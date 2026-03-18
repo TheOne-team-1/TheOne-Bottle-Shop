@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.annotation.RedisLock;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.ProductExceptionEnum;
 import one.theone.server.common.exception.domain.ReviewExceptionEnum;
 import one.theone.server.domain.point.event.PointEarnPublisher;
 import one.theone.server.domain.point.event.RedisPointEarnEvent;
+import one.theone.server.domain.product.entity.Product;
+import one.theone.server.domain.product.repository.ProductRepository;
 import one.theone.server.domain.review.dto.*;
 import one.theone.server.domain.review.entity.Review;
 import one.theone.server.domain.review.repository.ReviewRepository;
@@ -16,6 +19,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +34,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final PointEarnPublisher pointEarnPublisher;
+    private final ProductRepository productRepository;
 
 
     @CacheEvict(value = "reviewList", allEntries = true)
@@ -39,6 +46,7 @@ public class ReviewService {
         Review review = Review.create(request.orderDetailId(), memberId, request.productId(), request.rating(), "리뷰", request.content());
         reviewRepository.save(review);
         pointEarnPublisher.publish(new RedisPointEarnEvent(memberId, 200L,"리뷰 작성 포인트 지급"));
+        calculateRating(request.productId());
         return BaseResponse.success("OK", "리뷰 작성 완료", null);
     }
 
@@ -86,6 +94,17 @@ public class ReviewService {
             throw new ServiceErrorException(ReviewExceptionEnum.NOT_AUTHORIZED_DELETE);
         }
         review.delete();
+        calculateRating(review.getProductId());
         return BaseResponse.success("OK", "삭제 성공", null);
+    }
+
+    private void calculateRating(Long productId) {
+        BigDecimal avgRating = reviewRepository.findAvgRatingByProductId(productId)
+                .orElse(null);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.updateRating(avgRating != null ? avgRating.setScale(1, RoundingMode.HALF_UP) : null);
     }
 }
