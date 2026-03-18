@@ -3,6 +3,7 @@ package one.theone.server.domain.payment.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.OrderExceptionEnum;
 import one.theone.server.domain.coupon.entity.Coupon;
 import one.theone.server.domain.coupon.entity.MemberCoupon;
 import one.theone.server.domain.coupon.repository.CouponRepository;
@@ -11,10 +12,14 @@ import one.theone.server.domain.event.entity.EventLog;
 import one.theone.server.domain.event.entity.EventReward;
 import one.theone.server.domain.event.repository.EventLogRepository;
 import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.entity.OrderStatus;
 import one.theone.server.domain.order.repository.OrderRepository;
+import one.theone.server.domain.payment.dto.response.PaymentConfirmResponse;
 import one.theone.server.domain.payment.dto.response.PaymentCreateResponse;
 import one.theone.server.domain.payment.entity.Payment;
 import one.theone.server.domain.payment.repository.PaymentRepository;
+import one.theone.server.domain.member.entity.Member;
+import one.theone.server.domain.member.repository.MemberRepository;
 import one.theone.server.domain.point.service.PointService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 import static one.theone.server.common.exception.domain.CouponExceptionEnum.*;
+import static one.theone.server.common.exception.domain.MemberExceptionEnum.ERR_MEMBER_NOT_FOUND;
+import static one.theone.server.common.exception.domain.OrderExceptionEnum.ERR_ORDER_NOT_FOUND;
+import static one.theone.server.common.exception.domain.PaymentExceptionEnum.*;
 
 @Slf4j
 @Service
@@ -36,6 +44,7 @@ public class PaymentService {
     private final MemberCouponRepository memberCouponRepository;
     private final CouponRepository couponRepository;
     private final EventLogRepository eventLogRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public PaymentCreateResponse processPayment(Order order, List<EventReward> eventRewardList) {
@@ -76,5 +85,36 @@ public class PaymentService {
         }
 
         return new PaymentCreateResponse(payment.getPaymentUniqueId());
+    }
+
+    @Transactional
+    public PaymentConfirmResponse processConfirm(Long paymentId, Long memberId) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new ServiceErrorException(ERR_PAYMENT_NOT_FOUND));
+        Order order = orderRepository.findById(payment.getOrderId()).orElseThrow(() -> new ServiceErrorException(ERR_ORDER_NOT_FOUND));
+
+        // 주문 검증
+        if(!order.getMemberId().equals(memberId)) {
+            throw new ServiceErrorException(ERR_NOT_MY_ORDER);
+        }
+
+        if(payment.getStatus() != Payment.PaymentStatus.COMPLETED) {
+            throw new ServiceErrorException(ERR_INVALID_COMPLETE);
+        }
+
+        if(order.getStatus() != OrderStatus.COMPLETED) {
+            throw new ServiceErrorException(ERR_INVALID_ORDER_COMPLETE);
+        }
+
+        // 주문 확정 처리
+        order.markConfirmed();
+
+        // 포인트 적립
+        pointService.earnPoint(memberId, order.getId(), order.getFinalAmount());
+
+        // 구매 총액 증가 + 등급 갱신
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new ServiceErrorException(ERR_MEMBER_NOT_FOUND));
+        member.addPayAmount(order.getFinalAmount());
+
+        return new PaymentConfirmResponse(order.getId(), payment.getId(), payment.getPaymentUniqueId());
     }
 }
