@@ -1,6 +1,7 @@
 package one.theone.server.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.config.cache.CacheConfig;
 import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CartExceptionEnum;
@@ -17,6 +18,9 @@ import one.theone.server.domain.order.repository.OrderQueryRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,18 +49,31 @@ public class OrderService {
     private static final long LOCK_WAIT_TIME = 1L;
     private static final long LOCK_LEASE_TIME = 1L;
 
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true)
+    })
     @Transactional
     public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateDirectRequest request) {
         String lockKey = "lock:order:direct:" + memberId + ":" + request.productId();
         return executeWithLock(lockKey, () -> createDirectOrderInternal(memberId, request));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
+    })
     @Transactional
     public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
         String lockKey = "lock:order:cart:" + memberId;
         return executeWithLock(lockKey, () -> createOrderFromCartInternal(memberId, request));
     }
 
+    @Cacheable(
+            value = CacheConfig.ORDER_LIST_CACHE,
+            key = "'member:' + #memberId + ':page:' + #page + ':size:' + #pageSize"
+    )
     @Transactional(readOnly = true)
     public OrderPageResponse getOrderList(Long memberId, int page, int pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
@@ -78,12 +95,20 @@ public class OrderService {
         );
     }
 
+    @Cacheable(
+            value = CacheConfig.ORDER_DETAIL_CACHE,
+            key = "'member:' + #memberId + ':order:' + #orderId"
+    )
     @Transactional(readOnly = true)
     public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
         return orderQueryRepository.findOrderDetail(orderId, memberId)
                 .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true)
+    })
     @Transactional
     public OrderCancelResponse cancelOrder(Long memberId, Long orderId) {
         Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
