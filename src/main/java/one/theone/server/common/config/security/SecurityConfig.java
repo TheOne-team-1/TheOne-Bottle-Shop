@@ -1,6 +1,8 @@
 package one.theone.server.common.config.security;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.exception.CustomAccessDeniedHandler;
+import one.theone.server.common.exception.CustomAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -38,6 +42,11 @@ public class SecurityConfig {
                         //endregion
 
                         .anyRequest().authenticated()
+                )
+                // 핸들러 등록
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint) // 401 처리
+                        .accessDeniedHandler(customAccessDeniedHandler)           // 403 처리
                 )
                 // JWT 필터를 ID/PW 필터 앞에 배치하여 토큰이 있으면 먼저 인증되도록 함
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);

@@ -1,11 +1,14 @@
 package one.theone.server.common.config.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import one.theone.server.common.exception.domain.AuthExceptionEnum;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,25 +30,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = resolveToken(request);
 
-            if (token != null && jwtProvider.validateToken(token)) {
+            // 토큰이 아예 없는 경우 (A005)
+            if (token == null) {
+                request.setAttribute("exception", AuthExceptionEnum.ERR_EMPTY_TOKEN);
+            }
+            // 토큰이 존재하고 유효성 검증을 통과한 경우
+            else if (jwtProvider.validateToken(token)) {
                 Long memberId = jwtProvider.getMemberId(token);
-
-                //권한 정보 추출 및 주입
-                //토큰 생성 시 넣었던 Role을 꺼내서 권한 목록을 생성
                 String role = jwtProvider.getRole(token);
+
+                // ROLE_ 접두사를 붙여 권한 생성
                 List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
-                //null 대신 authorities 주입
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(memberId, null, authorities);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+            // 토큰은 있지만 유효하지 않은 경우 (A004)
+            else {
+                request.setAttribute("exception", AuthExceptionEnum.ERR_INVALID_TOKEN);
+            }
+
+        } catch (ExpiredJwtException e) {
+            // 만료된 토큰 처리 (A003)
+            log.info("만료된 JWT 토큰입니다.");
+            request.setAttribute("exception", AuthExceptionEnum.ERR_EXPIRED_TOKEN);
+        } catch (JwtException | IllegalArgumentException e) {
+            // 잘못된 형식이나 서명 오류 (A004)
+            log.info("유효하지 않은 JWT 토큰입니다: {}", e.getMessage());
+            request.setAttribute("exception", AuthExceptionEnum.ERR_INVALID_TOKEN);
         } catch (Exception e) {
-            //필터 내부 예외 처리
-            //보안 필터에서 발생하는 예외를 로그 남기기
-            log.error("Security Context에 사용자 인증 정보를 설정할 수 없습니다: {}", e.getMessage());
+            // 그 외 기타 인증 실패 (A001)
+            log.error("Security Context 인증 설정 실패: {}", e.getMessage());
+            request.setAttribute("exception", AuthExceptionEnum.ERR_UNAUTHORIZED);
         }
 
         filterChain.doFilter(request, response);
