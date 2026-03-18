@@ -20,7 +20,7 @@ public class Payment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "order_id", nullable = false)
     private Long orderId;
 
     @Column(name = "payment_unique_id", nullable = false)
@@ -30,15 +30,17 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private PaymentStatus status;
 
-    @Column(nullable = false)
-    private Long price_snap;
+    @Column(name = "price_snap", nullable = false)
+    private Long priceSnap;
 
-    private LocalDateTime pay_at;
+    @Column(name = "pay_at")
+    private LocalDateTime payAt;
 
     @Column(nullable = false)
     private Boolean deleted;
 
-    private LocalDateTime deleted_at;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     public enum PaymentStatus {
         PENDING, COMPLETED, FAILED, REFUNDED
@@ -54,7 +56,7 @@ public class Payment extends BaseEntity {
                 , UlidCreator.getUlid().toString() // ULID 적용
         );
         payment.deleted = false;
-        payment.price_snap = price_snap;
+        payment.priceSnap = price_snap;
         return payment;
     }
 
@@ -76,7 +78,7 @@ public class Payment extends BaseEntity {
     public void updateComplete() {
         validatePending();
         this.status = PaymentStatus.COMPLETED;
-        this.pay_at = LocalDateTime.now();
+        this.payAt = LocalDateTime.now();
     }
 
     public void updateFail() {
