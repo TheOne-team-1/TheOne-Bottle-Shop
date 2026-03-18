@@ -148,4 +148,8 @@ public class Product extends BaseEntity {
 
         this.quantity += quantity;
     }
+
+    public void updateRating(BigDecimal rating) {
+        this.rating = rating;
+    }
 }
