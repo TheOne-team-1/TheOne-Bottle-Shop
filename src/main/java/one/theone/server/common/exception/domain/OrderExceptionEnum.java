@@ -15,6 +15,7 @@ public enum OrderExceptionEnum implements ErrorCode {
     ERR_ORDER_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "이미 취소된 주문입니다"),
     ERR_ORDER_STOCK_EXCEEDED(HttpStatus.BAD_REQUEST, "재고를 초과한 주문입니다."),
     ERR_ORDER_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "주문 취소가 가능한 상태가 아닙니다"),
+    ERR_ORDER_REQUEST_CONFLICT(HttpStatus.CONFLICT, "동일 주문 요청이 처리 중입니다"),
     ERR_ORDER_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "주문번호 생성에 실패했습니다");
 
     private final HttpStatus httpStatus;

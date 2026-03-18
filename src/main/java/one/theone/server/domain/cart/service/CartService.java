@@ -1,6 +1,7 @@
 package one.theone.server.domain.cart.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.config.cache.CacheConfig;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CartExceptionEnum;
 import one.theone.server.common.exception.domain.ProductExceptionEnum;
@@ -9,6 +10,8 @@ import one.theone.server.domain.cart.dto.request.CartUpdateQuantityRequest;
 import one.theone.server.domain.cart.dto.response.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class CartService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ProductRepository productRepository;
 
+    @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     @Transactional
     public CartAddResponse addItem(Long memberId, CartAddRequest request) {
         validateAddRequest(request);
@@ -55,6 +59,7 @@ public class CartService {
         );
     }
 
+    @Cacheable(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     @Transactional(readOnly = true)
     public CartResponse getCart(Long memberId) {
         String cartKey = generateCartKey(memberId);
@@ -112,6 +117,7 @@ public class CartService {
         return new CartResponse(items, totalAmount);
     }
 
+    @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     @Transactional
     public CartUpdateQuantityResponse updateQuantity(
             Long memberId, Long productId, CartUpdateQuantityRequest request
@@ -137,6 +143,7 @@ public class CartService {
         );
     }
 
+    @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     @Transactional
     public CartRemoveItemResponse removeItem(Long memberId, Long productId) {
         validateProductId(productId);
@@ -151,6 +158,7 @@ public class CartService {
         return new CartRemoveItemResponse(productId);
     }
 
+    @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     @Transactional
     public CartRemoveResponse removeCart(Long memberId) {
         String cartKey = generateCartKey(memberId);

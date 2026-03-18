@@ -1,6 +1,8 @@
 package one.theone.server.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.config.cache.CacheConfig;
+import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CartExceptionEnum;
 import one.theone.server.common.exception.domain.OrderExceptionEnum;
@@ -16,6 +18,9 @@ import one.theone.server.domain.order.repository.OrderQueryRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,10 +44,93 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final OrderQueryRepository orderQueryRepository;
+    private final RedisLockService redisLockService;
 
+    private static final long LOCK_WAIT_TIME = 1L;
+    private static final long LOCK_LEASE_TIME = 1L;
+
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true)
+    })
     @Transactional
     public OrderCreateResponse createDirectOrder(Long memberId, OrderCreateDirectRequest request) {
+        String lockKey = "lock:order:direct:" + memberId + ":" + request.productId();
+        return executeWithLock(lockKey, () -> createDirectOrderInternal(memberId, request));
+    }
 
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
+    })
+    @Transactional
+    public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
+        String lockKey = "lock:order:cart:" + memberId;
+        return executeWithLock(lockKey, () -> createOrderFromCartInternal(memberId, request));
+    }
+
+    @Cacheable(
+            value = CacheConfig.ORDER_LIST_CACHE,
+            key = "'member:' + #memberId + ':page:' + #page + ':size:' + #pageSize"
+    )
+    @Transactional(readOnly = true)
+    public OrderPageResponse getOrderList(Long memberId, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+
+        Page<Order> orderPage = orderRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
+
+        List<OrderListGetResponse> content = orderPage.getContent().stream()
+                .map(OrderListGetResponse::from)
+                .toList();
+
+        return new OrderPageResponse(
+                content,
+                orderPage.getNumber(),
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages(),
+                orderPage.isFirst(),
+                orderPage.isLast()
+        );
+    }
+
+    @Cacheable(
+            value = CacheConfig.ORDER_DETAIL_CACHE,
+            key = "'member:' + #memberId + ':order:' + #orderId"
+    )
+    @Transactional(readOnly = true)
+    public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
+        return orderQueryRepository.findOrderDetail(orderId, memberId)
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true)
+    })
+    @Transactional
+    public OrderCancelResponse cancelOrder(Long memberId, Long orderId) {
+        Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
+                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ALREADY_CANCELLED);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCEL_NOT_ALLOWED);
+        }
+
+        order.markCancelled();
+
+        return new OrderCancelResponse(
+                order.getId(),
+                order.getStatus()
+        );
+    }
+
+    private OrderCreateResponse createDirectOrderInternal(Long memberId, OrderCreateDirectRequest request) {
         Product product = productRepository.findById(request.productId()).orElseThrow(
                 () -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND)
         );
@@ -88,8 +177,7 @@ public class OrderService {
         return OrderCreateResponse.from(savedOrder);
     }
 
-    @Transactional
-    public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
+    private OrderCreateResponse createOrderFromCartInternal(Long memberId, OrderCreateFromCartRequest request) {
         String cartKey = generateCartKey(memberId);
 
         Map<Object, Object> cartEntries = redisTemplate.opsForHash().entries(cartKey);
@@ -160,55 +248,29 @@ public class OrderService {
         redisTemplate.delete(cartKey);
 
         return OrderCreateResponse.from(savedOrder);
-
     }
 
-    @Transactional(readOnly = true)
-    public OrderPageResponse getOrderList(Long memberId, int page, int pageSize) {
-        Pageable pageable = PageRequest.of(page, pageSize);
-
-        Page<Order> orderPage = orderRepository.findByMemberIdOrderByCreatedAtDesc(memberId, pageable);
-
-        List<OrderListGetResponse> content = orderPage.getContent().stream()
-                .map(OrderListGetResponse::from)
-                .toList();
-
-        return new OrderPageResponse(
-                content,
-                orderPage.getNumber(),
-                orderPage.getSize(),
-                orderPage.getTotalElements(),
-                orderPage.getTotalPages(),
-                orderPage.isFirst(),
-                orderPage.isLast()
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public OrderDetailGetResponse getOrderDetail(Long memberId, Long orderId) {
-        return orderQueryRepository.findOrderDetail(orderId, memberId)
-                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
-    }
-
-    @Transactional
-    public OrderCancelResponse cancelOrder(Long memberId, Long orderId) {
-        Order order = orderRepository.findByIdAndMemberId(orderId, memberId)
-                .orElseThrow(() -> new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_NOT_FOUND));
-
-        if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_ALREADY_CANCELLED);
+    private <T> T executeWithLock(String lockKey, LockAction<T> action) {
+        String lockValue = null;
+        try {
+            lockValue = redisLockService.tryLock(
+                    lockKey, LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
+            if (lockValue == null) {
+                throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_REQUEST_CONFLICT);
+            }
+            return action.execute();
+        } catch (InterruptedException e) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_REQUEST_CONFLICT);
+        } finally {
+            if (lockValue != null) {
+                redisLockService.unLock(lockKey, lockValue);
+            }
         }
+    }
 
-        if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CANCEL_NOT_ALLOWED);
-        }
-
-        order.markCancelled();
-
-        return new OrderCancelResponse(
-                order.getId(),
-                order.getStatus()
-        );
+    @FunctionalInterface
+    private interface LockAction<T> {
+        T execute();
     }
 
     private Long calculateTotalAmountFromCart(List<Product> products, Map<Object, Object> cartEntries) {
@@ -233,22 +295,17 @@ public class OrderService {
 
     private String generateOrderNum() {
 
-        // 1. 오늘 날짜 접두어 (예: 20260317)
         String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // 2. Redis 키 설정 (예: order:count:20260317)
         String redisKey = "order:count:" + datePrefix;
 
-        // 3. Redis에서 카운트 1 증가 (키가 없으면 1로 시작)
         Long count = redisTemplate.opsForValue().increment(redisKey);
 
-        // 4. (선택) 하루가 지나면 이 키는 필요 없으니 24시간 뒤 만료되게 설정
-        if (count != null && count == 1) {
-            redisTemplate.expire(redisKey, java.time.Duration.ofDays(1));
+        if (count == null) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CREATE_FAILED);
         }
 
-        // 5. 8자리 숫자로 포맷팅 (예: 00000001) 및 결합
-        // 결과: 20260317-00000001 (총 17자)
+        redisTemplate.expire(redisKey, java.time.Duration.ofDays(1));
         return String.format("%s-%08d", datePrefix, count);
     }
 

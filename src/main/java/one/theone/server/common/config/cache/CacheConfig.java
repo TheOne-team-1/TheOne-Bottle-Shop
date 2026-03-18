@@ -17,6 +17,9 @@ public class CacheConfig {
 
     public static final String PRODUCT_SEARCH = "productSearch";
     public static final String SEARCH_RANKING = "searchRanking";
+    public static final String CART_CACHE = "cartCache";
+    public static final String ORDER_LIST_CACHE = "orderListCache";
+    public static final String ORDER_DETAIL_CACHE = "orderDetailCache";
 
     @Bean
     public CacheManager localCacheManager() {
@@ -24,7 +27,10 @@ public class CacheConfig {
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(List.of(
                 buildCache(PRODUCT_SEARCH, 5, TimeUnit.MINUTES, 100),
-                buildCache(SEARCH_RANKING, 10, TimeUnit.MINUTES, 1)
+                buildCache(SEARCH_RANKING, 10, TimeUnit.MINUTES, 1),
+                buildCache(CART_CACHE, 10, TimeUnit.SECONDS, 10_000),
+                buildCache(ORDER_LIST_CACHE, 30, TimeUnit.SECONDS, 10_000),
+                buildCache(ORDER_DETAIL_CACHE, 1, TimeUnit.MINUTES, 10_000)
         ));
         return manager;
     }

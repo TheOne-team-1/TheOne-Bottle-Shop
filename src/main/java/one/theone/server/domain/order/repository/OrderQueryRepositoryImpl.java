@@ -4,7 +4,6 @@ import com.querydsl.core.group.GroupBy;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.domain.order.dto.response.OrderDetailGetResponse;
-import one.theone.server.domain.order.dto.response.OrderListGetResponse;
 import one.theone.server.domain.order.entity.QOrder;
 import one.theone.server.domain.order.entity.QOrderDetail;
 import org.springframework.stereotype.Repository;
@@ -19,23 +18,6 @@ public class OrderQueryRepositoryImpl implements OrderQueryRepository {
 
     private final QOrder order = QOrder.order;
     private final QOrderDetail orderDetail = QOrderDetail.orderDetail;
-
-    @Override
-    public List<OrderListGetResponse> findOrderListByMemberId(Long memberId) {
-        return queryFactory
-                .select(com.querydsl.core.types.Projections.constructor(
-                        OrderListGetResponse.class,
-                        order.id,
-                        order.orderNum,
-                        order.status,
-                        order.finalAmount,
-                        order.createdAt
-                ))
-                .from(order)
-                .where(order.memberId.eq(memberId))
-                .orderBy(order.createdAt.desc())
-                .fetch();
-    }
 
     @Override
     public Optional<OrderDetailGetResponse> findOrderDetail(Long orderId, Long memberId) {
