@@ -21,23 +21,6 @@ public class OrderQueryRepositoryImpl implements OrderQueryRepository {
     private final QOrderDetail orderDetail = QOrderDetail.orderDetail;
 
     @Override
-    public List<OrderListGetResponse> findOrderListByMemberId(Long memberId) {
-        return queryFactory
-                .select(com.querydsl.core.types.Projections.constructor(
-                        OrderListGetResponse.class,
-                        order.id,
-                        order.orderNum,
-                        order.status,
-                        order.finalAmount,
-                        order.createdAt
-                ))
-                .from(order)
-                .where(order.memberId.eq(memberId))
-                .orderBy(order.createdAt.desc())
-                .fetch();
-    }
-
-    @Override
     public Optional<OrderDetailGetResponse> findOrderDetail(Long orderId, Long memberId) {
         List<OrderDetailGetResponse> result = queryFactory
                 .from(order)
