@@ -47,8 +47,6 @@ public class EventDetail extends BaseEntity {
                 }
                 yield amountBuyEvent(eventId, details.minPrice());
             }
-            case FIRST -> firstEvent(eventId, details.minPrice(), details.eventProductId());
-            default -> throw new ServiceErrorException(EventExceptionEnum.ERR_EVENT_TYPE_INVALID);
         };
     }
 
@@ -63,15 +61,6 @@ public class EventDetail extends BaseEntity {
     private static EventDetail productBuyEvent(Long eventId, Long eventProductId) {
         EventDetail eventDetail = new EventDetail();
         eventDetail.eventId = eventId;
-        eventDetail.eventProductId = eventProductId;
-        eventDetail.deleted = false;
-        return eventDetail;
-    }
-
-    private static EventDetail firstEvent(Long eventId, Long minPrice, Long eventProductId) {
-        EventDetail eventDetail = new EventDetail();
-        eventDetail.eventId = eventId;
-        eventDetail.minPrice = minPrice;
         eventDetail.eventProductId = eventProductId;
         eventDetail.deleted = false;
         return eventDetail;

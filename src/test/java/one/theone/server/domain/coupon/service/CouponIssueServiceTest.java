@@ -1,7 +1,6 @@
 package one.theone.server.domain.coupon.service;
 
 import com.redis.testcontainers.RedisContainer;
-import one.theone.server.domain.coupon.dto.request.CouponIssueEventRequest;
 import one.theone.server.domain.coupon.entity.Coupon;
 import one.theone.server.domain.coupon.repository.CouponRepository;
 import one.theone.server.domain.coupon.repository.MemberCouponRepository;
@@ -61,8 +60,6 @@ public class CouponIssueServiceTest {
     @Autowired
     private MemberCouponRepository memberCouponRepository;
 
-    private static final Long EVENT_ID = 1L;
-
     private Long couponId;
     private final List<Long> memberIds = new ArrayList<>();
 
@@ -115,7 +112,7 @@ public class CouponIssueServiceTest {
             final Long memberId = memberIds.get(i);
             executorService.submit(() -> {
                 try {
-                    couponService.issueCouponByEvent(couponId, memberId, new CouponIssueEventRequest(EVENT_ID));
+                    couponService.issueCouponByEvent(couponId, memberId, 1L);
                 } finally {
                     latch.countDown();
                 }
@@ -147,7 +144,7 @@ public class CouponIssueServiceTest {
             final Long memberId = memberIds.get(i);
             executorService.submit(() -> {
                 try {
-                    couponIssueService.issueCouponWithLock(couponId, memberId, EVENT_ID);
+                    couponIssueService.issueCouponWithLock(couponId, memberId, 1L);
                 } catch (Exception e) {
                     failCount.getAndIncrement();
                 } finally {

@@ -32,6 +32,15 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), "상품 등록 성공", productService.createProduct(request)));
     }
 
+    @GetMapping("/admin/products")
+    public ResponseEntity<BaseResponse<PageResponse<AdminProductsGetResponse>>> getAdminProducts(
+            @ModelAttribute AdminProductsGetRequest request,
+            @PageableDefault(page = 0, size = 10) Pageable pageable
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "관리자 상품 목록 조회 성공", productService.getAdminProducts(request, pageable)));
+    }
+
+
     @PatchMapping("/admin/products/{id}")
     public ResponseEntity<BaseResponse<ProductUpdateResponse>> updateProduct(
             @PathVariable Long id,

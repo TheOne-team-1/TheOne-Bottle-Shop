@@ -9,12 +9,16 @@ import one.theone.server.domain.category.repository.CategoryDetailRepository;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
+import one.theone.server.domain.review.dto.ReviewResponse;
+import one.theone.server.domain.review.repository.ReviewRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryDetailRepository categoryDetailRepository;
     private final ProductViewService productViewService;
+    private final ReviewRepository reviewRepository;
 
     // 관리자 전용 -----------------------------------------------------------------------------------------
     @Transactional
@@ -41,6 +46,12 @@ public class ProductService {
 
         productRepository.save(product);
         return ProductCreateResponse.from(product);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AdminProductsGetResponse> getAdminProducts(AdminProductsGetRequest request, Pageable pageable) {
+        Page<AdminProductsGetResponse> page = productRepository.findAdminProductWithConditions(pageable, request);
+        return PageResponse.register(page);
     }
 
     @CacheEvict(value = "productCache", allEntries = true)
@@ -99,7 +110,8 @@ public class ProductService {
         }
 
         productViewService.record(id, clientIp);
-        return response.withViewCount(productViewService.getViewCount(id));
+        List<ReviewResponse> top3Reviews = reviewRepository.findTop3ByProductIdAndLikes(id);
+        return response.withViewCountAndTop3Reviews(productViewService.getViewCount(id), top3Reviews);
     }
 
 

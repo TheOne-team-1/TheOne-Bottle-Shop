@@ -23,20 +23,16 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class OrderService {
-    private static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
-    private static final DateTimeFormatter ORDER_DATE_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
-
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ProductRepository productRepository;
@@ -236,18 +232,24 @@ public class OrderService {
     }
 
     private String generateOrderNum() {
-        LocalDate today = LocalDate.now(SEOUL_ZONE_ID);
-        String date = today.format(ORDER_DATE_FORMATTER);
 
-        String sequenceKey = "order:seq:" + date;
-        Long sequence = redisTemplate.opsForValue().increment(sequenceKey);
+        // 1. 오늘 날짜 접두어 (예: 20260317)
+        String datePrefix = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        if (sequence == null) {
-            throw new ServiceErrorException(OrderExceptionEnum.ERR_ORDER_CREATE_FAILED);
+        // 2. Redis 키 설정 (예: order:count:20260317)
+        String redisKey = "order:count:" + datePrefix;
+
+        // 3. Redis에서 카운트 1 증가 (키가 없으면 1로 시작)
+        Long count = redisTemplate.opsForValue().increment(redisKey);
+
+        // 4. (선택) 하루가 지나면 이 키는 필요 없으니 24시간 뒤 만료되게 설정
+        if (count != null && count == 1) {
+            redisTemplate.expire(redisKey, java.time.Duration.ofDays(1));
         }
 
-        redisTemplate.expire(sequenceKey, Duration.ofDays(2));
-        return "%s-%08d".formatted(date, sequence);
+        // 5. 8자리 숫자로 포맷팅 (예: 00000001) 및 결합
+        // 결과: 20260317-00000001 (총 17자)
+        return String.format("%s-%08d", datePrefix, count);
     }
 
     private String generateCartKey(Long memberId) {

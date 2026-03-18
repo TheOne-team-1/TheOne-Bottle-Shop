@@ -80,4 +80,9 @@ public class Order extends BaseEntity {
     public void markConfirmed() {
         this.status = OrderStatus.CONFIRMED;
     }
+
+    public void calculateFinalAmount(Long discountAmount) {
+        this.discountAmount = discountAmount;
+        this.finalAmount = this.totalAmount - discountAmount - this.usedPoint;
+    }
 }

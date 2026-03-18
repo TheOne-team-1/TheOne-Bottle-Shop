@@ -87,16 +87,20 @@ public class Coupon extends BaseEntity {
         this.issuedQuantity++;
     }
 
+    // 쿠폰 발급 취소
+    public void issueCancelCoupon() {
+        this.issuedQuantity--;
+    }
+
     // 할인 금액 계산
     public Long calculateDiscount(Long price) {
         if (price < this.minPrice) {
             throw new ServiceErrorException(CouponExceptionEnum.ERR_COUPON_MIN_PRICE);
         }
 
-        // TODO : 반올림 처리 필요할지도
-        return switch (this.useType) {
+        return (long) switch (this.useType) {
             case AMOUNT -> Math.min(this.discountValue, price);
-            case RATE -> price * this.discountValue / 100;
+            case RATE -> Math.floor((double) (price * this.discountValue) / 100);
         };
     }
 
