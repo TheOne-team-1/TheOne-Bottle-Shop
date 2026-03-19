@@ -39,7 +39,7 @@ public class ChatRoom extends BaseEntity {
     private ChatRoom(String name, Long customerId) {
         this.name = name;
         this.customerId = customerId;
-        this.status = ChatRoomStatus.WAITING
+        this.status = ChatRoomStatus.WAITING;
     }
 
     public static ChatRoom create(String name, Long customerId) {

@@ -1,6 +1,8 @@
 package one.theone.server.domain.chat.dto.response;
 
-import one.theone.server.domain.chat.entity.*;
+import one.theone.server.domain.chat.entity.ChatMessage;
+import one.theone.server.domain.chat.entity.MessageType;
+import one.theone.server.domain.chat.entity.SenderType;
 
 import java.time.LocalDateTime;
 
