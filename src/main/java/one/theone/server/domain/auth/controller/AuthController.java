@@ -5,14 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.auth.dto.LoginRequest;
+import one.theone.server.domain.auth.dto.ReissueRequest;
 import one.theone.server.domain.auth.dto.TokenResponse;
 import one.theone.server.domain.auth.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -21,6 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @PostMapping("/reissue")
+    public BaseResponse<TokenResponse> reissue(@Valid @RequestBody ReissueRequest request) {
+        TokenResponse response = authService.reissue(request.refreshToken(), request.memberId());
+        return BaseResponse.success("200", "토큰 재발급 완료", response);
+    }
 
      //로그인 API - 성공 시 Access/Refresh Token 발급
      //실패 시 Redis에 기록하여 3회 실패 시 30초 차단

@@ -30,6 +30,33 @@ public class AuthService {
     private static final int MAX_FAIL_COUNT = 3;
     private static final long LOCK_TIME = 30; // 30초 차단
 
+    @Transactional
+    public TokenResponse reissue(String oldRefreshToken, Long memberId) {
+        //Redis에서 저장된 리프레시 토큰 가져오기
+        String savedToken = (String) redisTemplate.opsForValue().get(REFRESH_TOKEN_PREFIX + memberId);
+
+        //검증: 클라이언트가 보낸 토큰이 Redis에 있는 것과 일치하는지
+        if (savedToken == null || !savedToken.equals(oldRefreshToken)) {
+            throw new ServiceErrorException(MemberExceptionEnum.ERR_UNAUTHORIZED_ACCESS);
+        }
+
+        //새 토큰 생성
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ServiceErrorException(MemberExceptionEnum.ERR_MEMBER_NOT_FOUND));
+
+        String newAccessToken = jwtProvider.createAccessToken(member.getId(), member.getRole().name());
+        String newRefreshToken = jwtProvider.createRefreshToken();
+
+        //Redis 갱신 (Refresh Token Rotation)
+        redisTemplate.opsForValue().set(
+                REFRESH_TOKEN_PREFIX + member.getId(),
+                newRefreshToken,
+                7, TimeUnit.DAYS
+        );
+
+        return new TokenResponse(newAccessToken, newRefreshToken);
+    }
+
     @PostConstruct
     public void checkRedis() {
         try {

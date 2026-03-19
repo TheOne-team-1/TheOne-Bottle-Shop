@@ -3,10 +3,7 @@ package one.theone.server.domain.member.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
-import one.theone.server.domain.member.dto.MemberJoinRequest;
-import one.theone.server.domain.member.dto.MemberResponse;
-import one.theone.server.domain.member.dto.MyInfoResponse;
-import one.theone.server.domain.member.dto.PasswordChangeRequest;
+import one.theone.server.domain.member.dto.*;
 import one.theone.server.domain.member.service.MemberService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +23,13 @@ public class MemberController {
         MemberResponse response = memberService.join(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success("CREATED", "회원가입 성공", response));
+    }
+
+    //관리자 회원가입
+    @PostMapping("/signup/admin")
+    public BaseResponse<MemberResponse> joinAdmin(@RequestBody @Valid AdminJoinRequest request) {
+        MemberResponse response = memberService.joinAdmin(request);
+        return BaseResponse.success("200", "관리자 회원가입이 완료되었습니다.", response);
     }
 
     //내 정보 조회
