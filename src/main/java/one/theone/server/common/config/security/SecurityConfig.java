@@ -45,6 +45,38 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/refunds").hasRole("ADMIN")
                         //endregion
 
+                        //region 이벤트 관련
+                        .requestMatchers("/api/admin/events/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 사은품 관련
+                        .requestMatchers("/api/freebies/**").permitAll()
+                        .requestMatchers("/api/admin/freebies/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 사은품 카테고리 관련
+                        .requestMatchers("/api/admin/freebie-categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/freebie-category-details/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 상품 관련
+                        .requestMatchers("/api/products/**", "/api/best/products").permitAll()
+                        .requestMatchers("/api/admin/products/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 상품 카테고리 관련
+                        .requestMatchers("/api/admin/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/category-details/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 포인트 관련
+                        .requestMatchers("/api/admin/points/**").hasRole("ADMIN")
+                        //endregion
+
+                        //region 검색어 관련
+                        .requestMatchers("/api/search/**", "/api/best/search").permitAll()
+                        //endregion
+
                         .anyRequest().authenticated()
                 )
                 // 핸들러 등록
