@@ -11,7 +11,9 @@ import java.time.LocalDate;
 
 @Getter
 @Entity
-@Table(name = "point_logs")
+@Table(name = "point_logs", indexes = {
+        @Index(name = "idx_point_log_member_id_created_at", columnList = "member_id, created_at")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointLog extends BaseEntity {
     @Id
