@@ -5,7 +5,6 @@ import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CouponExceptionEnum;
 import one.theone.server.domain.coupon.dto.request.CouponCreateRequest;
-import one.theone.server.domain.coupon.dto.request.CouponIssueEventRequest;
 import one.theone.server.domain.coupon.dto.request.CouponIssueAdminRequest;
 import one.theone.server.domain.coupon.dto.response.CouponCreateResponse;
 import one.theone.server.domain.coupon.dto.response.CouponDetailResponse;
@@ -23,6 +22,7 @@ import one.theone.server.domain.member.repository.MemberRepository;
 
 import static one.theone.server.common.exception.domain.CouponExceptionEnum.*;
 import static one.theone.server.common.exception.domain.MemberExceptionEnum.ERR_MEMBER_NOT_FOUND;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -107,7 +107,7 @@ public class CouponService {
         Coupon coupon = couponRepository.findById(memberCoupon.getCouponId()).orElseThrow(() -> new ServiceErrorException(ERR_COUPON_NOT_FOUND));
 
         coupon.issueCancelCoupon();
-        memberCoupon.delete(); //FIXME 우선은 삭제처리, RECALL 이 맞는지는 좀 더 생각
+        memberCoupon.delete();
     }
 
     private Coupon ValidateIssueCoupon(Long couponId, Long memberId) {

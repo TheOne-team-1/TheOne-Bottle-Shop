@@ -88,7 +88,7 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentConfirmResponse processConfirm(Long paymentId, Long memberId) {
+    public PaymentConfirmResponse processConfirm(Long memberId, Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new ServiceErrorException(ERR_PAYMENT_NOT_FOUND));
         Order order = orderRepository.findById(payment.getOrderId()).orElseThrow(() -> new ServiceErrorException(ERR_ORDER_NOT_FOUND));
 

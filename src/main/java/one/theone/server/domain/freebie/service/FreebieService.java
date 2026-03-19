@@ -1,7 +1,6 @@
 package one.theone.server.domain.freebie.service;
 
 import lombok.RequiredArgsConstructor;
-import one.theone.server.common.annotation.RedisLock;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.FreebieCategoryExceptionEnum;
@@ -34,6 +33,7 @@ public class FreebieService {
                 request.name(),
                 request.quantity()
         );
+
         freebieRepository.save(freebie);
 
         return new FreebieCreateResponse(
