@@ -102,7 +102,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         priceBetween(request.priceMin(), request.priceMax()),
                         volumeIn(request.volumeMl())
                 )
-                .orderBy(getOrderSpecifier(request.sortType()))
+                .orderBy(getOrderSpecifier(request.sortType()), product.id.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -146,7 +146,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
                         volumeIn(request.volumeMl()),
                         statusEq(request.status())
                 )
-                .orderBy(getAdminOrderSpecifier(request.sortType()))
+                .orderBy(getAdminOrderSpecifier(request.sortType()), product.id.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -228,7 +228,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
             case LATEST -> product.createdAt.desc();
             case PRICE_ASC -> product.price.asc();
             case PRICE_DESC -> product.price.desc();
-            case RATING_DESC -> product.rating.desc();
+            case RATING_DESC -> product.rating.desc().nullsLast();
         };
     }
 
@@ -237,7 +237,7 @@ public class ProductQueryRepositoryImpl implements ProductQueryRepository{
             case LATEST -> product.createdAt.desc();
             case PRICE_ASC -> product.price.asc();
             case PRICE_DESC -> product.price.desc();
-            case RATING_DESC -> product.rating.desc();
+            case RATING_DESC -> product.rating.desc().nullsLast();
         };
     }
 
