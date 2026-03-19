@@ -24,7 +24,7 @@ import static one.theone.server.common.exception.domain.CouponExceptionEnum.*;
 import static one.theone.server.common.exception.domain.MemberExceptionEnum.ERR_MEMBER_NOT_FOUND;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -126,9 +126,9 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<CouponSearchResponse> getCoupons(Coupon.CouponUseType useType, LocalDateTime startAt, LocalDateTime endAt, Pageable pageable) {
-        Page<CouponSearchResponse> page = couponQueryRepository.findAllCoupons(useType, startAt, endAt, pageable);
-        return PageResponse.register(page);
+    public PageResponse<CouponSearchResponse> getCoupons(Coupon.CouponUseType useType, LocalDateTime startAt, LocalDateTime endAt, int page, int size) {
+        Page<CouponSearchResponse> coupons = couponQueryRepository.findAllCoupons(useType, startAt, endAt, PageRequest.of(page, size));
+        return PageResponse.register(coupons);
     }
 
     @Transactional(readOnly = true)
@@ -137,9 +137,9 @@ public class CouponService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<CouponSearchMeResponse> getMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, Pageable pageable) {
-        Page<CouponSearchMeResponse> page = couponQueryRepository.findMyCoupons(memberId, status, pageable);
-        return PageResponse.register(page);
+    public PageResponse<CouponSearchMeResponse> getMyCoupons(Long memberId, MemberCoupon.MemberCouponStatus status, int page, int size) {
+        Page<CouponSearchMeResponse> myCoupons = couponQueryRepository.findMyCoupons(memberId, status, PageRequest.of(page, size));
+        return PageResponse.register(myCoupons);
     }
 
     @Transactional

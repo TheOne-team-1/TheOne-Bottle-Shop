@@ -12,7 +12,7 @@ import one.theone.server.domain.freebie.entity.Freebie;
 import one.theone.server.domain.freebie.repository.FreebieRepository;
 import one.theone.server.domain.freebieCategory.repository.FreebieCategoryDetailRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,9 +46,9 @@ public class FreebieService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<FreebiesGetResponse> getFreebies(Pageable pageable) {
-        Page<FreebiesGetResponse> page = freebieRepository.findAllFreebies(pageable);
-        return PageResponse.register(page);
+    public PageResponse<FreebiesGetResponse> getFreebies(int page, int size) {
+        Page<FreebiesGetResponse> freebies = freebieRepository.findAllFreebies(PageRequest.of(page, size));
+        return PageResponse.register(freebies);
     }
 
     @Transactional(readOnly = true)

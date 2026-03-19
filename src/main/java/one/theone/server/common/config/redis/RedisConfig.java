@@ -48,6 +48,10 @@ public class RedisConfig {
         configs.put("categoryCache", defaultConfig.entryTtl(Duration.ofHours(1)));
         //endregion
 
+        //region 이벤트 관련 캐싱
+        configs.put("eventListCache", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        //endregion
+
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(configs)
