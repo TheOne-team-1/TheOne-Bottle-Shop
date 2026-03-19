@@ -28,6 +28,9 @@ jwt:
     accessExpire: 1800000
     refreshExpire: 60480000
 
+admin:
+  signup-key: ${DEV_ADMIN_SIGNUP_KEY}
+
 logging:
   level:
     root: info
