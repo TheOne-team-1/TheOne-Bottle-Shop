@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
+import one.theone.server.domain.chat.entity.ChatRoom;
+import one.theone.server.domain.chat.entity.ChatRoomStatus;
 import one.theone.server.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,5 +38,14 @@ public class ChatController {
         List<ChatRoomResponse> response = chatService.getMyRooms(memberId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "내 채팅방 목록 조회 성공", response));
+    }
+
+    @GetMapping
+    public ResponseEntity<BaseResponse<List<ChatRoomResponse>>> getAdminRooms(
+            @RequestParam(required = false) ChatRoomStatus status
+    ) {
+        List<ChatRoomResponse> response = chatService.getAdminRooms(status);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "전체 채팅방 목록 조회 성공", response));
     }
 }

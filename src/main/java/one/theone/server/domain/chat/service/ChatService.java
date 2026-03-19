@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
 import one.theone.server.domain.chat.entity.ChatRoom;
+import one.theone.server.domain.chat.entity.ChatRoomStatus;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,14 @@ public class ChatService {
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> getMyRooms(Long customerId) {
         return chatRoomRepository.findMyRooms(customerId)
+                .stream()
+                .map(ChatRoomResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatRoomResponse> getAdminRooms(ChatRoomStatus status) {
+        return chatRoomRepository.findAdminRooms(status)
                 .stream()
                 .map(ChatRoomResponse::from)
                 .toList();
