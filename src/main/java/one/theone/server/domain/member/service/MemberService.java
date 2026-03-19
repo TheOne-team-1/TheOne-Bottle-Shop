@@ -15,6 +15,7 @@ import one.theone.server.domain.point.event.RedisPointEarnEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +31,42 @@ public class MemberService {
     private final MemberRecommendLogRepository memberRecommendLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final PointEarnPublisher pointEarnPublisher;
+
+    @Value("${admin.signup-key}")
+    private String adminSignupKey;
+
+    @Transactional
+    public MemberResponse joinAdmin(AdminJoinRequest request) {
+        // 검증 (이메일 중복, 비밀번호 일치, 시크릿 키 대조)
+        validateAdminJoinRequest(request);
+
+        // 비밀번호 암호화
+        String encodedPassword = passwordEncoder.encode(request.password());
+
+        // 관리자 엔티티 생성 (생년월일 등은 고정값 처리)
+        Member admin = Member.createAdmin(
+                request.email(),
+                encodedPassword,
+                request.name()
+        );
+
+        Member savedAdmin = memberRepository.save(admin);
+
+        // 관리자는 주소(MemberAddress)나 추천로그를 저장 안함
+        return MemberResponse.from(savedAdmin);
+    }
+
+    private void validateAdminJoinRequest(AdminJoinRequest request) {
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new ServiceErrorException(MemberExceptionEnum.ERR_DUPLICATE_EMAIL);
+        }
+        if (!request.password().equals(request.passwordConfirm())) {
+            throw new ServiceErrorException(MemberExceptionEnum.ERR_PASSWORD_MISMATCH);
+        }
+        if (request.adminKey() == null || !request.adminKey().equals(adminSignupKey)) {
+            throw new ServiceErrorException(MemberExceptionEnum.ERR_INVALID_ADMIN_KEY);
+        }
+    }
 
 
     //회원가입 통합 로직

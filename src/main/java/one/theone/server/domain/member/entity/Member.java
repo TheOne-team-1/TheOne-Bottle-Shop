@@ -9,6 +9,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "members")
@@ -84,6 +85,17 @@ public class Member extends BaseEntity {
             this.grade = newGrade;
             this.gradeAt = LocalDateTime.now();
         }
+    }
+    public static Member createAdmin(String email, String encodedPassword, String name) {
+        Member member = new Member();
+        member.email = email;
+        member.passwd = encodedPassword;
+        member.name = name;
+        member.birthAt = "00000000"; // 관리자는 생년월일이 기본값 처리
+        member.role = UserRole.ADMIN; // 관리자 권한 부여
+        member.recommendCode = "ADMIN_" + UUID.randomUUID().toString().substring(0, 6); // 추천인 코드 형식만 유지
+        member.deleted = false;
+        return member;
     }
 }
 

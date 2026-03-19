@@ -18,6 +18,7 @@ public enum MemberExceptionEnum implements ErrorCode {
     ERR_INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 일치하지 않습니다"),
     ERR_LOGIN_LOCKED(HttpStatus.FORBIDDEN, "로그인 3회 실패로 인해 30초간 접속이 제한됩니다"),
     ERR_UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "접근 권한이 없습니다"),
+    ERR_INVALID_ADMIN_KEY(HttpStatus.FORBIDDEN, "시크릿 코드가 일치하지 않습니다."),
     ERR_PRIVACY_POLICY_AGREED(HttpStatus.BAD_REQUEST, "개인정보 동의를 해야 회원가입 진행이 가능합니다");
 
     private final HttpStatus httpStatus;
