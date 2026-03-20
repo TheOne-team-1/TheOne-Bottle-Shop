@@ -17,6 +17,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static one.theone.server.common.config.cache.CacheConfig.PRODUCT_SEARCH;
+
 @Configuration
 public class RedisConfig {
     @Value("${spring.data.redis.host}")
@@ -46,6 +48,7 @@ public class RedisConfig {
         //region 상품 관련 캐싱
         configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         configs.put("categoryCache", defaultConfig.entryTtl(Duration.ofHours(1)));
+        configs.put(PRODUCT_SEARCH, defaultConfig.entryTtl(Duration.ofMinutes(30)));
         //endregion
 
         //region 이벤트 관련 캐싱
