@@ -19,7 +19,7 @@ public class ChatMessageController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/chat/rooms/{roomId")
+    @MessageMapping("/chat/rooms/{roomId}")
     public void sendMessage(
             @DestinationVariable Long roomId,
             ChatMessageSendRequest request,
@@ -36,7 +36,6 @@ public class ChatMessageController {
 
         ChatMessageResponse response = chatService.saveMessage(senderId, senderType, roomId, request);
 
-        messagingTemplate.convertAndSend("/sub/chat/rooms" + roomId, response);
+        messagingTemplate.convertAndSend("/sub/chat/rooms/" + roomId, response);
     }
-
 }
