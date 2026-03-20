@@ -3,10 +3,15 @@ package one.theone.server.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.ChatExceptionEnum;
+import one.theone.server.domain.chat.dto.request.ChatMessageSendRequest;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
+import one.theone.server.domain.chat.dto.response.ChatMessageResponse;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
+import one.theone.server.domain.chat.entity.ChatMessage;
 import one.theone.server.domain.chat.entity.ChatRoom;
 import one.theone.server.domain.chat.entity.ChatRoomStatus;
+import one.theone.server.domain.chat.entity.SenderType;
+import one.theone.server.domain.chat.repository.ChatMessageRepository;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     @Transactional
     public ChatRoomResponse createRoom(Long customerId, ChatRoomCreateRequest request) {
@@ -46,6 +52,21 @@ public class ChatService {
         ChatRoom room = getRoomOrThrow(roomId);
         validateRoomAccess(memberId, room);
         return ChatRoomResponse.from(room);
+    }
+
+    @Transactional
+    public ChatMessageResponse saveMessage(
+            Long senderId, SenderType senderType, Long roomId, ChatMessageSendRequest request
+    ) {
+        ChatRoom room = getRoomOrThrow(roomId);
+        validateRoomAccess(senderId, room);
+
+        ChatMessage message = ChatMessage.createText(roomId,senderId, senderType, request.content());
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        room.updateLastMessageAt(saved.getCreatedAt());
+
+        return ChatMessageResponse.from(saved);
     }
 
     private ChatRoom getRoomOrThrow(Long roomId) {

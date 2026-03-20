@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
-import one.theone.server.domain.chat.entity.ChatRoom;
 import one.theone.server.domain.chat.entity.ChatRoomStatus;
 import one.theone.server.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
