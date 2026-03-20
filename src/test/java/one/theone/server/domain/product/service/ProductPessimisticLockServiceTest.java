@@ -22,14 +22,13 @@ import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-public class ProductOptimisticLockServiceTest {
+public class ProductPessimisticLockServiceTest {
     
     @Container
     static final RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
@@ -47,7 +46,7 @@ public class ProductOptimisticLockServiceTest {
     private ProductService productService;
 
     @Autowired
-    private ProductOptimisticLockService productOptimisticLockService;
+    private ProductPessimisticLockService productPessimisticLockService;
 
     @Autowired
     private ProductRepository productRepository;
@@ -95,10 +94,9 @@ public class ProductOptimisticLockServiceTest {
     }
 
     @Test
-    @DisplayName("withOptimisticLock - decreaseStock")
-    void withOptimisticLock_decreaseStock() throws InterruptedException {
+    @DisplayName("withPessimisticLock - decreaseStock")
+    void withPessimisticLock_decreaseStock() throws InterruptedException {
         int threadCount = 100;
-        AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -106,9 +104,7 @@ public class ProductOptimisticLockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productOptimisticLockService.decreaseStock(productId, 1L);
-                } catch (Exception e) {
-                    failCount.incrementAndGet();
+                    productPessimisticLockService.decreaseStock(productId, 1L);
                 } finally {
                     latch.countDown();
                 }
@@ -120,15 +116,14 @@ public class ProductOptimisticLockServiceTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        assertThat(product.getQuantity()).isEqualTo(failCount.get());
-        System.out.println("낙관적 락 최종 재고 : " + product.getQuantity());
+        assertThat(product.getQuantity()).isEqualTo(0L);
+        System.out.println("비관적 락 최종 재고 : " + product.getQuantity());
     }
 
     @Test
-    @DisplayName("withOptimisticLock - increaseStock")
-    void withOptimisticLock_increaseStock() throws InterruptedException {
+    @DisplayName("withPessimisticLock - increaseStock")
+    void withPessimisticLock_increaseStock() throws InterruptedException {
         int threadCount = 100;
-        AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -136,9 +131,7 @@ public class ProductOptimisticLockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productOptimisticLockService.increaseStock(productId, 1L);
-                } catch (Exception e) {
-                    failCount.incrementAndGet();
+                    productPessimisticLockService.increaseStock(productId, 1L);
                 } finally {
                     latch.countDown();
                 }
@@ -150,7 +143,7 @@ public class ProductOptimisticLockServiceTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        assertThat(product.getQuantity()).isEqualTo(200L - failCount.get());
-        System.out.println("낙관적 락 최종 재고 : " + product.getQuantity());
+        assertThat(product.getQuantity()).isEqualTo(200L);
+        System.out.println("비관적 락 최종 재고 : " + product.getQuantity());
     }
 }
