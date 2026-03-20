@@ -81,4 +81,14 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "채팅방 상태 변경 성공", response));
     }
+
+    @PutMapping("/{roomId}/assign")
+    public ResponseEntity<BaseResponse<ChatRoomResponse>> assignManager(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long roomId
+    ) {
+        ChatRoomResponse response = chatService.assignManager(memberId, roomId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "관리자 배정 성공", response));
+    }
 }

@@ -92,6 +92,23 @@ public class ChatService {
         return ChatRoomResponse.from(room);
     }
 
+    @Transactional
+    public ChatRoomResponse assignManager(Long memberId, Long roomId) {
+        ChatRoom room = getRoomOrThrow(roomId);
+
+        if (room.getManagerId() != null && !room.getManagerId().equals(memberId)) {
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
+        }
+
+        room.assignManager(memberId);
+
+        if (room.getStatus() == ChatRoomStatus.WAITING) {
+            room.changeStatus(ChatRoomStatus.IN_PROGRESS);
+        }
+
+        return ChatRoomResponse.from(room);
+    }
+
     private ChatRoom getRoomOrThrow(Long roomId) {
         return chatRoomRepository.findById(roomId).orElseThrow(
                 () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
