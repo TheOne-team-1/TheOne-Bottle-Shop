@@ -85,7 +85,7 @@ class ProductControllerTest {
                         )
                 ))
         );
-        given(productService.getAdminProducts(any(), any())).willReturn(pageResponse);
+        given(productService.getAdminProducts(any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/admin/products")

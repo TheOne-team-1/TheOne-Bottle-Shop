@@ -131,7 +131,7 @@ class FavoriteServiceTest {
                 .willReturn(new PageImpl<>(responses));
 
         // when
-        PageResponse<FavoritesGetResponse> result = favoriteService.getFavorites(memberId, null, PageRequest.of(0, 10));
+        PageResponse<FavoritesGetResponse> result = favoriteService.getFavorites(memberId, null, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(2);
@@ -150,7 +150,7 @@ class FavoriteServiceTest {
 
         // when
         PageResponse<FavoritesGetResponse> result = favoriteService.getFavorites(
-                memberId, FavoritesGetResponse.FavoriteProductStatus.SALES, PageRequest.of(0, 10));
+                memberId, FavoritesGetResponse.FavoriteProductStatus.SALES, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);
@@ -171,7 +171,7 @@ class FavoriteServiceTest {
 
         // when
         PageResponse<FavoritesGetResponse> result = favoriteService.getFavorites(
-                memberId, FavoritesGetResponse.FavoriteProductStatus.DELETED, PageRequest.of(0, 10));
+                memberId, FavoritesGetResponse.FavoriteProductStatus.DELETED, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);

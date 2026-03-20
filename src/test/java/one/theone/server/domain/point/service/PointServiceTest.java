@@ -112,7 +112,7 @@ class PointServiceTest {
                 .willReturn(new PageImpl<>(List.of()));
 
         // when
-        PageResponse<PointLogsGetResponse> result = pointService.getPointLogs(memberId, request, pageable);
+        PageResponse<PointLogsGetResponse> result = pointService.getPointLogs(memberId, request, 0, 10);
 
         // then
         assertThat(result.content()).isEmpty();

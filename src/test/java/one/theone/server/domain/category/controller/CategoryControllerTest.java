@@ -17,6 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -160,7 +161,7 @@ class CategoryControllerTest {
         PageResponse<CategoriesGetResponse> pageResponse = PageResponse.register(
                 new PageImpl<>(List.of(new CategoriesGetResponse(1L, "위스키", 1, List.of())))
         );
-        given(categoryService.getCategories(any())).willReturn(pageResponse);
+        given(categoryService.getCategories(anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/admin/categories")
