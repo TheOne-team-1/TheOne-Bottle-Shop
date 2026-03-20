@@ -1,6 +1,7 @@
 package one.theone.server.domain.product.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.annotation.RedissonLock;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.CategoryExceptionEnum;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -133,4 +135,24 @@ public class ProductService {
 
         product.increaseStock(quantity);
     }
+
+    //region RedissonLock 사용 재고 감소
+    @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
+    @RedissonLock(key = "'stock:product:' + #id", waitTime = 0, leaseTime = 5L, timeUnit = TimeUnit.SECONDS)
+    public boolean decreaseStockWithRedisson(Long id, Long quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.decreaseStock(quantity);
+        return product.getQuantity() == 0;
+    }
+
+    @RedissonLock(key = "'stock:product:' + #id", waitTime = 60L, leaseTime = 5L, timeUnit = TimeUnit.SECONDS)
+    public void increaseStockWithRedisson(Long id, Long quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
+
+        product.increaseStock(quantity);
+    }
+    //endregion
 }

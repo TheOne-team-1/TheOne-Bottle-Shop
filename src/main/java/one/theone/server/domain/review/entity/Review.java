@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Table(name = "reviews")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(access = AccessLevel.PRIVATE)
 public class Review extends BaseEntity {
 
     @Id
@@ -48,15 +47,15 @@ public class Review extends BaseEntity {
 
     public static Review create(Long orderDetailId, Long memberId, Long productId,
                                 int rating, String title, String content) {
-        return Review.builder()
-                .orderDetailId(orderDetailId)
-                .memberId(memberId)
-                .productId(productId)
-                .rating(rating)
-                .title(title)
-                .content(content)
-                .deleted(false)
-                .build();
+        Review review = new Review();
+        review.orderDetailId = orderDetailId;
+        review.memberId = memberId;
+        review.productId = productId;
+        review.rating = rating;
+        review.title = title;
+        review.content = content;
+        review.deleted = false;
+        return review;
     }
 
     // 소프트 딜리트
