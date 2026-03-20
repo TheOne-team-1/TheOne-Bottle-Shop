@@ -1,10 +1,12 @@
 package one.theone.server.domain.chat.service;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.ChatExceptionEnum;
 import one.theone.server.domain.chat.dto.request.ChatMessageSendRequest;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
+import one.theone.server.domain.chat.dto.request.ChatRoomStatusUpdateRequest;
 import one.theone.server.domain.chat.dto.response.ChatMessageResponse;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
 import one.theone.server.domain.chat.entity.ChatMessage;
@@ -80,6 +82,16 @@ public class ChatService {
                 .toList();
     }
 
+    @Transactional
+    public ChatRoomResponse updateStatus(Long memberId, Long roomId, ChatRoomStatusUpdateRequest request) {
+        ChatRoom room = getRoomOrThrow(roomId);
+        validateManagerOnly(memberId, room);
+
+        room.changeStatus(request.status());
+
+        return ChatRoomResponse.from(room);
+    }
+
     private ChatRoom getRoomOrThrow(Long roomId) {
         return chatRoomRepository.findById(roomId).orElseThrow(
                 () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
@@ -90,6 +102,12 @@ public class ChatService {
         boolean isManager = room.getManagerId() != null && room.getManagerId().equals(memberId);
 
         if (!isCustomer && !isManager) {
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
+        }
+    }
+
+    private void validateManagerOnly(Long memberId, ChatRoom room) {
+        if (room.getManagerId() == null || !room.getManagerId().equals(memberId)) {
             throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
         }
     }

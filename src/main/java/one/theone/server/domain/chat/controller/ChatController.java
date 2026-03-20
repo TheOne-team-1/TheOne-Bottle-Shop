@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
+import one.theone.server.domain.chat.dto.request.ChatRoomStatusUpdateRequest;
 import one.theone.server.domain.chat.dto.response.ChatMessageResponse;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
 import one.theone.server.domain.chat.entity.ChatRoomStatus;
@@ -68,5 +69,16 @@ public class ChatController {
         List<ChatMessageResponse> response = chatService.getMessages(memberId, roomId, lastMessageId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "채팅 메시지 조회 성공", response));
+    }
+
+    @PutMapping("/{roomId}/status")
+    public ResponseEntity<BaseResponse<ChatRoomResponse>> updateStatus(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long roomId,
+            @Valid @RequestBody ChatRoomStatusUpdateRequest request
+    ) {
+        ChatRoomResponse response = chatService.updateStatus(memberId, roomId, request);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "채팅방 상태 변경 성공", response));
     }
 }
