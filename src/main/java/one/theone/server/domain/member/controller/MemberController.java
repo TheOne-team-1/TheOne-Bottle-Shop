@@ -29,7 +29,7 @@ public class MemberController {
     @PostMapping("/signup/admin")
     public BaseResponse<MemberResponse> joinAdmin(@RequestBody @Valid AdminJoinRequest request) {
         MemberResponse response = memberService.joinAdmin(request);
-        return BaseResponse.success("200", "관리자 회원가입이 완료되었습니다.", response);
+        return BaseResponse.success("OK", "관리자 회원가입이 완료되었습니다.", response);
     }
 
     //내 정보 조회

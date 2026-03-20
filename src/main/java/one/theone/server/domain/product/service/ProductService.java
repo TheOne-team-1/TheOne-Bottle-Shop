@@ -138,16 +138,15 @@ public class ProductService {
 
     //region RedissonLock 사용 재고 감소
     @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
-    @RedissonLock(key = "'stock:product:' + #id", waitTime = 0, leaseTime = 5L, timeUnit = TimeUnit.SECONDS)
-    public boolean decreaseStockWithRedisson(Long id, Long quantity) {
+    @RedissonLock(key = "'stock:product:' + #id")
+    public void decreaseStockWithRedisson(Long id, Long quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));
 
         product.decreaseStock(quantity);
-        return product.getQuantity() == 0;
     }
 
-    @RedissonLock(key = "'stock:product:' + #id", waitTime = 60L, leaseTime = 5L, timeUnit = TimeUnit.SECONDS)
+    @RedissonLock(key = "'stock:product:' + #id", waitTime = 10L)
     public void increaseStockWithRedisson(Long id, Long quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND));

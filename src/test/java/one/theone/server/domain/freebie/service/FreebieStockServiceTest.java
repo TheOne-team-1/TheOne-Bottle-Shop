@@ -3,6 +3,8 @@ package one.theone.server.domain.freebie.service;
 import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.freebie.entity.Freebie;
 import one.theone.server.domain.freebie.repository.FreebieRepository;
+import one.theone.server.domain.product.entity.Product;
+import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -39,6 +42,9 @@ public class FreebieStockServiceTest {
         registry.add("spring.data.redis.host", () -> redisContainer.getHost());
         registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
     }
+
+    @MockitoBean
+    private KomoranCorrector komoranCorrector;
 
     @Autowired
     private FreebieService freebieService;
@@ -94,7 +100,7 @@ public class FreebieStockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock")
+    @DisplayName("WithRedisLock - decreaseStock")
     void withSpinLock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger();
@@ -119,7 +125,37 @@ public class FreebieStockServiceTest {
 
         Freebie freebie = freebieRepository.findById(freebieId).orElseThrow();
 
+        System.out.println("재고 감소 - 최종 재고 : " + freebie.getQuantity());
         assertThat(freebie.getQuantity()).isEqualTo(failCount.get());
-        System.out.println("레디스 락 최종 재고 : " + freebie.getQuantity());
+    }
+
+    @Test
+    @DisplayName("WithRedisLock - increaseStock")
+    void withSpinLock_increaseStock() throws InterruptedException {
+        int threadCount = 100;
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    freebieStockService.increaseStockWithLock(freebieId, 1L);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        Freebie freebie = freebieRepository.findById(freebieId).orElseThrow();
+
+        System.out.println("재고 증가 - 최종 재고 : " + freebie.getQuantity());
+        assertThat(freebie.getQuantity()).isEqualTo(200L - failCount.get());
     }
 }

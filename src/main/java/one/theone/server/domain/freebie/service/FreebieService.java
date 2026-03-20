@@ -1,6 +1,7 @@
 package one.theone.server.domain.freebie.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.annotation.RedissonLock;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.FreebieCategoryExceptionEnum;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -109,4 +112,21 @@ public class FreebieService {
                 .orElseThrow(() -> new ServiceErrorException(FreebieExceptionEnum.ERR_FREEBIE_NOT_FOUND));
         freebie.increaseStock(quantity);
     }
+
+    //region Redisson 적용
+    @RedissonLock(key = "'stock:freebie:' + #id")
+    public void decreaseStockWithRedisson(Long id, Long quantity) {
+        Freebie freebie = freebieRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(FreebieExceptionEnum.ERR_FREEBIE_NOT_FOUND));
+        freebie.decreaseStock(quantity);
+    }
+
+    @RedissonLock(key = "'stock:freebie:' + #id", waitTime = 10L)
+    public void increaseStockWithRedisson(Long id, Long quantity) {
+        Freebie freebie = freebieRepository.findById(id)
+                .orElseThrow(() -> new ServiceErrorException(FreebieExceptionEnum.ERR_FREEBIE_NOT_FOUND));
+        freebie.increaseStock(quantity);
+    }
+    //endregion
 }
+
