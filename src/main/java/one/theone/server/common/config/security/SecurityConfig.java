@@ -77,6 +77,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/search/**", "/api/best/search").permitAll()
                         //endregion
 
+                        //region 채팅 관련
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chat/rooms").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/chat/rooms/*/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/chat/rooms/*/assign").hasRole("ADMIN")
+                        //endregion
+
                         .anyRequest().authenticated()
                 )
                 // 핸들러 등록
