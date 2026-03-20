@@ -89,14 +89,14 @@ public class PointOptimisticLockServiceTest {
         memberId = member.getId();
 
         // 포인트 10000 세팅
-        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(500L, "테스트 지급"), 500L);
+        PointLog earnLog = PointLog.ofAdmin(memberId, new PointAdjustRequest(10000L, "테스트 지급"), 10000L);
         pointLogRepository.save(earnLog);
         Point point = Point.register(memberId);
-        point.updateBalance(500L);
+        point.updateBalance(10000L);
         pointRepository.save(point);
 
-        // 주문 5개 생성 (각 usedPoint = 100)
-        for (int i = 0; i < 5; i++) {
+        // 주문 100개 생성 (각 usedPoint = 100)
+        for (int i = 0; i < 100; i++) {
             Order order = Order.create(
                     memberId, null, "ORDER-" + i,
                     100L,
@@ -119,7 +119,7 @@ public class PointOptimisticLockServiceTest {
     @Test
     @DisplayName("NO_LOCK - usePoint")
     void withoutLock_use() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 100;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -147,7 +147,7 @@ public class PointOptimisticLockServiceTest {
     @Test
     @DisplayName("withOptimisticLock - usePoint")
     void withOptimisticLock_use() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -186,7 +186,7 @@ public class PointOptimisticLockServiceTest {
     void withoutLock_refund() throws InterruptedException {
         setupForRefund();
 
-        int threadCount = 5;
+        int threadCount = 100;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -206,7 +206,7 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isNotEqualTo(500L);
+        assertThat(point.getBalance()).isNotEqualTo(10000L);
         System.out.println("락 없는 최종 환불 잔액: " + point.getBalance());
     }
 
@@ -215,7 +215,7 @@ public class PointOptimisticLockServiceTest {
     void withOptimisticLock_refund() throws InterruptedException {
         setupForRefund();
 
-        int threadCount = 5;
+        int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -238,14 +238,14 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isEqualTo(500L - failCount.get() * 100L);
+        assertThat(point.getBalance()).isEqualTo(10000L - failCount.get() * 100L);
         System.out.println("낙관적 락 최종 환불 잔액: " + point.getBalance());
     }
 
     @Test
     @DisplayName("NO_LOCK - earnPoint")
     void withoutLock_earn() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 100;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -265,14 +265,14 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isNotEqualTo(1000L);
+        assertThat(point.getBalance()).isNotEqualTo(20000L);
         System.out.println("락 없는 최종 적립 잔액: " + point.getBalance());
     }
 
     @Test
     @DisplayName("withOptimisticLock - earnPoint")
     void withOptimisticLock_earn() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -295,14 +295,14 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isEqualTo(1000L - failCount.get() * 100L);
+        assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 100L);
         System.out.println("낙관적 락 최종 적립 잔액: " + point.getBalance());
     }
 
     @Test
     @DisplayName("NO_LOCK - earnEventPoint")
     void withoutLock_earnEvent() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 10;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -321,14 +321,14 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isNotEqualTo(5500L); // 기존 500 + 5*1000
+        assertThat(point.getBalance()).isNotEqualTo(20000L); // 기존 10000 + 10*1000
         System.out.println("락 없는 최종 이벤트 적립 잔액: " + point.getBalance());
     }
 
     @Test
     @DisplayName("withOptimisticLock - earnEventPoint")
     void withOptimisticLock_earnEvent() throws InterruptedException {
-        int threadCount = 5;
+        int threadCount = 10;
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -350,7 +350,7 @@ public class PointOptimisticLockServiceTest {
         executorService.shutdown();
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(point.getBalance()).isEqualTo(5500L - failCount.get() * 1000L);
+        assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 1000L);
         System.out.println("낙관적 락 최종 이벤트 적립 잔액: " + point.getBalance());
     }
 }
