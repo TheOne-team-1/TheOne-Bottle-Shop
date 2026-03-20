@@ -50,7 +50,6 @@ public class SecurityConfig {
                         //endregion
 
                         //region 사은품 관련
-                        .requestMatchers("/api/freebies/**").permitAll()
                         .requestMatchers("/api/admin/freebies/**").hasRole("ADMIN")
                         //endregion
 

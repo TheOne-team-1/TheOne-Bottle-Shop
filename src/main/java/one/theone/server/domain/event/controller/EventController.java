@@ -7,8 +7,6 @@ import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.event.dto.*;
 import one.theone.server.domain.event.entity.Event;
 import one.theone.server.domain.event.service.EventService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -44,13 +42,15 @@ public class EventController {
 
     @GetMapping("/events")
     public ResponseEntity<BaseResponse<PageResponse<EventsGetResponse>>> getEvents(
-            EventsGetRequest request,
-            @PageableDefault(page = 0, size = 10)Pageable pageable,
-            Authentication authentication) {
+            @RequestBody EventsGetRequest request
+            , @RequestParam(defaultValue = "0") int page
+            , @RequestParam(defaultValue = "10") int size
+            , Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "이벤트 목록 조회 성공",
-                eventService.getEvents(request, pageable, authentication)
+                eventService.getEvents(request, page, size, isAdmin)
         ));
     }
 
@@ -58,11 +58,18 @@ public class EventController {
     public ResponseEntity<BaseResponse<EventGetResponse>> getEvent(
             @PathVariable Long eventId,
             Authentication authentication) {
+        boolean isAdmin = isAdmin(authentication);
         return ResponseEntity.ok(BaseResponse.success(
                 HttpStatus.OK.name(),
                 "이벤트 상세 조회 성공",
-                eventService.getEvent(eventId, authentication)
+                eventService.getEvent(eventId, isAdmin)
         ));
+    }
+
+    // 이벤트 API는 관리자 별 API 분리가 아닌 통합 시행
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream().anyMatch(grantedAuthority -> "ROLE_ADMIN".equals(grantedAuthority.getAuthority()));
     }
 
     @DeleteMapping("/admin/events/{eventId}")

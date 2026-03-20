@@ -17,8 +17,10 @@ import one.theone.server.domain.freebie.entity.Freebie;
 import one.theone.server.domain.freebie.repository.FreebieRepository;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,10 +38,9 @@ public class EventService {
     private final CouponRepository couponRepository;
 
     @Transactional
+    @CacheEvict(value = "eventListCache", allEntries = true, cacheManager = "redisCacheManager")
     public EventCreateResponse createEvent(EventCreateRequest request) {
         EventDetail.validateDetails(request.details());
-        // TODO 사은품, 쿠폰 존재 여부 검증,, 사은품 재고, 쿠폰 만료일 검증
-
         Event event = Event.register(
                 request.name(),
                 request.startAt(),
@@ -62,6 +63,7 @@ public class EventService {
     }
 
     @Transactional
+    @CacheEvict(value = "eventListCache", allEntries = true, cacheManager = "redisCacheManager")
     public EventStatusUpdateResponse updateEventStatus(Long eventId, EventStatusUpdateRequest request) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
@@ -72,9 +74,13 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, Pageable pageable, Authentication authentication) {
-        boolean isAdmin = isAdmin(authentication);
-
+    @Cacheable(
+            value = "eventListCache",
+            key = "#isAdmin + ':' + #request.status() + ':' + #page + ':' + #size",
+            condition = "#request.startAt() == null && #request.endAt() == null",
+            cacheManager = "redisCacheManager"
+    )
+    public PageResponse<EventsGetResponse> getEvents(EventsGetRequest request, int page, int size, boolean isAdmin) {
         validateStatusAccess(request.status(), isAdmin);
 
         if (request.startAt() != null && request.endAt() != null && !request.endAt().isAfter(request.startAt())) {
@@ -82,13 +88,11 @@ public class EventService {
         }
         List<Event.EventStatus> statuses = cleanStatuses(request.status(), isAdmin);
 
-        return eventRepository.findEventsWithConditions(request, pageable, statuses, isAdmin);
+        return eventRepository.findEventsWithConditions(request, PageRequest.of(page, size), statuses, isAdmin);
     }
 
     @Transactional(readOnly = true)
-    public EventGetResponse getEvent(Long eventId, Authentication authentication) {
-        boolean isAdmin = isAdmin(authentication);
-
+    public EventGetResponse getEvent(Long eventId, boolean isAdmin) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
         );
@@ -98,6 +102,7 @@ public class EventService {
     }
 
     @Transactional
+    @CacheEvict(value = "eventListCache", allEntries = true, cacheManager = "redisCacheManager")
     public EventDeleteResponse deleteEvent(Long eventId) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new ServiceErrorException(EventExceptionEnum.ERR_EVENT_NOT_FOUND)
@@ -133,6 +138,7 @@ public class EventService {
 
     // 사은품 재고가 0이라면 이벤트 PAUSE 상태 변경
     @Transactional
+    @CacheEvict(value = "eventListCache", allEntries = true, cacheManager = "redisCacheManager")
     public void pauseEventIfFreebieSoldOut(Long freebieId) {
         // 사은품 재고가 있으면 계속 상태 유지
         Freebie freebie = freebieRepository.findById(freebieId).orElse(null);
@@ -152,6 +158,7 @@ public class EventService {
 
     // 쿠폰 가 0이라면 이벤트 PAUSE 상태 변경
     @Transactional
+    @CacheEvict(value = "eventListCache", allEntries = true, cacheManager = "redisCacheManager")
     public void pauseEventIfCouponSoldOut(Long couponId) {
         // 쿠폰 재고가 있으면 계속 상태 유지
         Coupon coupon = couponRepository.findById(couponId).orElse(null);
@@ -194,11 +201,6 @@ public class EventService {
                 yield order.getTotalAmount() >= detail.getMinPrice();
             }
         };
-    }
-
-    private boolean isAdmin(Authentication authentication) {
-        if (authentication == null) return false;
-        return authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     private void validateStatusAccess(Event.EventStatus status, boolean isAdmin) {

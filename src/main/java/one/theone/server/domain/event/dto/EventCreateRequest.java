@@ -16,7 +16,7 @@ public record EventCreateRequest(
         Event.EventType type,
 
         @NotNull(message = "이벤트 시작일은 필수입니다")
-        @FutureOrPresent(message = "이벤트 시작일은 현재 이후여야 합니다")
+        @FutureOrPresent(message = "이벤트 시작일은 현재일자보다 이후의 일자여야 합니다")
         LocalDateTime startAt,
 
         @NotNull(message = "이벤트 종료일은 필수입니다")

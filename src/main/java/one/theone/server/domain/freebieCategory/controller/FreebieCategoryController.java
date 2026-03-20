@@ -10,6 +10,7 @@ import one.theone.server.domain.freebieCategory.dto.request.FreebieCategoryDetai
 import one.theone.server.domain.freebieCategory.dto.request.FreebieCategoryUpdateRequest;
 import one.theone.server.domain.freebieCategory.dto.response.*;
 import one.theone.server.domain.freebieCategory.service.FreebieCategoryService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class FreebieCategoryController {
-
     private final FreebieCategoryService freebieCategoryService;
 
     @PostMapping("/freebie-categories")
@@ -69,8 +69,9 @@ public class FreebieCategoryController {
 
     @GetMapping("/freebie-categories")
     public ResponseEntity<BaseResponse<PageResponse<FreebieCategoriesGetResponse>>> getFreebieCategories(
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @RequestParam(defaultValue = "0") int page
+            , @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "사은품 카테고리 목록 조회 성공", freebieCategoryService.getFreebieCategories(pageable)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "사은품 카테고리 목록 조회 성공", freebieCategoryService.getFreebieCategories(PageRequest.of(page, size))));
     }
 }
