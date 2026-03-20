@@ -102,7 +102,6 @@ public class MemberService {
 
         // 5. 추천인 코드 입력 시 로그 기록 처리 (ID 직접 참조 방식)
         if (request.invitedCode() != null && !request.invitedCode().isBlank()) {
-            processRecommendation(savedMember.getId(), request.invitedCode());
             Member inviter = processRecommendation(savedMember.getId(), request.invitedCode());
             pointEarnPublisher.publish(new RedisPointEarnEvent(inviter.getId(), 500L, "추천인 보상"));
         }

@@ -8,6 +8,7 @@ import one.theone.server.domain.member.dto.MemberAddressResponse;
 import one.theone.server.domain.member.service.MemberAddressService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -63,6 +64,13 @@ public class MemberAddressController {
     }
 
     private Long getAuthenticatedMemberId() {
-        return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            return Long.parseLong(((UserDetails) principal).getUsername());
+        } else if (principal instanceof String) {
+            return Long.parseLong((String) principal);
+        }
+        throw new IllegalStateException("인증 정보가 올바르지 않습니다.");
     }
 }
