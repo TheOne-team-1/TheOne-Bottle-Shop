@@ -3,10 +3,13 @@ import { check, sleep } from 'k6';
 
 export const options = {
     stages: [
-        { duration: '30s', target: 10 },
-        { duration: '1m', target: 50 },
+        { duration: '30s', target: 50 },   // 점진적 증가 (Ramp Up)
         { duration: '30s', target: 100 },
-        { duration: '30s', target: 0 },
+        { duration: '30s', target: 200 },
+        { duration: '30s', target: 300 },
+        { duration: '30s', target: 500 },  // 포화지점 탐색
+        { duration: '1m',  target: 500 },  // 유지
+        { duration: '30s', target: 0 },    // Ramp Down
     ],
 };
 
@@ -16,5 +19,5 @@ export default function () {
         'status is 200': (r) => r.status === 200,
         'response time < 500ms': (r) => r.timings.duration < 500,
     });
-    sleep(1);
+    sleep(0.1);
 }
