@@ -12,7 +12,7 @@ public class PointOptimisticLockService {
 
     private final PointService pointService;
 
-    private static final int MAX_RETRY = 3;
+    private static final int MAX_RETRY = 5;
 
     private void executeWithOptimisticLock(Long memberId, Runnable task) {
         int retry = 0;
