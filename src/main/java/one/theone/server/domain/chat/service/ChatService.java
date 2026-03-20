@@ -69,6 +69,17 @@ public class ChatService {
         return ChatMessageResponse.from(saved);
     }
 
+    @Transactional(readOnly = true)
+    public List<ChatMessageResponse> getMessages(Long  memberId, Long roomId, Long lastMessageId) {
+        ChatRoom room = getRoomOrThrow(roomId);
+        validateRoomAccess(memberId, room);
+
+        return chatMessageRepository.findMessages(roomId, lastMessageId, 20)
+                .stream()
+                .map(ChatMessageResponse::from)
+                .toList();
+    }
+
     private ChatRoom getRoomOrThrow(Long roomId) {
         return chatRoomRepository.findById(roomId).orElseThrow(
                 () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
