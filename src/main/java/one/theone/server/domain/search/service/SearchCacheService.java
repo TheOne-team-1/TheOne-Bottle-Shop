@@ -22,7 +22,7 @@ public class SearchCacheService {
     @Cacheable(
             value = PRODUCT_SEARCH,
             key = "'keyword:' + #keyword + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize",
-            cacheManager = "localCacheManager")
+            cacheManager = "redisCacheManager")
     @Transactional(readOnly = true)
     public PageResponse<ProductSearchResponse> getOrCache(List<String> keywordMorphemes, String keyword, Pageable pageable) {
         return productRepository.findProductByKeyword(keywordMorphemes, keyword, pageable);
