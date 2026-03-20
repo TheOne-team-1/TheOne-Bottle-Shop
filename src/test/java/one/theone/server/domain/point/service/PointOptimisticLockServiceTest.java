@@ -112,7 +112,7 @@ public class PointOptimisticLockServiceTest {
         pointLogRepository.deleteAll();
         pointRepository.deleteAll();
         memberRepository.deleteAll();
-        pointUseDetailRepository.deleteAll();;
+        pointUseDetailRepository.deleteAll();
         orderIds.clear();
     }
 

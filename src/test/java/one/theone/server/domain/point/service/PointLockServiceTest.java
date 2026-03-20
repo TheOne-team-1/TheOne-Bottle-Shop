@@ -26,7 +26,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -113,7 +112,7 @@ public class PointLockServiceTest {
         pointLogRepository.deleteAll();
         pointRepository.deleteAll();
         memberRepository.deleteAll();
-        pointUseDetailRepository.deleteAll();;
+        pointUseDetailRepository.deleteAll();
         orderIds.clear();
     }
 
