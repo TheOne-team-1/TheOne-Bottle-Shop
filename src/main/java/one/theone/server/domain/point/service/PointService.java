@@ -22,7 +22,7 @@ import one.theone.server.domain.point.repository.PointUseDetailRepository;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.repository.OrderRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,9 +58,9 @@ public class PointService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<PointLogsGetResponse> getPointLogs(Long memberId, PointLogsGetRequest request, Pageable pageable) {
-        Page<PointLogsGetResponse> page = pointLogRepository.findPointLogs(memberId, request, pageable);
-        return PageResponse.register(page);
+    public PageResponse<PointLogsGetResponse> getPointLogs(Long memberId, PointLogsGetRequest request, int page, int size) {
+        Page<PointLogsGetResponse> pointLogs = pointLogRepository.findPointLogs(memberId, request, PageRequest.of(page, size));
+        return PageResponse.register(pointLogs);
     }
 
     @Transactional

@@ -15,7 +15,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,9 +49,9 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<AdminProductsGetResponse> getAdminProducts(AdminProductsGetRequest request, Pageable pageable) {
-        Page<AdminProductsGetResponse> page = productRepository.findAdminProductWithConditions(pageable, request);
-        return PageResponse.register(page);
+    public PageResponse<AdminProductsGetResponse> getAdminProducts(AdminProductsGetRequest request, int page, int size) {
+        Page<AdminProductsGetResponse> adminProducts = productRepository.findAdminProductWithConditions(PageRequest.of(page, size), request);
+        return PageResponse.register(adminProducts);
     }
 
     @CacheEvict(value = "productCache", allEntries = true)
