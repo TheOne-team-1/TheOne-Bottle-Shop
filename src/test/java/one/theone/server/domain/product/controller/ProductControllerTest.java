@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -84,7 +85,7 @@ class ProductControllerTest {
                         )
                 ))
         );
-        given(productService.getAdminProducts(any(), any())).willReturn(pageResponse);
+        given(productService.getAdminProducts(any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/admin/products")
@@ -175,7 +176,7 @@ class ProductControllerTest {
                         new ProductsGetResponse(1L, "테스트 상품", 10000L, Product.ProductStatus.SALES, BigDecimal.valueOf(4.5))
                 ))
         );
-        given(productService.getProducts(any(), any())).willReturn(pageResponse);
+        given(productService.getProducts(any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/products")

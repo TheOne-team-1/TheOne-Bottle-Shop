@@ -315,7 +315,7 @@ class CategoryServiceTest {
         given(categoryRepository.findAllCategories(pageable)).willReturn(new PageImpl<>(List.of(item)));
 
         // when
-        PageResponse<CategoriesGetResponse> result = categoryService.getCategories(pageable);
+        PageResponse<CategoriesGetResponse> result = categoryService.getCategories(0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);

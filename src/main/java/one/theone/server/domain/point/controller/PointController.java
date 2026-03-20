@@ -9,8 +9,6 @@ import one.theone.server.domain.point.dto.PointAdjustResponse;
 import one.theone.server.domain.point.dto.PointLogsGetRequest;
 import one.theone.server.domain.point.dto.PointLogsGetResponse;
 import one.theone.server.domain.point.service.PointService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,8 +33,9 @@ public class PointController {
     public ResponseEntity<BaseResponse<PageResponse<PointLogsGetResponse>>> getPointLogs(
             @AuthenticationPrincipal Long memberId,
             @ModelAttribute PointLogsGetRequest request,
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "포인트 내역 조회 성공", pointService.getPointLogs(memberId, request, pageable)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "포인트 내역 조회 성공", pointService.getPointLogs(memberId, request, page, size)));
     }
 }

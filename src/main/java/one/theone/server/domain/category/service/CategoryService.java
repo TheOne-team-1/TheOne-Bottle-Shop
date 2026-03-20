@@ -13,7 +13,7 @@ import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -146,11 +146,11 @@ public class CategoryService {
 
     @Cacheable(
             value = "categoryCache",
-            key = "'page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize"
+            key = "'page:' + #page + ':size:' + #size"
     )
     @Transactional(readOnly = true)
-    public PageResponse<CategoriesGetResponse> getCategories(Pageable pageable) {
-        Page<CategoriesGetResponse> page = categoryRepository.findAllCategories(pageable);
-        return PageResponse.register(page);
+    public PageResponse<CategoriesGetResponse> getCategories(int page, int size) {
+        Page<CategoriesGetResponse> categories = categoryRepository.findAllCategories(PageRequest.of(page, size));
+        return PageResponse.register(categories);
     }
 }

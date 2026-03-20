@@ -6,8 +6,6 @@ import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.category.dto.*;
 import one.theone.server.domain.category.service.CategoryService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -65,8 +63,9 @@ public class CategoryController {
 
     @GetMapping("/categories")
     public ResponseEntity<BaseResponse<PageResponse<CategoriesGetResponse>>> getCategories(
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "카테고리 목록 조회 성공", categoryService.getCategories(pageable)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "카테고리 목록 조회 성공", categoryService.getCategories(page, size)));
     }
 }

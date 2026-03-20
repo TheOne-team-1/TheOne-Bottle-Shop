@@ -27,6 +27,9 @@ public class Point extends BaseEntity {
     private Boolean deleted = Boolean.FALSE;
     private LocalDateTime deletedAt;
 
+    @Version
+    private Long version;
+
     public static Point register(Long memberId) {
         Point point = new Point();
 

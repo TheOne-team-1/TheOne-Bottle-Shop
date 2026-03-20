@@ -92,7 +92,7 @@ class ProductServiceTest {
                 .willReturn(new PageImpl<>(List.of(item)));
 
         // when
-        PageResponse<AdminProductsGetResponse> result = productService.getAdminProducts(request, pageable);
+        PageResponse<AdminProductsGetResponse> result = productService.getAdminProducts(request, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);
@@ -313,7 +313,7 @@ class ProductServiceTest {
                 .willReturn(new PageImpl<>(List.of(item)));
 
         // when
-        PageResponse<ProductsGetResponse> result = productService.getProducts(request, pageable);
+        PageResponse<ProductsGetResponse> result = productService.getProducts(request, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);
