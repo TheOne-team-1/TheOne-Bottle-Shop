@@ -8,6 +8,7 @@ import one.theone.server.domain.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
@@ -24,8 +25,14 @@ public class ChatMessageController {
             ChatMessageSendRequest request,
             Principal principal
     ) {
+        Authentication authentication = (Authentication) principal;
+
         Long senderId = Long.valueOf(principal.getName());
-        SenderType senderType = SenderType.CUSTOMER;
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+        SenderType senderType = isAdmin ? SenderType.MANAGER : SenderType.CUSTOMER;
 
         ChatMessageResponse response = chatService.saveMessage(senderId, senderType, roomId, request);
 
