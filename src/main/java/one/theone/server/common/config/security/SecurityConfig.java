@@ -61,6 +61,7 @@ public class SecurityConfig {
                         //region 상품 관련
                         .requestMatchers("/api/products/**", "/api/best/products").permitAll()
                         .requestMatchers("/api/admin/products/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/dummy/products").hasRole("ADMIN")
                         //endregion
 
                         //region 상품 카테고리 관련
