@@ -14,6 +14,7 @@ import one.theone.server.domain.review.repository.ReviewRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,12 +95,12 @@ public class ProductService {
     @Cacheable(
             value = "productCache",
             key = "'list:' + #request.sortType + ':' + #request.categoryIds + ':' + #request.abvMin + ':' + #request.abvMax + ':' + " +
-                    "#request.priceMin + ':' + #request.priceMax + ':' + #request.volumeMl + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+                    "#request.priceMin + ':' + #request.priceMax + ':' + #request.volumeMl + ':' + #page + ':' + #size"
     )
     @Transactional(readOnly = true)
-    public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, Pageable pageable) {
-        Page<ProductsGetResponse> page = productRepository.findProductWithConditions(pageable, request);
-        return PageResponse.register(page);
+    public PageResponse<ProductsGetResponse> getProducts(ProductsGetRequest request, int page, int size) {
+        Page<ProductsGetResponse> products = productRepository.findProductWithConditions(PageRequest.of(page, size), request);
+        return PageResponse.register(products);
     }
 
     @Transactional(readOnly = true)

@@ -69,9 +69,10 @@ public class ProductController {
     @GetMapping("/products")
     public ResponseEntity<BaseResponse<PageResponse<ProductsGetResponse>>> getProducts(
             @ModelAttribute ProductsGetRequest request,
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 목록 조회 성공", productService.getProducts(request, pageable)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 목록 조회 성공", productService.getProducts(request, page, size)));
     }
 
     @GetMapping("/products/{id}")
