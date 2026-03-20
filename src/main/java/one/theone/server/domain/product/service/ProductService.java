@@ -13,12 +13,15 @@ import one.theone.server.domain.review.dto.ReviewResponse;
 import one.theone.server.domain.review.repository.ReviewRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static one.theone.server.common.config.cache.CacheConfig.PRODUCT_SEARCH;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +57,10 @@ public class ProductService {
         return PageResponse.register(page);
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "productCache", allEntries = true),
+            @CacheEvict(value = PRODUCT_SEARCH, allEntries = true)
+    })
     @Transactional
     public ProductUpdateResponse updateProduct(Long id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
@@ -69,7 +75,10 @@ public class ProductService {
         return ProductUpdateResponse.from(product);
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "productCache", allEntries = true),
+            @CacheEvict(value = PRODUCT_SEARCH, allEntries = true)
+    })
     @Transactional
     public ProductStatusUpdateResponse updateProductStatus(Long id, ProductStatusUpdateRequest request) {
         Product product = productRepository.findById(id)
@@ -79,7 +88,10 @@ public class ProductService {
         return ProductStatusUpdateResponse.from(product);
     }
 
-    @CacheEvict(value = "productCache", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "productCache", allEntries = true),
+            @CacheEvict(value = PRODUCT_SEARCH, allEntries = true)
+    })
     @Transactional
     public ProductDeleteResponse deleteProduct(Long id) {
         Product product = productRepository.findById(id)
@@ -116,7 +128,10 @@ public class ProductService {
 
 
     // 재고 차감/복구 --------------------------------------------------------------------------------------
-    @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true")
+    @Caching(evict = {
+            @CacheEvict(value = "productCache", allEntries = true, condition = "#result == true"),
+            @CacheEvict(value = PRODUCT_SEARCH, allEntries = true, condition = "#result == true")
+    })
     @Transactional
     public boolean decreaseStock(Long id, Long quantity) {
         Product product = productRepository.findById(id)
