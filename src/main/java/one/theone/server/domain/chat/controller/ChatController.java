@@ -48,4 +48,14 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "전체 채팅방 목록 조회 성공", response));
     }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<BaseResponse<ChatRoomResponse>> getRoom(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long roomId
+    ) {
+        ChatRoomResponse response = chatService.getRoom(memberId, roomId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "채팅방 상세 조회 성공", response));
+    }
 }
