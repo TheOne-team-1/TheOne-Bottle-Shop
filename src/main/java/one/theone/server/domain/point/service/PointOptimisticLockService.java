@@ -14,7 +14,7 @@ public class PointOptimisticLockService {
 
     private static final int MAX_RETRY = 5;
 
-    private void executeWithOptimisticLock(Long memberId, Runnable task) {
+    private void executeWithOptimisticLock(Runnable task) {
         int retry = 0;
         while (retry < MAX_RETRY) {
             try {
@@ -34,18 +34,18 @@ public class PointOptimisticLockService {
     }
 
     public void usePoint(Long memberId, Long orderId) {
-        executeWithOptimisticLock(memberId, () -> pointService.usePoint(memberId, orderId));
+        executeWithOptimisticLock(() -> pointService.usePoint(memberId, orderId));
     }
 
     public void refundPoint(Long memberId, Long orderId) {
-        executeWithOptimisticLock(memberId, () -> pointService.refundPoint(memberId, orderId));
+        executeWithOptimisticLock(() -> pointService.refundPoint(memberId, orderId));
     }
 
     public void earnPoint(Long memberId, Long orderId, Long finalAmount) {
-        executeWithOptimisticLock(memberId, () -> pointService.earnPoint(memberId, orderId, finalAmount));
+        executeWithOptimisticLock(() -> pointService.earnPoint(memberId, orderId, finalAmount));
     }
 
     public void earnEventPoint(Long memberId, Long amount, String description) {
-        executeWithOptimisticLock(memberId, () -> pointService.earnEventPoint(memberId, amount, description));
+        executeWithOptimisticLock(() -> pointService.earnEventPoint(memberId, amount, description));
     }
 }

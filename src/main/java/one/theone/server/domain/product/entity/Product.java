@@ -54,6 +54,9 @@ public class Product extends BaseEntity {
     private Boolean deleted = Boolean.FALSE;
     private LocalDateTime deletedAt;
 
+    @Version
+    private Long version;
+
     public static Product register(
             String name,
             Long price,
