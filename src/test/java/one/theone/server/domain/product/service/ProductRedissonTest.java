@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-public class ProductStockServiceTest {
+public class ProductRedissonTest {
     // withExposedPorts(6379) : 랜덤 포트로 Redis 실행
     @Container
     static final RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
@@ -51,9 +52,6 @@ public class ProductStockServiceTest {
 
     @Autowired
     private ProductService productService;
-
-    @Autowired
-    private ProductStockService productStockService;
 
     @Autowired
     private ProductRepository productRepository;
@@ -98,13 +96,13 @@ public class ProductStockServiceTest {
         Product product = productRepository.findById(productId).orElseThrow();
 
         // 동시성 문제로 재고가 0이 아님
-        assertThat(product.getQuantity()).isNotEqualTo(0);
         System.out.println("락 없는 최종 재고 : " + product.getQuantity());
+        assertThat(product.getQuantity()).isNotEqualTo(0);
     }
 
     @Test
-    @DisplayName("WithRedisLock - decreaseStock")
-    void withSpinLock_decreaseStock() throws InterruptedException {
+    @DisplayName("WithRedissonLock - decreaseStock")
+    void withRedisson_decreaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -114,7 +112,7 @@ public class ProductStockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productStockService.decreaseStock(productId, 1L);
+                    productService.decreaseStockWithRedisson(productId, 1L);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -128,13 +126,13 @@ public class ProductStockServiceTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        System.out.println("재고 감소 - 최종 재고 : " + product.getQuantity());
+        System.out.println("Redisson 락 최종 재고 : " + product.getQuantity());
         assertThat(product.getQuantity()).isEqualTo(failCount.get());
     }
 
     @Test
-    @DisplayName("WithRedisLock - increaseStock")
-    void withSpinLock_increaseStock() throws InterruptedException {
+    @DisplayName("WithRedissonLock - increaseStock")
+    void withRedisson_increaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -144,8 +142,9 @@ public class ProductStockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productStockService.increaseStock(productId, 1L);
+                    productService.increaseStockWithRedisson(productId, 1L);
                 } catch (Exception e) {
+                    System.out.println("error: " + e.getClass().getName() + " - " + e.getMessage());
                     failCount.incrementAndGet();
                 } finally {
                     latch.countDown();
@@ -158,7 +157,8 @@ public class ProductStockServiceTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        System.out.println("재고 증가 - 최종 재고 : " + product.getQuantity());
+        System.out.println("Redisson 락 최종 재고 : " + product.getQuantity());
+        System.out.println("Redisson 락 failCount : " + failCount.get());
         assertThat(product.getQuantity()).isEqualTo(200L - failCount.get());
     }
 }

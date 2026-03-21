@@ -409,7 +409,7 @@ public class PaymentFacadeTest {
         // given - 재고 전부 소진
         Member member = createMember();
         Order order1 = createOrder(member.getId(), 500000L);
-        addOrderDetail(order1.getId(), commonProductId, "테스트 위스키", 50000L, 10);
+        addOrderDetail(order1.getId(), commonProductId, "testWhiskey", 50000L, 10);
         paymentFacade.createPayment(member.getId(),
                 new PaymentCreateRequest(order1.getId(), 500000L, 0L));
 
@@ -772,10 +772,10 @@ public class PaymentFacadeTest {
             final Long orderId = concurrentorderIdList.get(i);
             executorService.submit(() -> {
                 try {
-                    paymentFacade.createPayment(memberId,
-                            new PaymentCreateRequest(orderId, 50000L, 0L));
+                    paymentFacade.createPayment(memberId, new PaymentCreateRequest(orderId, 50000L, 0L));
                     successCount.getAndIncrement();
                 } catch (Exception e) {
+                    System.out.println("error: " + e.getClass().getName() + " - " + e.getMessage());
                     failCount.getAndIncrement();
                 } finally {
                     latch.countDown();

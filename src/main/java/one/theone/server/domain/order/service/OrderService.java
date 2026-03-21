@@ -1,6 +1,7 @@
 package one.theone.server.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.annotation.RedissonLock;
 import one.theone.server.common.config.cache.CacheConfig;
 import one.theone.server.common.config.redis.RedisLockService;
 import one.theone.server.common.exception.ServiceErrorException;
@@ -61,6 +62,15 @@ public class OrderService {
 
     @Caching(evict = {
             @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true)
+    })
+    @RedissonLock(key = "'order:direct:' + #memberId + ':' + #request.productId()")
+    public OrderCreateResponse createDirectOrderWithRedisson(Long memberId, OrderCreateDirectRequest request) {
+        return createDirectOrderInternal(memberId, request);
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
             @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true),
             @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
     })
@@ -68,6 +78,16 @@ public class OrderService {
     public OrderCreateResponse createOrderFromCart(Long memberId, OrderCreateFromCartRequest request) {
         String lockKey = "lock:order:cart:" + memberId;
         return executeWithLock(lockKey, () -> createOrderFromCartInternal(memberId, request));
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.ORDER_LIST_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ORDER_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CART_CACHE, key = "'member:' + #memberId")
+    })
+    @RedissonLock(key = "'order:cart:' + #memberId")
+    public OrderCreateResponse createOrderFromCartWithRedisson(Long memberId, OrderCreateFromCartRequest request) {
+        return createOrderFromCartInternal(memberId, request);
     }
 
     @Cacheable(

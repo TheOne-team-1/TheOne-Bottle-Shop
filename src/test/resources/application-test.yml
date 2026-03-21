@@ -6,6 +6,13 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 60000  # 60초
+      idle-timeout: 600000       # 10분
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
@@ -20,3 +27,6 @@ jwt:
     key: 27Wug/NdWwgE9OjNbLTyIQmjVBYbAmvfyBKaCHn3qqE=
     accessExpire: 1800000
     refreshExpire: 60480000
+
+admin:
+  signup-key: 27Wug/NdWwgE9OjNbLTyIQmjVBYbAmvfyBKaCHn3qqE=

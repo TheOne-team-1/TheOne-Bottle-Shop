@@ -1,6 +1,10 @@
-package one.theone.server.domain.product.service;
+package one.theone.server.domain.order.service;
 
 import com.redis.testcontainers.RedisContainer;
+import one.theone.server.domain.order.dto.request.OrderCreateDirectRequest;
+import one.theone.server.domain.order.dto.request.OrderCreateFromCartRequest;
+import one.theone.server.domain.order.repository.OrderDetailRepository;
+import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.point.event.PointEarnPublisher;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -30,13 +35,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
-public class ProductStockServiceTest {
-    // withExposedPorts(6379) : 랜덤 포트로 Redis 실행
-    @Container
-    static final RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
+public class OrderServiceRedissonTest {
 
-    // @DynamicPropertySource
-    // Docker가 랜덤 포트로 Redis를 실행하기 때문에 실행 후 포트를 Spring 설정에 주입
+    @Container
+    static final RedisContainer redisContainer =
+            new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
+
     @DynamicPropertySource
     static void redisProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", () -> redisContainer.getHost());
@@ -44,77 +48,62 @@ public class ProductStockServiceTest {
     }
 
     @MockitoBean
-    private KomoranCorrector komoranCorrector;  // 실제 인스턴스화 차단
+    private KomoranCorrector komoranCorrector;
 
     @MockitoBean
     private PointEarnPublisher pointEarnPublisher;
 
     @Autowired
-    private ProductService productService;
+    private OrderService orderService;
 
     @Autowired
-    private ProductStockService productStockService;
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
 
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     private Long productId;
 
     @BeforeEach
-    void beforeSetUp() {
-        // 재고 100개 상품 생성
-        Product product = productRepository.save(Product.register("test", 1000L, BigDecimal.valueOf(13.5), 1000, 1L, 100L));
+    void setUp() {
+        Product product = productRepository.save(
+                Product.register("testWhiskey", 100000L, BigDecimal.valueOf(75.0), 750, 1L, 100L)
+        );
         productId = product.getId();
     }
 
     @AfterEach
     void tearDown() {
+        orderDetailRepository.deleteAll();
+        orderRepository.deleteAll();
         productRepository.deleteAll();
     }
 
     @Test
-    @DisplayName("NO_LOCK")
-    void withoutLock() throws InterruptedException {
-        int threadCount = 100;
-
-        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-
-        CountDownLatch latch = new CountDownLatch(threadCount);
-
-        for (int i = 0; i < threadCount; i++) {
-            executorService.submit(() -> {
-                try {
-                    // 락 없는 재고 감소
-                    productService.decreaseStock(productId, 1L);
-                } finally {
-                    latch.countDown(); // 스레드 완료 카운트 감소
-                }
-            });
-        }
-
-        latch.await(); // 모든 스레드 완료까지 대기
-        executorService.shutdown();
-
-        Product product = productRepository.findById(productId).orElseThrow();
-
-        // 동시성 문제로 재고가 0이 아님
-        assertThat(product.getQuantity()).isNotEqualTo(0);
-        System.out.println("락 없는 최종 재고 : " + product.getQuantity());
-    }
-
-    @Test
-    @DisplayName("WithRedisLock - decreaseStock")
-    void withSpinLock_decreaseStock() throws InterruptedException {
-        int threadCount = 100;
+    @DisplayName("WithRedissonLock - 동시 바로구매 요청")
+    void createDirectOrderWithRedisson_concurrent() throws InterruptedException {
+        int threadCount = 10;
+        AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        for (int i = 0; i < threadCount; i++) {
+        for (int i = 1; i <= threadCount; i++) {
+            final long memberId = i;
             executorService.submit(() -> {
                 try {
-                    productStockService.decreaseStock(productId, 1L);
+                    OrderCreateDirectRequest request = new OrderCreateDirectRequest(
+                            productId, 1, null, 0L, "testAddress1", "testAddress2"
+                    );
+                    orderService.createDirectOrderWithRedisson(memberId, request);
+                    successCount.incrementAndGet();
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -126,16 +115,22 @@ public class ProductStockServiceTest {
         latch.await();
         executorService.shutdown();
 
-        Product product = productRepository.findById(productId).orElseThrow();
-
-        System.out.println("재고 감소 - 최종 재고 : " + product.getQuantity());
-        assertThat(product.getQuantity()).isEqualTo(failCount.get());
+        System.out.println("바로구매 동시 요청 - 성공 : " + successCount.get() + "/ 실패 : " + failCount.get());
+        assertThat(successCount.get() + failCount.get()).isEqualTo(threadCount);
+        assertThat(successCount.get()).isGreaterThanOrEqualTo(1);
     }
 
+
     @Test
-    @DisplayName("WithRedisLock - increaseStock")
-    void withSpinLock_increaseStock() throws InterruptedException {
-        int threadCount = 100;
+    @DisplayName("Redisson - 동시 장바구니 주문에서 첫 번째 요청만 성공하고 나머지는 실패")
+    void createOrderFromCartWithRedisson_concurrent_onlyOne() throws InterruptedException {
+        // 장바구니 설정
+        Long memberId = 2L;
+        String cartKey = "cart:member:" + memberId;
+        redisTemplate.opsForHash().put(cartKey, productId.toString(), 1);
+
+        int threadCount = 10;
+        AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failCount = new AtomicInteger(0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -144,7 +139,11 @@ public class ProductStockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productStockService.increaseStock(productId, 1L);
+                    OrderCreateFromCartRequest request = new OrderCreateFromCartRequest(
+                            null, 0L, "testAddress1", "testAddress2"
+                    );
+                    orderService.createOrderFromCartWithRedisson(memberId, request);
+                    successCount.incrementAndGet();
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -156,9 +155,8 @@ public class ProductStockServiceTest {
         latch.await();
         executorService.shutdown();
 
-        Product product = productRepository.findById(productId).orElseThrow();
-
-        System.out.println("재고 증가 - 최종 재고 : " + product.getQuantity());
-        assertThat(product.getQuantity()).isEqualTo(200L - failCount.get());
+        System.out.println("첫 주문만 - 성공 : " + successCount.get() + "/ 실패 : " + failCount.get());
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(failCount.get()).isEqualTo(threadCount - 1);
     }
 }

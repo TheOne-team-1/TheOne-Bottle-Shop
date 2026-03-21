@@ -11,6 +11,7 @@ import one.theone.server.domain.coupon.repository.MemberCouponRepository;
 import one.theone.server.domain.coupon.service.CouponIssueService;
 import one.theone.server.domain.event.entity.EventReward;
 import one.theone.server.domain.event.service.EventService;
+import one.theone.server.domain.freebie.service.FreebieService;
 import one.theone.server.domain.freebie.service.FreebieStockService;
 import one.theone.server.domain.order.entity.Order;
 import one.theone.server.domain.order.entity.OrderDetail;
@@ -19,6 +20,7 @@ import one.theone.server.domain.order.repository.OrderDetailRepository;
 import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.payment.dto.request.PaymentCreateRequest;
 import one.theone.server.domain.payment.dto.response.PaymentCreateResponse;
+import one.theone.server.domain.product.service.ProductService;
 import one.theone.server.domain.product.service.ProductStockService;
 import org.springframework.stereotype.Component;
 
@@ -37,8 +39,10 @@ import static one.theone.server.common.exception.domain.PaymentExceptionEnum.ERR
 @RequiredArgsConstructor
 public class PaymentFacade {
     private final PaymentService paymentService;
-    private final ProductStockService productStockService;
-    private final FreebieStockService freebieStockService;
+    //private final ProductStockService productStockService;
+    private final ProductService productService;
+    //private final FreebieStockService freebieStockService;
+    private final FreebieService freebieService;
     private final CouponIssueService couponIssueService;
     private final EventService eventService;
 
@@ -80,11 +84,13 @@ public class PaymentFacade {
         Map<Long, Long> preemptProductMap = new HashMap<>();
         try {
             for (OrderDetail detail : orderDetails) {
-                productStockService.decreaseStock(detail.getProductId(), detail.getQuantity().longValue());
+                //productStockService.decreaseStock(detail.getProductId(), detail.getQuantity().longValue());
+                productService.decreaseStockWithRedisson(detail.getProductId(), detail.getQuantity().longValue());
                 preemptProductMap.put(detail.getProductId(), detail.getQuantity().longValue());
             }
         } catch (Exception e) {
-            preemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
+            //preemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
+            preemptProductMap.forEach((productId, quantity) -> productService.increaseStockWithRedisson(productId, quantity));
             throw e;
         }
 
@@ -98,7 +104,8 @@ public class PaymentFacade {
             for (EventReward eventReward : eventRewardList) {
                 if (eventReward.getRewardType() == EventReward.EventRewardType.FREEBIE) {
                     // 사은품은 주문당 1개 지급으로 고정
-                    freebieStockService.decreaseStockWithLock(eventReward.getFreebieId(), 1L);
+                    //freebieStockService.decreaseStockWithLock(eventReward.getFreebieId(), 1L);
+                    freebieService.decreaseStockWithRedisson(eventReward.getFreebieId(), 1L);
                     preemptFreebieList.add(eventReward.getFreebieId());
                     eventService.pauseEventIfFreebieSoldOut(eventReward.getFreebieId()); // 사은품 재고가 떨어지면 Event 상태 Pause 변경
                 }
@@ -110,8 +117,10 @@ public class PaymentFacade {
                 }
             }
         } catch(Exception e){
-            preemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
-            preemptFreebieList.forEach((freebieId) -> freebieStockService.increaseStockWithLock(freebieId, 1L));
+            //preemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
+            preemptProductMap.forEach((productId, quantity) -> productService.increaseStockWithRedisson(productId, quantity));
+            //preemptFreebieList.forEach((freebieId) -> freebieStockService.increaseStockWithLock(freebieId, 1L));
+            preemptFreebieList.forEach((freebieId) -> freebieService.increaseStockWithRedisson(freebieId, 1L));
             preemptMemberCouponList.forEach(response -> couponIssueService.cancelIssuanceWithLock(response.couponId(), response.memberCouponId()));
             throw e;
         }
@@ -121,8 +130,10 @@ public class PaymentFacade {
             // 결제 생성과 포인트 차감 작업 부
             return paymentService.processPayment(order, eventRewardList);
         } catch (Exception e) {
-            preemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
-            preemptFreebieList.forEach(freebieId -> freebieStockService.increaseStockWithLock(freebieId, 1L));
+            //reemptProductMap.forEach((productId, quantity) -> productStockService.increaseStock(productId, quantity));
+            preemptProductMap.forEach((productId, quantity) -> productService.increaseStockWithRedisson(productId, quantity));
+            //preemptFreebieList.forEach(freebieId -> freebieStockService.increaseStockWithLock(freebieId, 1L));
+            preemptFreebieList.forEach((freebieId) -> freebieService.increaseStockWithRedisson(freebieId, 1L));
             preemptMemberCouponList.forEach(response -> couponIssueService.cancelIssuanceWithLock(response.couponId(), response.memberCouponId()));
             throw e;
         }
