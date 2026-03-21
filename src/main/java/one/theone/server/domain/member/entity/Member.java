@@ -1,16 +1,16 @@
 package one.theone.server.domain.member.entity;
 
+import lombok.*;
 import one.theone.server.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Builder
+@AllArgsConstructor
 @Entity
 @Table(name = "members")
 @Getter
