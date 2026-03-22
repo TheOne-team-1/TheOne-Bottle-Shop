@@ -1,24 +1,15 @@
 package one.theone.server.domain.product.service;
 
-import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.product.dto.BestProductsGetResponse;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
-import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,24 +17,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import one.theone.server.common.RedisTestContainer;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-public class ProductViewServiceTest {
+public class ProductViewServiceTestContainer extends RedisTestContainer {
 
-    @Container
-    static final RedisContainer redisContainer = new RedisContainer(
-            DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
 
-    @DynamicPropertySource
-    static void redisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
 
-    @MockitoBean
-    private KomoranCorrector komoranCorrector;  // 실제 인스턴스화 차단
 
     @Autowired
     private ProductViewService productViewService;

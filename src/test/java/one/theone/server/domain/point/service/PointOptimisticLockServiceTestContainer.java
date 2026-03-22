@@ -1,6 +1,5 @@
 package one.theone.server.domain.point.service;
 
-import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.repository.MemberRepository;
 import one.theone.server.domain.order.entity.Order;
@@ -11,20 +10,11 @@ import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.repository.PointLogRepository;
 import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
-import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,24 +25,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import one.theone.server.common.RedisTestContainer;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-public class PointOptimisticLockServiceTest {
+public class PointOptimisticLockServiceTestContainer extends RedisTestContainer {
 
-    @Container
-    static final RedisContainer redisContainer = new RedisContainer(
-            DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
 
-    @DynamicPropertySource
-    static void redisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
 
-    @MockitoBean
-    private KomoranCorrector komoranCorrector;  // 실제 인스턴스화 차단
 
     @Autowired
     private PointService pointService;

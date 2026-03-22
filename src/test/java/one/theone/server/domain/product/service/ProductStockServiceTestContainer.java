@@ -1,24 +1,12 @@
 package one.theone.server.domain.product.service;
 
-import com.redis.testcontainers.RedisContainer;
-import one.theone.server.domain.point.event.PointEarnPublisher;
 import one.theone.server.domain.product.entity.Product;
 import one.theone.server.domain.product.repository.ProductRepository;
-import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.util.concurrent.CountDownLatch;
@@ -27,31 +15,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import one.theone.server.common.RedisTestContainer;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-public class ProductRedissonTest {
-    // withExposedPorts(6379) : 랜덤 포트로 Redis 실행
-    @Container
-    static final RedisContainer redisContainer = new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
+public class ProductStockServiceTestContainer extends RedisTestContainer {
 
-    // @DynamicPropertySource
-    // Docker가 랜덤 포트로 Redis를 실행하기 때문에 실행 후 포트를 Spring 설정에 주입
-    @DynamicPropertySource
-    static void redisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
 
-    @MockitoBean
-    private KomoranCorrector komoranCorrector;  // 실제 인스턴스화 차단
 
-    @MockitoBean
-    private PointEarnPublisher pointEarnPublisher;
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private ProductStockService productStockService;
 
     @Autowired
     private ProductRepository productRepository;
@@ -96,13 +71,13 @@ public class ProductRedissonTest {
         Product product = productRepository.findById(productId).orElseThrow();
 
         // 동시성 문제로 재고가 0이 아님
-        System.out.println("락 없는 최종 재고 : " + product.getQuantity());
         assertThat(product.getQuantity()).isNotEqualTo(0);
+        System.out.println("락 없는 최종 재고 : " + product.getQuantity());
     }
 
     @Test
-    @DisplayName("WithRedissonLock - decreaseStock")
-    void withRedisson_decreaseStock() throws InterruptedException {
+    @DisplayName("WithRedisLock - decreaseStock")
+    void withSpinLock_decreaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -112,7 +87,7 @@ public class ProductRedissonTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productService.decreaseStockWithRedisson(productId, 1L);
+                    productStockService.decreaseStock(productId, 1L);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -126,13 +101,13 @@ public class ProductRedissonTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        System.out.println("Redisson 락 최종 재고 : " + product.getQuantity());
+        System.out.println("재고 감소 - 최종 재고 : " + product.getQuantity());
         assertThat(product.getQuantity()).isEqualTo(failCount.get());
     }
 
     @Test
-    @DisplayName("WithRedissonLock - increaseStock")
-    void withRedisson_increaseStock() throws InterruptedException {
+    @DisplayName("WithRedisLock - increaseStock")
+    void withSpinLock_increaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -142,9 +117,8 @@ public class ProductRedissonTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    productService.increaseStockWithRedisson(productId, 1L);
+                    productStockService.increaseStock(productId, 1L);
                 } catch (Exception e) {
-                    System.out.println("error: " + e.getClass().getName() + " - " + e.getMessage());
                     failCount.incrementAndGet();
                 } finally {
                     latch.countDown();
@@ -157,8 +131,7 @@ public class ProductRedissonTest {
 
         Product product = productRepository.findById(productId).orElseThrow();
 
-        System.out.println("Redisson 락 최종 재고 : " + product.getQuantity());
-        System.out.println("Redisson 락 failCount : " + failCount.get());
+        System.out.println("재고 증가 - 최종 재고 : " + product.getQuantity());
         assertThat(product.getQuantity()).isEqualTo(200L - failCount.get());
     }
 }
