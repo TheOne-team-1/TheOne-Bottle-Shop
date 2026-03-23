@@ -70,6 +70,19 @@ public class Member extends BaseEntity {
         member.deleted = false;
         return member;
     }
+    public static Member createSocial(String email, String name) {
+        Member member = new Member();
+        member.email = email;
+        member.passwd = "SOCIAL_LOGIN_" + UUID.randomUUID(); // 소셜 전용 더미 비번
+        member.name = name;
+        member.birthAt = "99991231"; // 소셜 가입자 기본값 (나중에 수정 가능하게)
+        member.role = UserRole.USER;
+        member.recommendCode = "SOCIAL_" + UUID.randomUUID().toString().substring(0, 6);
+        member.totalPayAmount = 0L;
+        member.grade = MemberGrade.BRONZE;
+        member.deleted = false;
+        return member;
+    }
     public void updatePassword(String encodedPassword) {
 
         this.passwd = encodedPassword;
