@@ -1,7 +1,6 @@
 package one.theone.server.common;
 
 import com.redis.testcontainers.RedisContainer;
-import one.theone.server.domain.point.event.PointEarnPublisher;
 import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -19,9 +18,6 @@ public abstract class RedisTestContainer {
 
     @MockitoBean
     KomoranCorrector komoranCorrector;
-
-    @MockitoBean
-    PointEarnPublisher pointEarnPublisher;
 
     // static 블록으로 JVM 전체에서 단 한 번만 컨테이너 기동, Singleton
     static final RedisContainer redisContainer;
