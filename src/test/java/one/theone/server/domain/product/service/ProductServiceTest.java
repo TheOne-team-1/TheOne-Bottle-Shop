@@ -331,7 +331,7 @@ class ProductServiceTest {
                 BigDecimal.valueOf(13.5), 750, 1L, 1L, 100L, BigDecimal.valueOf(4.5), 0L
         );
         List<ReviewResponse> top3Reviews = List.of(
-                new ReviewResponse(1L, 1L, "테스터", "테스트 상품", 5, "최고예요", LocalDateTime.now())
+                new ReviewResponse(1L, 1L, "테스터", "테스트 상품", 5, "최고예요", 0, 0, LocalDateTime.now())
         );
         given(productRepository.findProductById(productId)).willReturn(response);
         given(productViewService.getViewCount(productId)).willReturn(10L);
