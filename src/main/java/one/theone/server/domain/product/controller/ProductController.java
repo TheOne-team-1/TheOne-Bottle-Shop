@@ -6,10 +6,12 @@ import lombok.RequiredArgsConstructor;
 import one.theone.server.common.dto.BaseResponse;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.product.dto.*;
+import one.theone.server.domain.product.service.ProductRecentlyViewedService;
 import one.theone.server.domain.product.service.ProductService;
 import one.theone.server.domain.product.service.ProductViewService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +23,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductViewService productViewService;
+    private final ProductRecentlyViewedService productRecentlyViewedService;
 
     // 관리자 전용 -----------------------------------------------------------------------------------------
     @PostMapping("/admin/products")
@@ -77,17 +80,25 @@ public class ProductController {
     @GetMapping("/products/{id}")
     public ResponseEntity<BaseResponse<ProductGetResponse>> getProduct(
             @PathVariable Long id,
+            @AuthenticationPrincipal Long memberId,
             HttpServletRequest request
     ) {
         String clientIp = request.getHeader("X-Forwarded-For");
         if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
             clientIp = request.getRemoteAddr();
         }
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id, clientIp)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "상품 상세 조회 성공", productService.getProduct(id, clientIp, memberId)));
     }
 
     @GetMapping("/best/products")
     public ResponseEntity<BaseResponse<List<BestProductsGetResponse>>> getBestProducts() {
         return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "베스트 상품 조회 성공", productViewService.getBestProducts()));
+    }
+
+    @GetMapping("/recently-viewed/products")
+    public ResponseEntity<BaseResponse<List<RecentlyViewedProductsGetResponse>>> getRecentlyViewedProducts(
+            @AuthenticationPrincipal Long memberId
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "최근 본 상품 조회 성공", productRecentlyViewedService.getRecentlyViewed(memberId)));
     }
 }

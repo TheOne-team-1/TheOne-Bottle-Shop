@@ -33,6 +33,7 @@ public class ProductService {
     private final CategoryDetailRepository categoryDetailRepository;
     private final ProductViewService productViewService;
     private final ReviewRepository reviewRepository;
+    private final ProductRecentlyViewedService productRecentlyViewedService;
 
     // 관리자 전용 -----------------------------------------------------------------------------------------
     @Transactional
@@ -117,10 +118,14 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductGetResponse getProduct(Long id, String clientIp) {
+    public ProductGetResponse getProduct(Long id, String clientIp, Long memberId) {
         ProductGetResponse response = productRepository.findProductById(id);
         if (response == null) {
             throw new ServiceErrorException(ProductExceptionEnum.ERR_PRODUCT_NOT_FOUND);
+        }
+
+        if (memberId != null) {
+            productRecentlyViewedService.record(memberId, id);
         }
 
         productViewService.record(id, clientIp);
