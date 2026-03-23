@@ -4,6 +4,8 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.domain.chat.entity.ChatMessage;
+import one.theone.server.domain.chat.entity.QChatMessage;
+import one.theone.server.domain.chat.entity.SenderType;
 
 import java.util.List;
 
@@ -28,5 +30,22 @@ public class ChatMessageRepositoryImpl implements ChatMessageRepositoryCustom {
 
     private BooleanExpression ltMessageId(Long lastMessageId) {
         return lastMessageId != null ? chatMessage.id.lt(lastMessageId) : null;
+    }
+
+    @Override
+    public long countUnread(Long roomId, Long lastReadMessageId, SenderType senderType) {
+        QChatMessage message = QChatMessage.chatMessage;
+
+        Long count = queryFactory
+                .select(message.count())
+                .from(message)
+                .where(
+                        message.chatRoomId.eq(roomId),
+                        lastReadMessageId != null ? message.id.gt(lastReadMessageId) : null,
+                        message.senderType.eq(senderType),
+                        message.deleted.isFalse()
+                )
+                .fetchOne();
+        return count == null ? 0L : count;
     }
 }

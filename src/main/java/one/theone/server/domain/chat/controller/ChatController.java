@@ -43,9 +43,10 @@ public class ChatController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<List<ChatRoomResponse>>> getAdminRooms(
+            @AuthenticationPrincipal Long memberId,
             @RequestParam(required = false) ChatRoomStatus status
     ) {
-        List<ChatRoomResponse> response = chatService.getAdminRooms(status);
+        List<ChatRoomResponse> response = chatService.getAdminRooms(memberId, status);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "전체 채팅방 목록 조회 성공", response));
     }
@@ -90,5 +91,15 @@ public class ChatController {
         ChatRoomResponse response = chatService.assignManager(memberId, roomId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "관리자 배정 성공", response));
+    }
+
+    @PatchMapping("/{roomId}/read")
+    public ResponseEntity<BaseResponse<Void>> markAsRead(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long roomId
+    ) {
+        chatService.markAsRead(memberId, roomId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "채팅방 읽음 처리 성공", null));
     }
 }

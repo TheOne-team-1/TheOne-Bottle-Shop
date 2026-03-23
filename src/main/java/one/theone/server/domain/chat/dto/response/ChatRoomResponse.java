@@ -14,9 +14,10 @@ public record ChatRoomResponse(
         LocalDateTime lastMessageAt,
         LocalDateTime closedAt,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        long unreadCount
 ) {
-    public static ChatRoomResponse from(ChatRoom room) {
+    public static ChatRoomResponse from(ChatRoom room, long unreadCount) {
         return new ChatRoomResponse(
                 room.getId(),
                 room.getName(),
@@ -26,7 +27,12 @@ public record ChatRoomResponse(
                 room.getLastMessageAt(),
                 room.getClosedAt(),
                 room.getCreatedAt(),
-                room.getUpdatedAt()
+                room.getUpdatedAt(),
+                unreadCount
         );
+    }
+
+    public static ChatRoomResponse from(ChatRoom room) {
+        return from(room, 0L);
     }
 }

@@ -41,15 +41,15 @@ public class ChatService {
     public List<ChatRoomResponse> getMyRooms(Long customerId) {
         return chatRoomRepository.findMyRooms(customerId)
                 .stream()
-                .map(ChatRoomResponse::from)
+                .map(room -> ChatRoomResponse.from(room, getUnreadCount(customerId, room)))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ChatRoomResponse> getAdminRooms(ChatRoomStatus status) {
+    public List<ChatRoomResponse> getAdminRooms(Long memberId, ChatRoomStatus status) {
         return chatRoomRepository.findAdminRooms(status)
                 .stream()
-                .map(ChatRoomResponse::from)
+                .map(room -> ChatRoomResponse.from(room, getUnreadCount(memberId, room)))
                 .toList();
     }
 
@@ -57,7 +57,7 @@ public class ChatService {
     public ChatRoomResponse getRoom(Long memberId, Long roomId) {
         ChatRoom room = getRoomOrThrow(roomId);
         validateRoomAccess(memberId, room);
-        return ChatRoomResponse.from(room);
+        return ChatRoomResponse.from(room,  getUnreadCount(memberId, room));
     }
 
     @Transactional
@@ -74,7 +74,7 @@ public class ChatService {
         ChatMessage message = ChatMessage.createText(roomId,senderId, senderType, request.content());
         ChatMessage saved = chatMessageRepository.save(message);
 
-        room.updateLastMessageAt(saved.getCreatedAt());
+        room.updateLastMessage(saved.getId(), saved.getCreatedAt());
 
         return ChatMessageResponse.from(saved);
     }
@@ -140,6 +140,31 @@ public class ChatService {
         }
 
         return ChatRoomResponse.from(room);
+    }
+
+    @Transactional
+    public void markAsRead(Long memberId, Long roomId) {
+        ChatRoom room = getRoomOrThrow(roomId);
+        validateRoomAccess(memberId, room);
+
+        room.markRead(memberId);
+    }
+
+    @Transactional(readOnly = true)
+    public long getUnreadCount(Long memberId, ChatRoom room) {
+        Long lastReadId;
+
+        if (room.getCustomerId().equals(memberId)) {
+            lastReadId = room.getCustomerLastReadMessageId();
+            return chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.MANAGER);
+        }
+
+        if (room.getManagerId() != null && room.getManagerId().equals(memberId)) {
+            lastReadId = room.getManagerLastReadMesasgeId();
+            return chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.CUSTOMER);
+        }
+
+        return 0;
     }
 
     private void saveSystemMessage(ChatRoom room, String content) {
