@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -36,7 +35,7 @@ public class SearchRankingService {
     private static final int RANKING_LIMIT = 5;
 
     @Async("asyncExecutor")
-    @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "localCacheManager")
+    @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "redisCacheManager")
     public void record(String keyword, Long userId, String clientIp, String userAgent) {
         String lockKey = LOCK_PREFIX + keyword;
         String lockValue = null;
@@ -67,7 +66,7 @@ public class SearchRankingService {
         }
     }
 
-    @Cacheable(value = SEARCH_RANKING, key = "'ranking:top5'", cacheManager = "localCacheManager")
+    @Cacheable(value = SEARCH_RANKING, key = "'ranking:top5'", cacheManager = "redisCacheManager")
     public List<String> getKeywordRanking() {
         String rankingKey = getWeeklyRankingKey();
         Set<Object> keywords = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, RANKING_LIMIT-1);
