@@ -1,5 +1,6 @@
 services:
   db:
+    profiles: ["dev"]
     image: mysql:8.4.8
     container_name: mysql-the_one
     healthcheck:
@@ -11,6 +12,7 @@ services:
       the_one-network:
 
   redis:
+    profiles: ["dev"]
     image: redis:8.6.1
     container_name: redis-the_one
     networks:

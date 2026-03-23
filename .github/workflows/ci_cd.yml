@@ -1,0 +1,173 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:8.6.1
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 21 설정
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Gradle 캐시 설정
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Gradle 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: 빌드 및 테스트
+        run: ./gradlew build
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+  docker-publish:
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # main 에만 배포될 때 작동하게 함
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/the-one:latest
+
+  deploy:
+    needs: docker-publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: AWS 자격증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: EC2 배포
+        run: |
+          COMPOSE_B64=$(base64 -w 0 docker-compose.yml)
+          COMPOSE_PROD_B64=$(base64 -w 0 docker-compose.prod.yml)
+
+          cat > commands.json << EOF
+          {
+            "InstanceIds": ["${{ secrets.EC2_INSTANCE_ID }}"],
+            "DocumentName": "AWS-RunShellScript",
+            "Parameters": {
+              "commands": [
+                "echo '$COMPOSE_B64' | base64 -d > /home/ec2-user/docker-compose.yml",
+                "echo '$COMPOSE_PROD_B64' | base64 -d > /home/ec2-user/docker-compose.prod.yml",
+                "echo 'DB_HOST=${{ secrets.DB_HOST }}' > /home/ec2-user/.env.prod",
+                "echo 'DB_PORT=${{ secrets.DB_PORT }}' >> /home/ec2-user/.env.prod",
+                "echo 'DB_NAME=${{ secrets.DB_NAME }}' >> /home/ec2-user/.env.prod",
+                "echo 'DB_USER=${{ secrets.DB_USER }}' >> /home/ec2-user/.env.prod",
+                "echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> /home/ec2-user/.env.prod",
+                "echo 'REDIS_HOST=${{ secrets.ELASTI_CACHE_HOST }}' >> /home/ec2-user/.env.prod",
+                "echo 'REDIS_PORT=${{ secrets.ELASTI_CACHE_PORT }}' >> /home/ec2-user/.env.prod",
+                "echo 'JWT_KEY=${{ secrets.JWT_KEY }}' >> /home/ec2-user/.env.prod",
+                "echo 'ADMIN_SIGNUP_KEY=${{ secrets.ADMIN_SIGNUP_KEY }}' >> /home/ec2-user/.env.prod",
+                "cd /home/ec2-user && docker compose -f docker-compose.yml -f docker-compose.prod.yml pull",
+                "cd /home/ec2-user && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans"
+              ]
+            }
+          }
+          EOF
+
+          COMMAND_ID=$(aws ssm send-command \
+            --cli-input-json file://commands.json \
+            --query "Command.CommandId" \
+            --output text)
+
+          for i in $(seq 1 30); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+
+            if [ "$STATUS" = "Success" ]; then
+              echo "배포 성공"
+              break
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              echo "배포 실패: $STATUS"
+              exit 1
+            fi
+
+            echo "배포 중... ($STATUS)"
+            sleep 10
+          done
+
+      - name: 헬스체크
+        run: |
+          sleep 30
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["curl -f http://localhost:8080/actuator/health || exit 1"]' \
+            --query "Command.CommandId" \
+            --output text)
+
+          for i in $(seq 1 12); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+
+            if [ "$STATUS" = "Success" ]; then
+              echo "헬스체크 성공"
+              exit 0
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then
+              echo "헬스체크 실패"
+              exit 1
+            fi
+
+            sleep 10
+          done

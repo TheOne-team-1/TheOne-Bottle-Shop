@@ -1,0 +1,58 @@
+spring:
+  # DB
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+  # Flyway
+  flyway:
+    enabled: true
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# JWT
+jwt:
+  secret:
+    key: ${JWT_KEY}
+    accessExpire: 1800000
+    refreshExpire: 60480000
+
+admin:
+  signup-key: ${ADMIN_SIGNUP_KEY}
+
+logging:
+  level:
+    root: info
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: TheOne
+    version: 1.0.0
+    description: TheOne Bottle Shop V1 API

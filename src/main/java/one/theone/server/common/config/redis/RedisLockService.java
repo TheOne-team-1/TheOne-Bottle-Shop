@@ -18,7 +18,7 @@ public class RedisLockService {
 
     private final RedisLockRepository redisLockRepository;
 
-    private final ScheduledExecutorService watchDogExcutor = Executors.newScheduledThreadPool(8);
+    private final ScheduledExecutorService watchDogExecutor = Executors.newScheduledThreadPool(8);
 
     // 락 시도
     public String tryLock(String key, long waitTime, long leaseTime, TimeUnit unit)
@@ -39,7 +39,7 @@ public class RedisLockService {
 
     // WatchDog
     public ScheduledFuture<?> setWatchDog(String key, String lockValue, long leaseTime, TimeUnit unit) {
-        return watchDogExcutor.scheduleAtFixedRate(() -> redisLockRepository.setWatchDog(key, lockValue, leaseTime, unit)
+        return watchDogExecutor.scheduleAtFixedRate(() -> redisLockRepository.setWatchDog(key, lockValue, leaseTime, unit)
                 , WATCH_DOG_INCREMENT_TIME, WATCH_DOG_INCREMENT_TIME, TimeUnit.MILLISECONDS
         );
     }
