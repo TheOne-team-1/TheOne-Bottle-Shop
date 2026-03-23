@@ -3,5 +3,6 @@
 .github/
 .idea
 build/
+!build/libs/*.jar
 src/test/
 *.md
