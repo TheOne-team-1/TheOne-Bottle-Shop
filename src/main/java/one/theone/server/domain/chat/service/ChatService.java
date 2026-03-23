@@ -120,10 +120,10 @@ public class ChatService {
 
     @Transactional
     public ChatRoomResponse assignManager(Long memberId, Long roomId) {
-        ChatRoom room = getRoomOrThrow(roomId);
+        ChatRoom room = getRoomForUpdateOrThrow(roomId);
 
         if (room.getManagerId() != null && !room.getManagerId().equals(memberId)) {
-            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ALREADY_ASSIGNED);
         }
 
         boolean firstAssigned = room.getManagerId() == null;
@@ -167,5 +167,11 @@ public class ChatService {
         if (room.getManagerId() == null || !room.getManagerId().equals(memberId)) {
             throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
         }
+    }
+
+    private ChatRoom getRoomForUpdateOrThrow(Long roomId) {
+        return chatRoomRepository.findByIdForUpdate(roomId).orElseThrow(
+                () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND)
+        );
     }
 }
