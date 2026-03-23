@@ -1,6 +1,5 @@
 package one.theone.server.domain.payment.service;
 
-import com.redis.testcontainers.RedisContainer;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.domain.category.entity.Category;
 import one.theone.server.domain.category.entity.CategoryDetail;
@@ -37,13 +36,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -58,21 +50,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import one.theone.server.common.RedisTestContainer;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-public class PaymentFacadeTest {
+public class PaymentFacadeTestContainer extends RedisTestContainer {
 
-    @Container
-    static final RedisContainer redisContainer =
-            new RedisContainer(DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
 
-    @DynamicPropertySource
-    static void redisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
 
     @Autowired
     private PaymentFacade paymentFacade;

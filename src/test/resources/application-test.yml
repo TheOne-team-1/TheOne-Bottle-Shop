@@ -13,6 +13,11 @@ spring:
       connection-timeout: 60000  # 60초
       idle-timeout: 600000       # 10분
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
