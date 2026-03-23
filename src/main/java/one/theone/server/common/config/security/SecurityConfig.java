@@ -40,8 +40,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        //region 헬스 체크               
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        //endregion
+                                       
+                        //region 회원 관련
                         .requestMatchers("/api/signup", "/api/login", "/api/signup/admin","/login/oauth2/**", "/oauth2/redirect","/index.html", "/").permitAll()
-
+                        //endregion
+                                       
                         //region 쿠폰 관련
                         .requestMatchers("/api/admin/coupons/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/member/*/coupons/*/recall").hasRole("ADMIN")

@@ -2,7 +2,7 @@ spring:
   application:
     name: TheOne
   profiles:
-    active: dev
+    active: prod
 
   # JPA
   jpa:

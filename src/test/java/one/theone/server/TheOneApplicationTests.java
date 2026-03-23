@@ -5,6 +5,7 @@ import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -20,6 +21,9 @@ class TheOneApplicationTests {
 
     @MockitoBean
     private RedissonClient redissonClient;
+
+    @MockitoBean
+    private ClientRegistrationRepository clientRegistrationRepository;
 
     @Test
     void contextLoads() {

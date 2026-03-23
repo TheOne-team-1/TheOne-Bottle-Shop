@@ -3,6 +3,7 @@ package one.theone.server.common;
 import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -18,6 +19,9 @@ public abstract class RedisTestContainer {
 
     @MockitoBean
     KomoranCorrector komoranCorrector;
+
+    @MockitoBean
+    ClientRegistrationRepository clientRegistrationRepository;
 
     // static 블록으로 JVM 전체에서 단 한 번만 컨테이너 기동, Singleton
     static final RedisContainer redisContainer;
