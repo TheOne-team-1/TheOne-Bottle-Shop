@@ -102,4 +102,15 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(BaseResponse.success(HttpStatus.OK.name(), "채팅방 읽음 처리 성공", null));
     }
+
+    @PatchMapping("/{roomId}/messages/{messageId}/delete")
+    public ResponseEntity<BaseResponse<Void>> deleteMessage(
+            @AuthenticationPrincipal Long memberId,
+            @PathVariable Long roomId,
+            @PathVariable Long messageId
+    ) {
+        chatService.deleteMessage(memberId, roomId, messageId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(BaseResponse.success(HttpStatus.OK.name(), "채팅 메시지 삭제 성공", null));
+    }
 }

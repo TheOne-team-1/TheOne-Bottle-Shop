@@ -69,5 +69,6 @@ public class ChatMessage extends BaseEntity {
 
    public void delete() {
        this.deleted = true;
+       this.content = "삭제된 메시지입니다";
    }
 }

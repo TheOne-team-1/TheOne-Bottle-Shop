@@ -8,10 +8,7 @@ import one.theone.server.domain.chat.dto.request.ChatRoomCreateRequest;
 import one.theone.server.domain.chat.dto.request.ChatRoomStatusUpdateRequest;
 import one.theone.server.domain.chat.dto.response.ChatMessageResponse;
 import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
-import one.theone.server.domain.chat.entity.ChatMessage;
-import one.theone.server.domain.chat.entity.ChatRoom;
-import one.theone.server.domain.chat.entity.ChatRoomStatus;
-import one.theone.server.domain.chat.entity.SenderType;
+import one.theone.server.domain.chat.entity.*;
 import one.theone.server.domain.chat.repository.ChatMessageRepository;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
 import org.springframework.stereotype.Service;
@@ -165,6 +162,27 @@ public class ChatService {
         }
 
         return 0;
+    }
+
+    @Transactional
+    public void deleteMessage(Long memberId, Long roomId, Long messageId) {
+        ChatRoom room = getRoomOrThrow(roomId);
+        validateRoomAccess(memberId, room);
+
+        ChatMessage message = chatMessageRepository.findByIdAndChatRoomId(messageId, roomId)
+                .orElseThrow(() -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_MESSAGE_NOT_FOUND));
+
+        if (message.getMessageType() == MessageType.SYSTEM) {
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_SYSTEM_MESSAGE_DELETE_NOT_ALLOWED);
+        }
+
+        if (!message.getSenderId().equals(memberId)) {
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_MESSAGE_DELETE_FORBIDDEN);
+        }
+
+        if (!message.isDeleted()) {
+            message.delete();
+        }
     }
 
     private void saveSystemMessage(ChatRoom room, String content) {
