@@ -11,8 +11,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
-import java.security.Principal;
-
 @Controller
 @RequiredArgsConstructor
 public class ChatMessageController {
@@ -23,11 +21,13 @@ public class ChatMessageController {
     public void sendMessage(
             @DestinationVariable Long roomId,
             ChatMessageSendRequest request,
-            Principal principal
+            Authentication authentication
     ) {
-        Authentication authentication = (Authentication) principal;
+        if (authentication == null) {
+            throw new IllegalArgumentException("웹소켓 인증 정보가 없습니다");
+        }
 
-        Long senderId = Long.valueOf(principal.getName());
+        Long senderId = Long.valueOf(authentication.getName());
 
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
