@@ -156,7 +156,7 @@ public class ProductStockLockComparisonTestContainer extends RedisTestContainer 
 
     @Test
     @Order(4)
-    @DisplayName("WithRedisLock")
+    @DisplayName("WithSpinLock")
     void withSpinLock_decreaseStock() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
@@ -186,6 +186,41 @@ public class ProductStockLockComparisonTestContainer extends RedisTestContainer 
         Product product = productRepository.findById(productId).orElseThrow();
 
         assertThat(product.getQuantity()).isEqualTo(failCount.get());
-        System.out.printf("[분산락] 소요 시간: %dms, 최종 재고: %d, 실패: %d%n", time, product.getQuantity(), failCount.get());
+        System.out.printf("[분산락(Lettuce)] 소요 시간: %dms, 최종 재고: %d, 실패: %d%n", time, product.getQuantity(), failCount.get());
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("WithRedisson")
+    void withRedisson_decreaseStock() throws InterruptedException {
+        int threadCount = 100;
+        AtomicInteger failCount = new AtomicInteger(0);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        long start = System.currentTimeMillis();
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    productService.decreaseStockWithRedisson(productId, 1L);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        long time = System.currentTimeMillis() - start;
+
+        Product product = productRepository.findById(productId).orElseThrow();
+
+        assertThat(product.getQuantity()).isEqualTo(failCount.get());
+        System.out.printf("[분산락(Redisson)] 소요 시간: %dms, 최종 재고: %d, 실패: %d%n", time, product.getQuantity(), failCount.get());
     }
 }
