@@ -25,6 +25,7 @@ import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.entity.PointUseDetail;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
 import one.theone.server.domain.point.service.PointService;
+import one.theone.server.domain.product.service.ProductRecentlyViewedService;
 import one.theone.server.domain.product.service.ProductService;
 import one.theone.server.domain.product.service.ProductViewService;
 import one.theone.server.domain.refund.dto.request.RefundCreateRequest;
@@ -61,6 +62,7 @@ class RefundServiceTest extends PaymentAndRefundTestFixture {
     @Autowired private EventLogRepository eventLogRepository;
 
     @MockitoBean private ProductViewService productViewService;
+    @MockitoBean private ProductRecentlyViewedService productRecentlyViewedService;
 
     @AfterEach
     void tearDown() {
