@@ -1,6 +1,5 @@
 package one.theone.server.domain.chat.service;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.exception.ServiceErrorException;
 import one.theone.server.common.exception.domain.ChatExceptionEnum;
@@ -23,6 +22,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+    private static final Long SYSTEM_SENDER_ID = 0L;
+
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
@@ -30,6 +31,9 @@ public class ChatService {
     public ChatRoomResponse createRoom(Long customerId, ChatRoomCreateRequest request) {
         ChatRoom room = ChatRoom.create(request.name(), customerId);
         ChatRoom saved = chatRoomRepository.save(room);
+
+        saveSystemMessage(saved, "문의가 접수되었습니다");
+
         return ChatRoomResponse.from(saved);
     }
 
@@ -63,6 +67,10 @@ public class ChatService {
         ChatRoom room = getRoomOrThrow(roomId);
         validateRoomAccess(senderId, room);
 
+        if (room.getStatus() == ChatRoomStatus.COMPLETED) {
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ALREADY_COMPLETED);
+        }
+
         ChatMessage message = ChatMessage.createText(roomId,senderId, senderType, request.content());
         ChatMessage saved = chatMessageRepository.save(message);
 
@@ -87,9 +95,27 @@ public class ChatService {
         ChatRoom room = getRoomOrThrow(roomId);
         validateManagerOnly(memberId, room);
 
-        room.changeStatus(request.status());
+        ChatRoomStatus before = room.getStatus();
+        ChatRoomStatus after = request.status();
 
-        return ChatRoomResponse.from(room);
+        if (before == after) {
+            return ChatRoomResponse.from(room);
+        }
+
+        if (after == ChatRoomStatus.WAITING) {
+            room.unassignManager();
+            room.changeStatus(ChatRoomStatus.WAITING);
+            saveSystemMessage(room, "상담이 대기 상태로 변경되었습니다");
+            return ChatRoomResponse.from(room);
+        }
+
+        if (after == ChatRoomStatus.COMPLETED) {
+            room.changeStatus(ChatRoomStatus.COMPLETED);
+            saveSystemMessage(room, "상담이 종료되었습니다");
+            return ChatRoomResponse.from(room);
+        }
+
+        throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_STATUS_INVALID);
     }
 
     @Transactional
@@ -100,13 +126,27 @@ public class ChatService {
             throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
         }
 
+        boolean firstAssigned = room.getManagerId() == null;
+
         room.assignManager(memberId);
 
         if (room.getStatus() == ChatRoomStatus.WAITING) {
             room.changeStatus(ChatRoomStatus.IN_PROGRESS);
         }
 
+        if (firstAssigned) {
+            saveSystemMessage(room, "상담사가 배정되었습니다");
+            saveSystemMessage(room, "상담이 시작되었습니다");
+        }
+
         return ChatRoomResponse.from(room);
+    }
+
+    private void saveSystemMessage(ChatRoom room, String content) {
+        ChatMessage systemMessage = ChatMessage.createSystem(room.getId(), SYSTEM_SENDER_ID, content);
+        ChatMessage saved = chatMessageRepository.save(systemMessage);
+
+        room.updateLastMessageAt(saved.getCreatedAt());
     }
 
     private ChatRoom getRoomOrThrow(Long roomId) {

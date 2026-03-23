@@ -50,11 +50,18 @@ public class ChatRoom extends BaseEntity {
         this.managerId = managerId;
     }
 
+    public void unassignManager() {
+        this.managerId = null;
+    }
+
     public void changeStatus(ChatRoomStatus status) {
         this.status = status;
         if (status == ChatRoomStatus.COMPLETED) {
             this.closedAt = LocalDateTime.now();
+            return;
         }
+
+        this.closedAt = null;
     }
 
     public void updateLastMessageAt(LocalDateTime time) {

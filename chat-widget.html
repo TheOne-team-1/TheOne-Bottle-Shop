@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Widget Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #0f172a;
+            --surface: #ffffff;
+            --surface-2: #f8fafc;
+            --line: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'IBM Plex Sans KR', sans-serif;
+            background:
+                    radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 30%),
+                    linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 56px 20px 140px;
+        }
+
+        .hero {
+            background: rgba(255, 255, 255, 0.74);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            padding: 36px;
+        }
+
+        .hero h1 {
+            margin: 0 0 12px;
+            font-size: 36px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            margin-top: 28px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            padding: 22px;
+        }
+
+        .card h2 {
+            margin: 0 0 16px;
+            font-size: 18px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        input, textarea, select, button {
+            font: inherit;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px 14px;
+            outline: none;
+            background: white;
+            color: var(--text);
+        }
+
+        textarea {
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.16s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .list {
+            display: grid;
+            gap: 10px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        .room {
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            border-radius: 16px;
+            padding: 14px;
+            cursor: pointer;
+        }
+
+        .room.active {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        .room-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .room-meta {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .widget-toggle {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1000;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 0;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 18px 40px rgba(37, 99, 235, 0.35);
+            cursor: pointer;
+        }
+
+        .widget {
+            position: fixed;
+            right: 24px;
+            bottom: 100px;
+            width: min(380px, calc(100vw - 24px * 2));
+            height: min(680px, calc(100vh - 130px));
+            background: white;
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            opacity: 0;
+            transform: translateY(18px) scale(0.98);
+            pointer-events: none;
+            transition: all 0.22s ease;
+        }
+
+        .widget.open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .widget-header {
+            padding: 18px 18px 14px;
+            background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .widget-title {
+            margin: 0 0 6px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .widget-subtitle {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.82);
+        }
+
+        .widget-close {
+            border: 0;
+            background: rgba(255,255,255,0.14);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .widget-body {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+            background: #f8fafc;
+        }
+
+        .widget-status {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--line);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 7px 10px;
+            border: 1px solid var(--line);
+            background: white;
+            font-weight: 700;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .dot.connected {
+            background: var(--success);
+        }
+
+        .chat-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 82%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .message.me {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .bubble {
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 11px 13px;
+            line-height: 1.55;
+            font-size: 14px;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.me .bubble {
+            background: var(--primary);
+            color: white;
+            border-color: transparent;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.other .bubble {
+            border-bottom-left-radius: 6px;
+        }
+
+        .widget-empty {
+            margin: auto;
+            text-align: center;
+            color: var(--muted);
+            padding: 20px;
+        }
+
+        .widget-composer {
+            border-top: 1px solid var(--line);
+            background: white;
+            padding: 12px;
+        }
+
+        .widget-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .widget-input {
+            flex: 1;
+            min-height: 48px;
+            max-height: 140px;
+            resize: vertical;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px 14px;
+            outline: none;
+            background: #f8fafc;
+        }
+
+        .widget-send {
+            width: 90px;
+            height: 48px;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(8px);
+            opacity: 0;
+            pointer-events: none;
+            background: #0f172a;
+            color: white;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            transition: 0.2s ease;
+            z-index: 1100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 900px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .page {
+                padding-top: 24px;
+            }
+
+            .hero {
+                padding: 22px;
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .widget {
+                right: 12px;
+                bottom: 86px;
+                width: calc(100vw - 24px);
+                height: min(74vh, 680px);
+            }
+
+            .widget-toggle {
+                right: 12px;
+                bottom: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <section class="hero">
+        <h1>채팅 문의 Widget</h1>
+        <p>
+            우하단 버튼을 누르면 실제 서비스형 채팅 위젯이 열립니다.
+            아래 설정 패널에서 고객/관리자 토큰을 넣고 테스트하세요.
+        </p>
+
+        <div class="hero-grid">
+            <div class="card">
+                <h2>테스트 설정</h2>
+
+                <div class="field">
+                    <label for="roleSelect">사용자 유형</label>
+                    <select id="roleSelect">
+                        <option value="USER">일반 사용자</option>
+                        <option value="ADMIN">관리자</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="tokenInput">Access Token</label>
+                    <textarea id="tokenInput" placeholder="Bearer 없이 access token만 입력하세요."></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="roomNameInput">채팅방 생성명 (일반 사용자용)</label>
+                    <input id="roomNameInput" type="text" placeholder="예: 주문 취소 문의" />
+                </div>
+
+                <div class="button-row">
+                    <button class="btn btn-primary" id="connectBtn">Connect</button>
+                    <button class="btn btn-secondary" id="refreshRoomsBtn">방 목록</button>
+                    <button class="btn btn-primary" id="createRoomBtn">방 생성</button>
+                    <button class="btn btn-danger" id="disconnectBtn">Disconnect</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>채팅방 선택</h2>
+                <div class="list" id="roomList"></div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<button class="widget-toggle" id="widgetToggle">문의</button>
+
+<div class="widget" id="widget">
+    <div class="widget-header">
+        <div>
+            <h2 class="widget-title" id="widgetTitle">1:1 문의</h2>
+            <p class="widget-subtitle" id="widgetSubtitle">채팅방을 선택하면 상담을 시작할 수 있어요.</p>
+        </div>
+        <button class="widget-close" id="widgetClose">×</button>
+    </div>
+
+    <div class="widget-body">
+        <div class="widget-status">
+      <span class="badge">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">연결 대기중</span>
+      </span>
+            <span id="roomStatusText">room: -</span>
+        </div>
+
+        <div class="chat-list" id="chatList">
+            <div class="widget-empty" id="emptyState">
+                우하단 위젯을 열고 채팅방을 선택하면 메시지가 표시됩니다.
+            </div>
+        </div>
+
+        <div class="widget-composer">
+            <form class="widget-form" id="widgetForm">
+        <textarea
+                id="messageInput"
+                class="widget-input"
+                placeholder="메시지를 입력하세요"
+                disabled
+        ></textarea>
+                <button class="btn btn-primary widget-send" id="sendBtn" type="submit" disabled>
+                    전송
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_BASE = 'http://localhost:8080';
+    const WS_URL = 'ws://localhost:8080/ws';
+
+    const state = {
+        stompClient: null,
+        connected: false,
+        subscribed: false,
+        currentRoomId: null,
+        currentRoomName: null,
+        currentSubscription: null,
+        rooms: [],
+        roomMap: new Map(),
+        renderedMessageKeys: new Set(),
+        isComposing: false
+    };
+
+    const el = {
+        roleSelect: document.getElementById('roleSelect'),
+        tokenInput: document.getElementById('tokenInput'),
+        roomNameInput: document.getElementById('roomNameInput'),
+        roomList: document.getElementById('roomList'),
+        widgetToggle: document.getElementById('widgetToggle'),
+        widget: document.getElementById('widget'),
+        widgetClose: document.getElementById('widgetClose'),
+        widgetTitle: document.getElementById('widgetTitle'),
+        widgetSubtitle: document.getElementById('widgetSubtitle'),
+        statusDot: document.getElementById('statusDot'),
+        statusText: document.getElementById('statusText'),
+        roomStatusText: document.getElementById('roomStatusText'),
+        chatList: document.getElementById('chatList'),
+        emptyState: document.getElementById('emptyState'),
+        messageInput: document.getElementById('messageInput'),
+        sendBtn: document.getElementById('sendBtn'),
+        widgetForm: document.getElementById('widgetForm'),
+        connectBtn: document.getElementById('connectBtn'),
+        refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
+        createRoomBtn: document.getElementById('createRoomBtn'),
+        disconnectBtn: document.getElementById('disconnectBtn'),
+        toast: document.getElementById('toast')
+    };
+
+    function showToast(message, isError = false) {
+        el.toast.textContent = message;
+        el.toast.style.background = isError ? '#7f1d1d' : '#0f172a';
+        el.toast.classList.add('show');
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => {
+            el.toast.classList.remove('show');
+        }, 2200);
+    }
+
+    function log(message) {
+        console.log(`[Widget] ${message}`);
+    }
+
+    function unwrapResponse(json) {
+        if (json && typeof json === 'object' && 'data' in json) return json.data;
+        return json;
+    }
+
+    function getRole() {
+        return el.roleSelect.value;
+    }
+
+    function getTokenOrThrow() {
+        const raw = el.tokenInput.value.trim();
+        if (!raw) throw new Error('토큰을 입력해주세요.');
+        return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
+    }
+
+    function buildMessageKey(data) {
+        return [
+            data.messageId ?? '',
+            data.senderId ?? '',
+            data.senderType ?? '',
+            data.createdAt ?? '',
+            data.content ?? ''
+        ].join('|');
+    }
+
+    function isMyMessage(data) {
+        const role = getRole();
+        return (role === 'USER' && data.senderType === 'CUSTOMER')
+            || (role === 'ADMIN' && data.senderType === 'MANAGER');
+    }
+
+    function buildSenderLabel(data) {
+        return data.senderType === 'MANAGER'
+            ? `상담사 #${data.senderId}`
+            : `고객 #${data.senderId}`;
+    }
+
+    function formatTime(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function updateStatusUI() {
+        if (state.connected) {
+            el.statusDot.classList.add('connected');
+            el.statusText.textContent = `${getRole()} 연결됨`;
+        } else {
+            el.statusDot.classList.remove('connected');
+            el.statusText.textContent = '연결 대기중';
+        }
+
+        el.roomStatusText.textContent = state.currentRoomId
+            ? `room: ${state.currentRoomId}${state.subscribed ? ' · 구독중' : ''}`
+            : 'room: -';
+
+        const enabled = state.connected && state.subscribed && !!state.currentRoomId;
+        el.messageInput.disabled = !enabled;
+        el.sendBtn.disabled = !enabled;
+    }
+
+    function clearMessages(message = '채팅방을 선택해주세요.') {
+        state.renderedMessageKeys.clear();
+        el.chatList.innerHTML = `<div class="widget-empty" id="emptyState">${escapeHtml(message)}</div>`;
+    }
+
+    function removeEmptyState() {
+        const empty = document.getElementById('emptyState');
+        if (empty) empty.remove();
+    }
+
+    function appendMessage(data) {
+        const key = buildMessageKey(data);
+        if (state.renderedMessageKeys.has(key)) return;
+        state.renderedMessageKeys.add(key);
+
+        removeEmptyState();
+
+        const mine = isMyMessage(data);
+        const div = document.createElement('div');
+        div.className = `message ${mine ? 'me' : 'other'}`;
+        div.innerHTML = `
+      <div class="message-meta">${escapeHtml(buildSenderLabel(data))} · ${escapeHtml(formatTime(data.createdAt))}</div>
+      <div class="bubble">${escapeHtml(data.content)}</div>
+    `;
+        el.chatList.appendChild(div);
+        el.chatList.scrollTop = el.chatList.scrollHeight;
+    }
+
+    async function requestJson(url, options = {}) {
+        const token = getTokenOrThrow();
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                Authorization: token,
+                ...(options.headers || {})
+            }
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`${response.status} ${text || '요청 실패'}`);
+        }
+
+        if (response.status === 204) return null;
+        return response.json();
+    }
+
+    function renderRooms() {
+        if (!state.rooms.length) {
+            el.roomList.innerHTML = `<div class="room"><div class="room-title">채팅방이 없습니다</div><div class="room-meta">생성 후 새로고침하세요.</div></div>`;
+            return;
+        }
+
+        el.roomList.innerHTML = state.rooms.map(room => {
+            const roomId = Number(room.roomId ?? room.id);
+            const active = Number(state.currentRoomId) === roomId ? 'active' : '';
+            return `
+        <div class="room ${active}" data-room-id="${roomId}">
+          <div class="room-title">${escapeHtml(room.name ?? `room-${roomId}`)}</div>
+          <div class="room-meta">
+            roomId: ${roomId}<br>
+            status: ${room.status ?? '-'}<br>
+            customerId: ${room.customerId ?? '-'}<br>
+            managerId: ${room.managerId ?? '-'}
+          </div>
+        </div>
+      `;
+        }).join('');
+
+        el.roomList.querySelectorAll('.room[data-room-id]').forEach(node => {
+            node.addEventListener('click', async () => {
+                const roomId = Number(node.dataset.roomId);
+                const room = state.roomMap.get(roomId);
+                try {
+                    await selectRoom(room);
+                } catch (e) {
+                    showToast(e.message, true);
+                }
+            });
+        });
+    }
+
+    async function loadRooms() {
+        const role = getRole();
+        const url = role === 'ADMIN'
+            ? `${API_BASE}/api/chat/rooms`
+            : `${API_BASE}/api/chat/rooms/me`;
+
+        const json = await requestJson(url, { method: 'GET' });
+        const rooms = unwrapResponse(json) || [];
+        state.rooms = rooms;
+        state.roomMap = new Map(rooms.map(room => [Number(room.roomId ?? room.id), room]));
+        renderRooms();
+        showToast(`채팅방 ${rooms.length}개 로드 완료`);
+    }
+
+    function disconnectSubscription() {
+        if (state.currentSubscription) {
+            try {
+                state.currentSubscription.unsubscribe();
+            } catch (e) {}
+            state.currentSubscription = null;
+        }
+        state.subscribed = false;
+        updateStatusUI();
+    }
+
+    function connectWebSocket() {
+        if (state.connected && state.stompClient) {
+            showToast('이미 연결되어 있습니다.');
+            return;
+        }
+
+        const token = getTokenOrThrow();
+        const socket = new WebSocket(WS_URL);
+        const client = Stomp.over(socket);
+        client.debug = () => {};
+
+        client.connect(
+            { Authorization: token },
+            async () => {
+                state.stompClient = client;
+                state.connected = true;
+                updateStatusUI();
+                showToast('WebSocket 연결 성공');
+
+                if (state.currentRoomId) {
+                    await subscribeCurrentRoom();
+                }
+            },
+            (error) => {
+                state.connected = false;
+                state.subscribed = false;
+                updateStatusUI();
+                log(JSON.stringify(error));
+                showToast('WebSocket 연결 실패', true);
+            }
+        );
+    }
+
+    function disconnectWebSocket() {
+        disconnectSubscription();
+        if (state.stompClient) {
+            state.stompClient.disconnect(() => {
+                state.connected = false;
+                state.stompClient = null;
+                updateStatusUI();
+                showToast('연결 종료');
+            });
+        } else {
+            state.connected = false;
+            updateStatusUI();
+        }
+    }
+
+    async function subscribeCurrentRoom() {
+        if (!state.connected || !state.stompClient) {
+            throw new Error('먼저 Connect를 해주세요.');
+        }
+        if (!state.currentRoomId) {
+            throw new Error('먼저 채팅방을 선택해주세요.');
+        }
+
+        disconnectSubscription();
+
+        state.currentSubscription = state.stompClient.subscribe(
+            `/sub/chat/rooms/${state.currentRoomId}`,
+            (message) => {
+                const data = JSON.parse(message.body);
+                appendMessage(data);
+            }
+        );
+
+        state.subscribed = true;
+        updateStatusUI();
+    }
+
+    async function loadHistory() {
+        if (!state.currentRoomId) {
+            throw new Error('채팅방을 선택해주세요.');
+        }
+
+        const json = await requestJson(`${API_BASE}/api/chat/rooms/${state.currentRoomId}/messages`, {
+            method: 'GET'
+        });
+
+        const messages = unwrapResponse(json) || [];
+        clearMessages('아직 메시지가 없습니다.');
+        [...messages].reverse().forEach(appendMessage);
+    }
+
+    async function selectRoom(room) {
+        if (!room) return;
+
+        state.currentRoomId = Number(room.roomId ?? room.id);
+        state.currentRoomName = room.name ?? `room-${state.currentRoomId}`;
+        el.widgetTitle.textContent = state.currentRoomName;
+        el.widgetSubtitle.textContent = `roomId=${state.currentRoomId} · 고객 ↔ 상담사 실시간 채팅`;
+        renderRooms();
+        clearMessages('메시지를 불러오는 중입니다...');
+
+        if (state.connected) {
+            await subscribeCurrentRoom();
+        } else {
+            state.subscribed = false;
+            updateStatusUI();
+        }
+
+        await loadHistory();
+        updateStatusUI();
+        el.widget.classList.add('open');
+    }
+
+    async function createRoom() {
+        if (getRole() !== 'USER') {
+            throw new Error('채팅방 생성은 일반 사용자만 가능합니다.');
+        }
+
+        const name = el.roomNameInput.value.trim();
+        if (!name) {
+            throw new Error('채팅방 이름을 입력해주세요.');
+        }
+
+        const json = await requestJson(`${API_BASE}/api/chat/rooms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+
+        const room = unwrapResponse(json);
+        el.roomNameInput.value = '';
+        await loadRooms();
+        const nextRoom = state.roomMap.get(Number(room.roomId));
+        if (nextRoom) await selectRoom(nextRoom);
+        showToast('채팅방 생성 완료');
+    }
+
+    function sendMessage(event) {
+        event.preventDefault();
+
+        if (!state.connected || !state.stompClient) {
+            showToast('먼저 Connect를 해주세요.', true);
+            return;
+        }
+
+        if (!state.subscribed || !state.currentRoomId) {
+            showToast('채팅방 구독 상태를 확인해주세요.', true);
+            return;
+        }
+
+        const content = el.messageInput.value.trim();
+        if (!content) return;
+
+        state.stompClient.send(
+            `/pub/chat/rooms/${state.currentRoomId}`,
+            {},
+            JSON.stringify({ content })
+        );
+
+        el.messageInput.value = '';
+        el.messageInput.focus();
+    }
+
+    function bindEvents() {
+        el.widgetToggle.addEventListener('click', () => {
+            el.widget.classList.toggle('open');
+        });
+
+        el.widgetClose.addEventListener('click', () => {
+            el.widget.classList.remove('open');
+        });
+
+        el.connectBtn.addEventListener('click', () => {
+            try {
+                connectWebSocket();
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        });
+
+        el.refreshRoomsBtn.addEventListener('click', async () => {
+            try {
+                await loadRooms();
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        });
+
+        el.createRoomBtn.addEventListener('click', async () => {
+            try {
+                await createRoom();
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        });
+
+        el.disconnectBtn.addEventListener('click', () => {
+            disconnectWebSocket();
+        });
+
+        el.widgetForm.addEventListener('submit', sendMessage);
+
+        el.messageInput.addEventListener('compositionstart', () => {
+            state.isComposing = true;
+        });
+
+        el.messageInput.addEventListener('compositionend', () => {
+            state.isComposing = false;
+        });
+
+        el.messageInput.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            if (e.shiftKey) return;
+
+            if (state.isComposing || e.isComposing) {
+                return;
+            }
+
+            e.preventDefault();
+            el.widgetForm.requestSubmit();
+        });
+    }
+
+    function init() {
+        bindEvents();
+        clearMessages();
+        updateStatusUI();
+    }
+
+    init();
+</script>
+</body>
+</html>
