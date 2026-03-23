@@ -36,6 +36,7 @@ class ProductServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private CategoryDetailRepository categoryDetailRepository;
     @Mock private ProductViewService productViewService;
+    @Mock private ProductRecentlyViewedService productRecentlyViewedService;
     @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks private ProductService productService;
@@ -337,13 +338,14 @@ class ProductServiceTest {
         given(reviewRepository.findTop3ByProductIdAndLikes(productId)).willReturn(top3Reviews);
 
         // when
-        ProductGetResponse result = productService.getProduct(productId, "127.0.0.1");
+        ProductGetResponse result = productService.getProduct(productId, "127.0.0.1", 1L);
 
         // then
         assertThat(result.viewCount()).isEqualTo(10L);
         assertThat(result.top3Reviews()).hasSize(1);
         assertThat(result.top3Reviews().get(0).memberName()).isEqualTo("테스터");
         verify(productViewService).record(productId, "127.0.0.1");
+        verify(productRecentlyViewedService).record(1L, productId);
     }
 
     @Test
@@ -353,7 +355,7 @@ class ProductServiceTest {
         given(productRepository.findProductById(any())).willReturn(null);
 
         // when & then
-        assertThatThrownBy(() -> productService.getProduct(999L, "127.0.0.1"))
+        assertThatThrownBy(() -> productService.getProduct(999L, "127.0.0.1", 1L))
                 .isInstanceOf(ServiceErrorException.class)
                 .hasMessage("상품을 찾을 수 없습니다");
     }
