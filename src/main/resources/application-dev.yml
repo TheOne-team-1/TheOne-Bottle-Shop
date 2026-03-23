@@ -15,11 +15,25 @@ spring:
   # JPA
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
 
 # JWT
 jwt:
@@ -27,6 +41,9 @@ jwt:
     key: ${DEV_JWT_KEY}
     accessExpire: 1800000
     refreshExpire: 60480000
+
+admin:
+  signup-key: ${DEV_ADMIN_SIGNUP_KEY}
 
 logging:
   level:

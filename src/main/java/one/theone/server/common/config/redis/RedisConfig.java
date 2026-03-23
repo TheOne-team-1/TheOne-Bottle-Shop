@@ -3,6 +3,7 @@ package one.theone.server.common.config.redis;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -13,6 +14,11 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+import static one.theone.server.common.config.cache.CacheConfig.PRODUCT_SEARCH;
+import static one.theone.server.common.config.cache.CacheConfig.SEARCH_RANKING;
 
 @Configuration
 public class RedisConfig {
@@ -28,7 +34,8 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisCacheManager cacheManager() {
+    @Primary
+    public RedisCacheManager redisCacheManager() {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
                 .serializeValuesWith(
@@ -37,12 +44,24 @@ public class RedisConfig {
                 );
 
         // 캐시별 TTL 개별 설정
-        //Map<String, RedisCacheConfiguration> configs = new HashMap<>();
-        //configs.put("products", defaultConfig.entryTtl(Duration.ofHours(1)));
+        Map<String, RedisCacheConfiguration> configs = new HashMap<>();
+
+        //region 상품 관련 캐싱
+        configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        configs.put("categoryCache", defaultConfig.entryTtl(Duration.ofHours(1)));
+        configs.put(PRODUCT_SEARCH, defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        //endregion
+
+        //region 검색어 관련 캐싱
+        configs.put(SEARCH_RANKING, defaultConfig.entryTtl(Duration.ofMinutes(10)));
+
+        //region 이벤트 관련 캐싱
+        configs.put("eventListCache", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        //endregion
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)
-                //.withInitialCacheConfigurations(configs)
+                .withInitialCacheConfigurations(configs)
                 .build();
     }
 

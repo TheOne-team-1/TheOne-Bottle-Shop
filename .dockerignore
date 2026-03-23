@@ -1,0 +1,7 @@
+.gradle/
+.git/
+.github/
+.idea
+build/
+src/test/
+*.md
