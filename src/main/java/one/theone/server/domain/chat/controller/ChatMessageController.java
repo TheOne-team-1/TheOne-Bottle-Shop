@@ -1,6 +1,8 @@
 package one.theone.server.domain.chat.controller;
 
 import lombok.RequiredArgsConstructor;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.ChatExceptionEnum;
 import one.theone.server.domain.chat.dto.request.ChatMessageSendRequest;
 import one.theone.server.domain.chat.dto.response.ChatMessageResponse;
 import one.theone.server.domain.chat.entity.SenderType;
@@ -24,7 +26,7 @@ public class ChatMessageController {
             Authentication authentication
     ) {
         if (authentication == null) {
-            throw new IllegalArgumentException("웹소켓 인증 정보가 없습니다");
+            throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_INFO_INVALID);
         }
 
         Long senderId = Long.valueOf(authentication.getName());

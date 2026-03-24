@@ -2,6 +2,8 @@ package one.theone.server.common.config.websocket;
 
 import lombok.RequiredArgsConstructor;
 import one.theone.server.common.config.security.JwtProvider;
+import one.theone.server.common.exception.ServiceErrorException;
+import one.theone.server.common.exception.domain.ChatExceptionEnum;
 import one.theone.server.domain.chat.entity.ChatRoom;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
 import org.jspecify.annotations.NonNull;
@@ -40,17 +42,17 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             System.out.println("CONNECT Authorization = " + bearerToken);
 
             if (bearerToken == null || bearerToken.isBlank()) {
-                throw new IllegalArgumentException("웹소켓 인증 토큰이 없습니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_MISSING);
             }
 
             if (!bearerToken.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("웹소켓 인증 토큰 형식이 올바르지 않습니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_FORMAT_INVALID);
             }
 
             String token = bearerToken.substring(7);
 
             if (!jwtProvider.validateToken(token)) {
-                throw new IllegalArgumentException("유효하지 않은 웹소켓 인증 토큰입니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_INVALID);
             }
 
             Long memberId = jwtProvider.getMemberId(token);
@@ -59,7 +61,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             System.out.println("CONNECT Member ID = " + memberId + ", role = " + role);
 
             if (memberId == null || role == null || role.isBlank()) {
-                throw new IllegalArgumentException("웹소켓 인증 정보가 올바르지 않습니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_INFO_INVALID);
             }
 
             List<SimpleGrantedAuthority> authorities =
@@ -80,7 +82,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             System.out.println("SUBSCRIBE destination = " + destination);
 
             if (principal == null || destination == null || destination.isBlank()) {
-                throw new IllegalArgumentException("웹소켓 구독 정보가 올바르지 않습니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_SUBSCRIBE_INVALID);
             }
 
             if (destination.startsWith("/sub/chat/rooms/")) {
@@ -88,13 +90,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 Long roomId = extractRoomId(destination, "/sub/chat/rooms/");
 
                 ChatRoom room = chatRoomRepository.findById(roomId)
-                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
+                        .orElseThrow(() -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
 
                 boolean isCustomer = room.getCustomerId().equals(memberId);
                 boolean isManager = room.getManagerId() != null && room.getManagerId().equals(memberId);
 
                 if (!isCustomer && !isManager) {
-                    throw new IllegalArgumentException("해당 채팅방 구독 권한이 없습니다.");
+                    throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
                 }
             }
         }
@@ -107,7 +109,7 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             System.out.println("SEND destination = " + destination);
 
             if (principal == null || destination == null || destination.isBlank()) {
-                throw new IllegalArgumentException("웹소켓 메시지 전송 정보가 올바르지 않습니다.");
+                throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_SEND_INVALID);
             }
 
             if (destination.startsWith("/pub/chat/rooms/")) {
@@ -115,13 +117,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 Long roomId = extractRoomId(destination, "/pub/chat/rooms/");
 
                 ChatRoom room = chatRoomRepository.findById(roomId)
-                        .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
+                        .orElseThrow(() -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
 
                 boolean isCustomer = room.getCustomerId().equals(memberId);
                 boolean isManager = room.getManagerId() != null && room.getManagerId().equals(memberId);
 
                 if (!isCustomer && !isManager) {
-                    throw new IllegalArgumentException("해당 채팅방 전송 권한이 없습니다.");
+                    throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_ACCESS_DENIED);
                 }
             }
         }
