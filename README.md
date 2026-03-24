@@ -2,7 +2,7 @@
 
 ---
 
-## 1. 프로젝트 소개
+## 프로젝트 소개
 
 **TheOne**은 주류 바틀 샵 컨셉의 백엔드 API 서버
 - 상품 검색 및 주문부터 결제, 포인트, 쿠폰, 사은품, 이벤트까지 쇼핑몰에 필요한 전반적인 기능을 제공
@@ -11,7 +11,7 @@
 
 ---
 
-## 2. 기술 스택
+## 기술 스택
 
 ### Backend
 - Java 21
@@ -40,23 +40,21 @@
 
 ---
 
-## 3. 아키텍처
+## 아키텍처
+
+- ERD
+<img width="3580" height="2842" alt="image" src="https://github.com/user-attachments/assets/8fd4b97f-e9a6-4bb3-9773-04b8ba2cd7d4" />
+
+- AWS 구조
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6b4f8f73-041c-4cdf-987f-f984933ad8a1" />
 
 ```
-- ERD 사진
-- AWS 아키텍처 사진
+외부 인터넷
+-> ALB -> EC2 -> RDS - ElastiCache
+-> NAT Gateway
+-> 외부 인터넷
 ```
-
-### CI/CD 흐름
-
-```
-dev 브랜치 PR 
--> main (PR, Merge)
--> GitHub Actions 
--> 빌드 및 테스트 
--> 도커 이미지 배포 
--> EC2 Pull 및 작동 수행
-```
+---
 
 ### 도메인 패키지 구조
 
@@ -85,7 +83,7 @@ one.theone.server
 
 ---
 
-## 4. 기능
+## 기능
 
 ### 회원
 - 이메일/비밀번호 회원가입 및 로그인
@@ -137,7 +135,7 @@ one.theone.server
 
 ---
 
-## 5. 구현 쟁점
+## 구현 쟁점
 
 ## 캐시
 ### 캐시 사용
@@ -224,7 +222,15 @@ one.theone.server
 
 - 성능 테스트 비교 (K6)
 
-  | 지표 | v1 (캐시 적용 X) | v2 (캐시 적용 O) |
+- V1
+<img width="1870" height="1384" alt="image" src="https://github.com/user-attachments/assets/b4ec7014-d62a-4c23-98d8-ec0bdf57eed8" />
+
+  
+- V2
+<img width="1924" height="1370" alt="image" src="https://github.com/user-attachments/assets/fc9e5f61-c5d2-43d5-a1d5-efef340bb6ce" />
+
+
+  | 지표 | V1 (캐시 적용 X) | V2 (캐시 적용 O) |
   |------|-----------------|-----------------|
   | 평균 응답 시간 | 3.74s | 2.56ms |
   | TPS | 70.8/s | 2,611/s |
@@ -415,24 +421,26 @@ ORDER BY created_at DESC
 LIMIT 10 OFFSET 0;
 ```
 
-- Before 첫번째 사진
+<img width="1077" height="94" alt="image" src="https://github.com/user-attachments/assets/b61d9909-18ab-41b0-90e9-5eaebd960d3e" />
+<img width="1033" height="87" alt="image" src="https://github.com/user-attachments/assets/d5df9d25-15f2-4fab-bd2f-65e687af6556" />
 - 전체 테이블 풀 스캔 발생
 
 #### WHERE 절 사항들로 인덱스 생성
   - deleted, status
-- 1.AFTER 사진
-- **실패** -> 카디널리티가 낮아 옵티마이저가 인덱스 사용 판단을 하지 않은 듯, 여전히 풀스캔
+<img width="1074" height="93" alt="image" src="https://github.com/user-attachments/assets/b23c01b5-8499-4b84-837b-86a8310a59c4" />
+실패, 카디널리티가 낮아 옵티마이저가 인덱스 사용 판단을 하지 않은 듯, 여전히 풀스캔
 
 #### WHERE 절 사항 + ORDER BY 절 사항 1
   - deleted, status, created_at
-- 2.AFTER 사진
-- 인덱스 내부적으로 status 값들이 created_at에 의해 정렬 -> 합쳤을 때 정렬 불가
-- 카디널리티 낮은 문제도 여전히 발생 -> 여전히 풀스캔
+<img width="1075" height="91" alt="image" src="https://github.com/user-attachments/assets/3f462888-79f4-41f2-b16e-f1c6743e9f2b" />
+실패, 인덱스 내부적으로 status 값들이 created_at에 의해 정렬 -> 합쳤을 때 정렬 불가
+실패, 카디널리티 낮은 문제도 여전히 발생 -> 여전히 풀스캔
 
 #### WHERE 절 사항 + ORDER BY 절 사항 2
   - created_at, deleted, status
-- 3.AFTER 사진
-- **성공**, created_at 을 선두로 정렬, deleted가 false 인 조건대로 status 가 SALES, SOLD_OUT 인 10건을 가져오면 됨 
+<img width="1432" height="92" alt="image" src="https://github.com/user-attachments/assets/018266ad-3d91-4adc-8c18-4d5cb187c722" />
+<img width="1062" height="88" alt="image" src="https://github.com/user-attachments/assets/99ce661a-03d7-4535-8978-12f69eae8b8d" />
+성공, created_at 을 선두로 정렬, deleted가 false 인 조건대로 status 가 SALES, SOLD_OUT 인 10건을 가져오면 됨 
 
 ```SQL
 CREATE INDEX idx_product_created_at_deleted_status ON products (created_at, deleted, status);
@@ -479,8 +487,7 @@ ChatMessageController 의 Authentication
 -> Authentication 활용 가능
 ```
 
-## AWS 배포 및 CI/CD
-- 아키텍처 사진
+## CI/CD
 #### CI/CD 흐름
 ``` 
 Dev Push/PR 
