@@ -10,7 +10,13 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "chat_rooms")
+@Table(name = "chat_rooms",
+        indexes = {
+                @Index(name = "idx_chat_room_customer_id", columnList = "customer_id"),
+                @Index(name = "idx_chat_room_manager_id", columnList = "manager_id"),
+                @Index(name = "idx_chat_room_status_last_message_at", columnList = "status,last_message_at")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoom extends BaseEntity {
     @Id

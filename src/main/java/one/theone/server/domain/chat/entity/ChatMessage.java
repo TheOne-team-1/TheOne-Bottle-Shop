@@ -8,7 +8,13 @@ import one.theone.server.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "chat_messages",
+        indexes = {
+                @Index(name = "idx_chat_message_room_id_id", columnList = "chat_room_id,id"),
+                @Index(name = "idx_chat_message_room_id_sender_type_id", columnList = "chat_room_id, sender_type,id"),
+                @Index(name = "idx_chat_message_sender_id", columnList = "sender_id")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatMessage extends BaseEntity {
     @Id
