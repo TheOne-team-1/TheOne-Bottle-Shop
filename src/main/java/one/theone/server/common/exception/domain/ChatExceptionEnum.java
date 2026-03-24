@@ -1,0 +1,32 @@
+package one.theone.server.common.exception.domain;
+
+import lombok.Getter;
+import one.theone.server.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+
+@Getter
+public enum ChatExceptionEnum implements ErrorCode {
+    ERR_CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다"),
+    ERR_CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "채팅방 접근 권한이 없습니다"),
+    ERR_CHAT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "채팅방 상태값이 올바르지 않습니다"),
+    ERR_CHAT_ROOM_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "이미 다른 상담사가 배정된 채팅방입니다"),
+    ERR_CHAT_ROOM_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "이미 종료된 채팅입니다"),
+    ERR_CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메시지 내용이 올바르지 않습니다"),
+    ERR_CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅 메시지를 찾을 수 없습니다"),
+    ERR_CHAT_MESSAGE_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "채팅 메시지 삭제 권한이 없습니다"),
+    ERR_CHAT_SYSTEM_MESSAGE_DELETE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "시스템 메시지는 삭제할 수 없습니다"),
+    ERR_CHAT_WS_AUTH_MISSING(HttpStatus.UNAUTHORIZED, "웹소켓 인증 토큰이 없습니다"),
+    ERR_CHAT_WS_AUTH_FORMAT_INVALID(HttpStatus.UNAUTHORIZED, "웹소켓 인증 토큰 형식이 올바르지 않습니다"),
+    ERR_CHAT_WS_AUTH_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 웹소켓 인증 토큰입니다"),
+    ERR_CHAT_WS_AUTH_INFO_INVALID(HttpStatus.UNAUTHORIZED, "웹소켓 인증 정보가 올바르지 않습니다"),
+    ERR_CHAT_WS_SUBSCRIBE_INVALID(HttpStatus.BAD_REQUEST, "웹소켓 구독 정보가 올바르지 않습니다"),
+    ERR_CHAT_WS_SEND_INVALID(HttpStatus.BAD_REQUEST, "웹소켓 메시지 전송 정보가 올바르지 않습니다");
+
+    private final HttpStatus httpStatus;
+    private final String message;
+
+    ChatExceptionEnum(HttpStatus httpStatus, String message) {
+        this.httpStatus = httpStatus;
+        this.message = message;
+    }
+}
