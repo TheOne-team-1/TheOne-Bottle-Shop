@@ -15,6 +15,8 @@ spring:
   # Flyway
   flyway:
     enabled: true
+    baseline-on-migrate: true   # TODO: 최초 배포 성공 후 제거
+    baseline-version: 1         # TODO: 최초 배포 성공 후 제거
 
   # JPA
   jpa:
