@@ -11,18 +11,23 @@ import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
 import one.theone.server.domain.chat.entity.*;
 import one.theone.server.domain.chat.repository.ChatMessageRepository;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
     private static final Long SYSTEM_SENDER_ID = 0L;
+    private static final Duration UNREAD_CACHE_TTL = Duration.ofMinutes(30);
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
 
     @Transactional
     public ChatRoomResponse createRoom(Long customerId, ChatRoomCreateRequest request) {
@@ -54,7 +59,7 @@ public class ChatService {
     public ChatRoomResponse getRoom(Long memberId, Long roomId) {
         ChatRoom room = getRoomOrThrow(roomId);
         validateRoomAccess(memberId, room);
-        return ChatRoomResponse.from(room,  getUnreadCount(memberId, room));
+        return ChatRoomResponse.from(room, getUnreadCount(memberId, room));
     }
 
     @Transactional
@@ -72,6 +77,14 @@ public class ChatService {
         ChatMessage saved = chatMessageRepository.save(message);
 
         room.updateLastMessage(saved.getId(), saved.getCreatedAt());
+
+        if (senderType == SenderType.CUSTOMER) {
+            if (room.getManagerId() != null) {
+                increaseUnreadCount(roomId, room.getManagerId());
+            }
+        } else if (senderType == SenderType.MANAGER){
+            increaseUnreadCount(roomId, room.getCustomerId());
+        }
 
         return ChatMessageResponse.from(saved);
     }
@@ -100,9 +113,16 @@ public class ChatService {
         }
 
         if (after == ChatRoomStatus.WAITING) {
+            Long previousManagerId = room.getManagerId();
+
             room.unassignManager();
             room.changeStatus(ChatRoomStatus.WAITING);
             saveSystemMessage(room, "상담이 대기 상태로 변경되었습니다");
+
+            if (previousManagerId != null) {
+                clearUnreadCount(roomId, previousManagerId);
+            }
+
             return ChatRoomResponse.from(room);
         }
 
@@ -145,20 +165,32 @@ public class ChatService {
         validateRoomAccess(memberId, room);
 
         room.markRead(memberId);
+        clearUnreadCount(roomId, memberId);
     }
 
     @Transactional(readOnly = true)
     public long getUnreadCount(Long memberId, ChatRoom room) {
+        String key = getUnreadKey(room.getId(), memberId);
+        Object cacheValue = redisTemplate.opsForValue().get(key);
+
+        if (cacheValue != null) {
+            return Long.parseLong(String.valueOf(cacheValue));
+        }
+
         Long lastReadId;
 
         if (room.getCustomerId().equals(memberId)) {
             lastReadId = room.getCustomerLastReadMessageId();
-            return chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.MANAGER);
+            long count = chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.MANAGER);
+            redisTemplate.opsForValue().set(key, count, UNREAD_CACHE_TTL);
+            return count;
         }
 
         if (room.getManagerId() != null && room.getManagerId().equals(memberId)) {
-            lastReadId = room.getManagerLastReadMesasgeId();
-            return chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.CUSTOMER);
+            lastReadId = room.getManagerLastReadMessageId();
+            long count = chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.CUSTOMER);
+            redisTemplate.opsForValue().set(key, count, UNREAD_CACHE_TTL);
+            return count;
         }
 
         return 0;
@@ -189,7 +221,23 @@ public class ChatService {
         ChatMessage systemMessage = ChatMessage.createSystem(room.getId(), SYSTEM_SENDER_ID, content);
         ChatMessage saved = chatMessageRepository.save(systemMessage);
 
-        room.updateLastMessageAt(saved.getCreatedAt());
+        room.updateLastMessage(saved.getId(), saved.getCreatedAt());
+    }
+
+    private String getUnreadKey(Long roomId, Long memberId) {
+        return "chat:unread:" + roomId + ":" + memberId;
+    }
+
+    private void increaseUnreadCount(Long roomId, Long memberId) {
+        String key = getUnreadKey(roomId, memberId);
+        Long unreadCount = redisTemplate.opsForValue().increment(key);
+        if (unreadCount != null && unreadCount == 1L) {
+            redisTemplate.expire(key, UNREAD_CACHE_TTL);
+        }
+    }
+
+    private void clearUnreadCount(Long roomId, Long memberId) {
+        redisTemplate.delete(getUnreadKey(roomId, memberId));
     }
 
     private ChatRoom getRoomOrThrow(Long roomId) {
