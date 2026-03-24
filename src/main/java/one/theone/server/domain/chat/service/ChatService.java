@@ -157,7 +157,7 @@ public class ChatService {
         }
 
         if (room.getManagerId() != null && room.getManagerId().equals(memberId)) {
-            lastReadId = room.getManagerLastReadMesasgeId();
+            lastReadId = room.getManagerLastReadMessageId();
             return chatMessageRepository.countUnread(room.getId(), lastReadId, SenderType.CUSTOMER);
         }
 
