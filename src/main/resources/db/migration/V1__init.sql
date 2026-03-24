@@ -345,6 +345,15 @@ CREATE TABLE reviews
     CONSTRAINT pk_reviews PRIMARY KEY (id)
 );
 
+CREATE TABLE social_auth
+(
+    id          BIGINT AUTO_INCREMENT NOT NULL,
+    provider    VARCHAR(255)          NULL,
+    provider_id VARCHAR(255)          NULL,
+    member_id   BIGINT                NULL,
+    CONSTRAINT pk_socialauth PRIMARY KEY (id)
+);
+
 ALTER TABLE points
     ADD CONSTRAINT uc_6a156dd9234b48df83212251e UNIQUE (member_id);
 

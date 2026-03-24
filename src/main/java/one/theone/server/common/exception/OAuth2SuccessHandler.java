@@ -47,7 +47,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 프론트엔드 리다이렉트 (필요한 경로로 수정 가능)
         //String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/oauth2/redirect")
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/index.html")
+        //String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/index.html")
+        String targetUrl = UriComponentsBuilder.fromUriString("http://theone-alb-200324328.ap-northeast-2.elb.amazonaws.com/index.html")
 
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
