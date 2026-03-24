@@ -59,7 +59,7 @@ public class ChatService {
     public ChatRoomResponse getRoom(Long memberId, Long roomId) {
         ChatRoom room = getRoomOrThrow(roomId);
         validateRoomAccess(memberId, room);
-        return ChatRoomResponse.from(room,  getUnreadCount(memberId, room));
+        return ChatRoomResponse.from(room, getUnreadCount(memberId, room));
     }
 
     @Transactional
@@ -120,7 +120,7 @@ public class ChatService {
             saveSystemMessage(room, "상담이 대기 상태로 변경되었습니다");
 
             if (previousManagerId != null) {
-                cleanUnreadCount(roomId, previousManagerId);
+                clearUnreadCount(roomId, previousManagerId);
             }
 
             return ChatRoomResponse.from(room);
@@ -165,8 +165,7 @@ public class ChatService {
         validateRoomAccess(memberId, room);
 
         room.markRead(memberId);
-
-        cleanUnreadCount(roomId, memberId);
+        clearUnreadCount(roomId, memberId);
     }
 
     @Transactional(readOnly = true)
@@ -225,6 +224,22 @@ public class ChatService {
         room.updateLastMessage(saved.getId(), saved.getCreatedAt());
     }
 
+    private String getUnreadKey(Long roomId, Long memberId) {
+        return "chat:unread:" + roomId + ":" + memberId;
+    }
+
+    private void increaseUnreadCount(Long roomId, Long memberId) {
+        String key = getUnreadKey(roomId, memberId);
+        Long unreadCount = redisTemplate.opsForValue().increment(key);
+        if (unreadCount != null && unreadCount == 1L) {
+            redisTemplate.expire(key, UNREAD_CACHE_TTL);
+        }
+    }
+
+    private void clearUnreadCount(Long roomId, Long memberId) {
+        redisTemplate.delete(getUnreadKey(roomId, memberId));
+    }
+
     private ChatRoom getRoomOrThrow(Long roomId) {
         return chatRoomRepository.findById(roomId).orElseThrow(
                 () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
@@ -249,21 +264,5 @@ public class ChatService {
         return chatRoomRepository.findByIdForUpdate(roomId).orElseThrow(
                 () -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND)
         );
-    }
-
-    private String getUnreadKey(Long roomId, Long memberId) {
-        return "chat:unread:" + roomId + ":" + memberId;
-    }
-
-    private void increaseUnreadCount(Long roomId, Long memberId) {
-        String key = getUnreadKey(roomId, memberId);
-        Long unreadCount = redisTemplate.opsForValue().increment(key);
-        if (unreadCount != null && unreadCount == 1L) {
-            redisTemplate.expire(key, UNREAD_CACHE_TTL);
-        }
-    }
-
-    private void cleanUnreadCount(Long roomId, Long memberId) {
-        redisTemplate.delete(getUnreadKey(roomId, memberId));
     }
 }
