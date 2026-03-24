@@ -15,7 +15,6 @@ spring:
   # Flyway
   flyway:
     enabled: true
-    repair-on-migrate: true  # TODO: V2 정상 적용 후 제거
 
   # JPA
   jpa:
