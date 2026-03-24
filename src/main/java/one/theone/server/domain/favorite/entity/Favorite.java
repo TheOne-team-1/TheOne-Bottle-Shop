@@ -8,12 +8,19 @@ import one.theone.server.common.entity.BaseEntity;
 
 @Getter
 @Entity
-@Table(name = "favorites", uniqueConstraints = {
-        @UniqueConstraint(
-                name = "uk_favorites_member_product",
-                columnNames = {"member_id", "product_id"}
-        )
-})
+@Table(
+        name = "favorites",
+        uniqueConstraints = {
+                @UniqueConstraint(
+
+                        name = "uk_favorites_member_product",
+                        columnNames = {"member_id", "product_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_favorite_member_id_created_at", columnList = "member_id, created_at")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Favorite extends BaseEntity {
     @Id

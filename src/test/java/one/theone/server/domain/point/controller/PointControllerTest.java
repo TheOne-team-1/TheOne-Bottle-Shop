@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -76,7 +77,7 @@ class PointControllerTest {
         PageResponse<PointLogsGetResponse> pageResponse = PageResponse.register(
                 new PageImpl<>(List.of(item))
         );
-        given(pointService.getPointLogs(any(), any(), any())).willReturn(pageResponse);
+        given(pointService.getPointLogs(any(), any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/points")

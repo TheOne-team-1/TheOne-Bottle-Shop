@@ -26,7 +26,8 @@ public class OrderController {
             @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody OrderCreateDirectRequest request
     ) {
-        OrderCreateResponse response = orderService.createDirectOrder(memberId, request);
+        //OrderCreateResponse response = orderService.createDirectOrder(memberId, request);
+        OrderCreateResponse response = orderService.createDirectOrderWithRedisson(memberId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "바로 구매 주문 생성 성공", response));
@@ -37,7 +38,8 @@ public class OrderController {
             @AuthenticationPrincipal Long memberId,
             @Valid @RequestBody OrderCreateFromCartRequest request
     ) {
-        OrderCreateResponse response = orderService.createOrderFromCart(memberId, request);
+        //OrderCreateResponse response = orderService.createOrderFromCart(memberId, request);
+        OrderCreateResponse response = orderService.createOrderFromCartWithRedisson(memberId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.success(HttpStatus.CREATED.name(), "장바구니 주문 생성 성공", response));

@@ -159,7 +159,7 @@ gradle-app.setting
 *.hprof
 
 ### env ###
-.env
+.env.prod
 .env.dev
 
 ### claude ###

@@ -10,7 +10,7 @@ import one.theone.server.domain.favorite.entity.Favorite;
 import one.theone.server.domain.favorite.repository.FavoriteRepository;
 import one.theone.server.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +47,8 @@ public class FavoriteService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<FavoritesGetResponse> getFavorites(Long memberId, FavoritesGetResponse.FavoriteProductStatus status, Pageable pageable) {
-        Page<FavoritesGetResponse> page = favoriteRepository.findFavorites(pageable, memberId, status);
-        return PageResponse.register(page);
+    public PageResponse<FavoritesGetResponse> getFavorites(Long memberId, FavoritesGetResponse.FavoriteProductStatus status, int page, int size) {
+        Page<FavoritesGetResponse> favorites = favoriteRepository.findFavorites(PageRequest.of(page, size), memberId, status);
+        return PageResponse.register(favorites);
     }
 }

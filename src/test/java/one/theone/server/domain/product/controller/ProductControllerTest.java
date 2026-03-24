@@ -3,6 +3,7 @@ package one.theone.server.domain.product.controller;
 import one.theone.server.common.dto.PageResponse;
 import one.theone.server.domain.product.dto.*;
 import one.theone.server.domain.product.entity.Product;
+import one.theone.server.domain.product.service.ProductRecentlyViewedService;
 import one.theone.server.domain.product.service.ProductService;
 import one.theone.server.domain.product.service.ProductViewService;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -42,6 +44,9 @@ class ProductControllerTest {
 
     @MockitoBean
     private ProductViewService productViewService;
+
+    @MockitoBean
+    private ProductRecentlyViewedService productRecentlyViewedService;
 
     @Test
     @DisplayName("상품 등록 성공")
@@ -84,7 +89,7 @@ class ProductControllerTest {
                         )
                 ))
         );
-        given(productService.getAdminProducts(any(), any())).willReturn(pageResponse);
+        given(productService.getAdminProducts(any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/admin/products")
@@ -175,7 +180,7 @@ class ProductControllerTest {
                         new ProductsGetResponse(1L, "테스트 상품", 10000L, Product.ProductStatus.SALES, BigDecimal.valueOf(4.5))
                 ))
         );
-        given(productService.getProducts(any(), any())).willReturn(pageResponse);
+        given(productService.getProducts(any(), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/products")
@@ -198,7 +203,7 @@ class ProductControllerTest {
                 1L, "테스트 상품", 10000L, Product.ProductStatus.SALES,
                 BigDecimal.valueOf(13.5), 750, 1L, 1L, 100L, BigDecimal.valueOf(4.5), 0L
         );
-        given(productService.getProduct(any(), any())).willReturn(response);
+        given(productService.getProduct(any(), any(), any())).willReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/products/{id}", productId)
@@ -229,5 +234,26 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].name").value("베스트 상품"));
+    }
+
+    @Test
+    @DisplayName("최근 본 상품 조회 성공")
+    @WithMockUser
+    void getRecentlyViewedProducts_success() throws Exception {
+        // given
+        given(productRecentlyViewedService.getRecentlyViewed(any())).willReturn(
+                List.of(new RecentlyViewedProductsGetResponse(1L, "테스트 상품", 10000L))
+        );
+
+        // when & then
+        mockMvc.perform(get("/api/recently-viewed/products")
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("최근 본 상품 조회 성공"))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].name").value("테스트 상품"));
     }
 }

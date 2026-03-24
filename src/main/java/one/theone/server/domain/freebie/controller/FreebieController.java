@@ -8,8 +8,6 @@ import one.theone.server.domain.freebie.dto.request.FreebieCreateRequest;
 import one.theone.server.domain.freebie.dto.request.FreebieUpdateRequest;
 import one.theone.server.domain.freebie.dto.response.*;
 import one.theone.server.domain.freebie.service.FreebieService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,14 +26,15 @@ public class FreebieController {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(HttpStatus.CREATED.name(), "사은품 생성 성공", freebieService.createFreebie(request)));
     }
 
-    @GetMapping("/freebies")
+    @GetMapping("/admin/freebies")
     public ResponseEntity<BaseResponse<PageResponse<FreebiesGetResponse>>> getFreebies(
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @RequestParam(defaultValue = "0") int page
+            , @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "사은품 목록 조회 성공", freebieService.getFreebies(pageable)));
+        return ResponseEntity.status(HttpStatus.OK).body(BaseResponse.success(HttpStatus.OK.name(), "사은품 목록 조회 성공", freebieService.getFreebies(page, size)));
     }
 
-    @GetMapping("/freebies/{id}")
+    @GetMapping("/admin/freebies/{id}")
     public ResponseEntity<BaseResponse<FreebieGetResponse>> getFreebie(
             @PathVariable Long id
     ) {

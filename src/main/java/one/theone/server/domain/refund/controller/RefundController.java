@@ -25,7 +25,7 @@ public class RefundController {
             , @AuthenticationPrincipal Long memberId
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(
-                HttpStatus.CREATED.name(), "환불 신청 성공", refundService.processRefund(memberId, request)));
+                HttpStatus.CREATED.name(), "환불 생성 성공", refundService.processRefund(memberId, request)));
     }
 
     @PostMapping("/api/admin/refunds")

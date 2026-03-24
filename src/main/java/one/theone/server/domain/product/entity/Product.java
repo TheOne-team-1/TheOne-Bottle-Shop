@@ -15,7 +15,11 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "products")
+@Table(name = "products", indexes = {
+        @Index(name = "idx_product_created_at_deleted_status", columnList = "created_at, deleted, status"),
+        @Index(name = "idx_product_price_deleted_status", columnList = "price, deleted, status"),
+        @Index(name = "idx_product_rating_deleted_status", columnList = "rating, deleted, status")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product extends BaseEntity {
     @Id
@@ -49,6 +53,9 @@ public class Product extends BaseEntity {
 
     private Boolean deleted = Boolean.FALSE;
     private LocalDateTime deletedAt;
+
+    @Version
+    private Long version;
 
     public static Product register(
             String name,

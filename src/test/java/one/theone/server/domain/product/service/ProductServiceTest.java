@@ -36,6 +36,7 @@ class ProductServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private CategoryDetailRepository categoryDetailRepository;
     @Mock private ProductViewService productViewService;
+    @Mock private ProductRecentlyViewedService productRecentlyViewedService;
     @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks private ProductService productService;
@@ -92,7 +93,7 @@ class ProductServiceTest {
                 .willReturn(new PageImpl<>(List.of(item)));
 
         // when
-        PageResponse<AdminProductsGetResponse> result = productService.getAdminProducts(request, pageable);
+        PageResponse<AdminProductsGetResponse> result = productService.getAdminProducts(request, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);
@@ -313,7 +314,7 @@ class ProductServiceTest {
                 .willReturn(new PageImpl<>(List.of(item)));
 
         // when
-        PageResponse<ProductsGetResponse> result = productService.getProducts(request, pageable);
+        PageResponse<ProductsGetResponse> result = productService.getProducts(request, 0, 10);
 
         // then
         assertThat(result.content()).hasSize(1);
@@ -330,20 +331,21 @@ class ProductServiceTest {
                 BigDecimal.valueOf(13.5), 750, 1L, 1L, 100L, BigDecimal.valueOf(4.5), 0L
         );
         List<ReviewResponse> top3Reviews = List.of(
-                new ReviewResponse(1L, 1L, "테스터", "테스트 상품", 5, "최고예요", LocalDateTime.now())
+                new ReviewResponse(1L, 1L, "테스터", "테스트 상품", 5, "최고예요", 0, 0, LocalDateTime.now())
         );
         given(productRepository.findProductById(productId)).willReturn(response);
         given(productViewService.getViewCount(productId)).willReturn(10L);
         given(reviewRepository.findTop3ByProductIdAndLikes(productId)).willReturn(top3Reviews);
 
         // when
-        ProductGetResponse result = productService.getProduct(productId, "127.0.0.1");
+        ProductGetResponse result = productService.getProduct(productId, "127.0.0.1", 1L);
 
         // then
         assertThat(result.viewCount()).isEqualTo(10L);
         assertThat(result.top3Reviews()).hasSize(1);
         assertThat(result.top3Reviews().get(0).memberName()).isEqualTo("테스터");
         verify(productViewService).record(productId, "127.0.0.1");
+        verify(productRecentlyViewedService).record(1L, productId);
     }
 
     @Test
@@ -353,7 +355,7 @@ class ProductServiceTest {
         given(productRepository.findProductById(any())).willReturn(null);
 
         // when & then
-        assertThatThrownBy(() -> productService.getProduct(999L, "127.0.0.1"))
+        assertThatThrownBy(() -> productService.getProduct(999L, "127.0.0.1", 1L))
                 .isInstanceOf(ServiceErrorException.class)
                 .hasMessage("상품을 찾을 수 없습니다");
     }

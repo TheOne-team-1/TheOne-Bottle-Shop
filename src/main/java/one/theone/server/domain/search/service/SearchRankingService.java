@@ -1,7 +1,6 @@
 package one.theone.server.domain.search.service;
 
 import lombok.RequiredArgsConstructor;
-import one.theone.server.common.config.redis.RedisLockService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -23,11 +21,6 @@ import static one.theone.server.common.config.cache.CacheConfig.SEARCH_RANKING;
 public class SearchRankingService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final RedisLockService redisLockService;
-
-    private static final String LOCK_PREFIX = "search:record:";
-    private static final long LOCK_WAIT = 1L;
-    private static final long LOCK_LEASE = 3L;
 
     private static final String DEDUP_PREFIX = "search:dedup:";
     private static final long DEDUP_TTL = 60*30;
@@ -36,38 +29,22 @@ public class SearchRankingService {
     private static final int RANKING_LIMIT = 5;
 
     @Async("asyncExecutor")
-    @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "localCacheManager")
+    @CacheEvict(value = SEARCH_RANKING, allEntries = true, cacheManager = "redisCacheManager")
     public void record(String keyword, Long userId, String clientIp, String userAgent) {
-        String lockKey = LOCK_PREFIX + keyword;
-        String lockValue = null;
+        String identifier = (userId != null) ? "user:" + userId : "guest:" + clientIp + ":" + userAgent;
+        String dedupKey = DEDUP_PREFIX + keyword + ":" + identifier;
+        Boolean isFirstSearch = redisTemplate.opsForValue().setIfAbsent(dedupKey, "locked", DEDUP_TTL, TimeUnit.SECONDS);
 
-        try {
-            lockValue = redisLockService.tryLock(lockKey, LOCK_WAIT, LOCK_LEASE, TimeUnit.SECONDS);
-
-            if (lockValue == null) {
-                return;
-            }
-            String identifier = (userId != null) ? "user:" + userId : "guest:" + clientIp + ":" + userAgent;
-            String dedupKey = DEDUP_PREFIX + keyword + ":" + identifier;
-            Boolean isFirstSearch = redisTemplate.opsForValue().setIfAbsent(dedupKey, "locked", DEDUP_TTL, TimeUnit.SECONDS);
-
-            if (Boolean.TRUE.equals(isFirstSearch)) {
-                String rankingKey = getWeeklyRankingKey();
-                redisTemplate.opsForZSet().incrementScore(rankingKey, keyword, 1);
-                if (redisTemplate.getExpire(rankingKey) == -1L) {
-                    redisTemplate.expire(rankingKey, 8, TimeUnit.DAYS);
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            if (lockValue != null) {
-                redisLockService.unLock(lockKey, lockValue);
+        if (Boolean.TRUE.equals(isFirstSearch)) {
+            String rankingKey = getWeeklyRankingKey();
+            redisTemplate.opsForZSet().incrementScore(rankingKey, keyword, 1);
+            if (redisTemplate.getExpire(rankingKey) == -1L) {
+                redisTemplate.expire(rankingKey, 8, TimeUnit.DAYS);
             }
         }
     }
 
-    @Cacheable(value = SEARCH_RANKING, key = "'ranking:top5'", cacheManager = "localCacheManager")
+    @Cacheable(value = SEARCH_RANKING, key = "'ranking:top5'", cacheManager = "redisCacheManager")
     public List<String> getKeywordRanking() {
         String rankingKey = getWeeklyRankingKey();
         Set<Object> keywords = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, RANKING_LIMIT-1);

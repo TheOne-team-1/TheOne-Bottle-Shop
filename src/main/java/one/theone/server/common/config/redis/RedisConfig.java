@@ -17,6 +17,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static one.theone.server.common.config.cache.CacheConfig.PRODUCT_SEARCH;
+import static one.theone.server.common.config.cache.CacheConfig.SEARCH_RANKING;
+
 @Configuration
 public class RedisConfig {
     @Value("${spring.data.redis.host}")
@@ -42,8 +45,19 @@ public class RedisConfig {
 
         // 캐시별 TTL 개별 설정
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
+
+        //region 상품 관련 캐싱
         configs.put("productCache", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         configs.put("categoryCache", defaultConfig.entryTtl(Duration.ofHours(1)));
+        configs.put(PRODUCT_SEARCH, defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        //endregion
+
+        //region 검색어 관련 캐싱
+        configs.put(SEARCH_RANKING, defaultConfig.entryTtl(Duration.ofMinutes(10)));
+
+        //region 이벤트 관련 캐싱
+        configs.put("eventListCache", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        //endregion
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(defaultConfig)

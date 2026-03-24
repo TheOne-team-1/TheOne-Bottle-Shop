@@ -2,7 +2,7 @@ spring:
   application:
     name: TheOne
   profiles:
-    active: dev
+    active: prod
 
   # JPA
   jpa:
@@ -13,6 +13,7 @@ spring:
   datasource:
     hikari:
       connection-timeout: 30000 # 30초 커넥션 대기 타임아웃
-      maximum-pool-size: 10
+      maximum-pool-size: 50
+      minimum-idle: 10
       connection-test-query: SELECT 1 # 커넥션 확인용 쿼리 선언부
       keepalive-time: 60000 # 1분 마다 상태 체크

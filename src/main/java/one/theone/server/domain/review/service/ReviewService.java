@@ -51,7 +51,6 @@ public class ReviewService {
     }
 
     @RedisLock(key = "'review_like:' + #reviewId")
-    @Transactional
     public BaseResponse<Void> likeReview(Long reviewId, Long memberId) {
         Review review = reviewRepository.findByIdAndDeletedFalse(reviewId)
                 .orElseThrow(() -> new ServiceErrorException(ReviewExceptionEnum.REVIEW_NOT_FOUND));

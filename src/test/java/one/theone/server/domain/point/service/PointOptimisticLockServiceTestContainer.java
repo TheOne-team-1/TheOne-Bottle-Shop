@@ -1,32 +1,21 @@
 package one.theone.server.domain.point.service;
 
-import com.redis.testcontainers.RedisContainer;
 import one.theone.server.domain.member.entity.Member;
 import one.theone.server.domain.member.repository.MemberRepository;
+import one.theone.server.domain.order.entity.Order;
+import one.theone.server.domain.order.repository.OrderRepository;
 import one.theone.server.domain.point.dto.PointAdjustRequest;
 import one.theone.server.domain.point.entity.Point;
 import one.theone.server.domain.point.entity.PointLog;
 import one.theone.server.domain.point.repository.PointLogRepository;
 import one.theone.server.domain.point.repository.PointRepository;
 import one.theone.server.domain.point.repository.PointUseDetailRepository;
-import one.theone.server.domain.order.entity.Order;
-import one.theone.server.domain.order.repository.OrderRepository;
-import one.theone.server.domain.search.corrector.KomoranCorrector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,30 +25,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import one.theone.server.common.RedisTestContainer;
 
-@SpringBootTest
-@Testcontainers
-@ActiveProfiles("test")
-public class PointLockServiceTest {
+public class PointOptimisticLockServiceTestContainer extends RedisTestContainer {
 
-    @Container
-    static final RedisContainer redisContainer = new RedisContainer(
-            DockerImageName.parse("redis:8.6.1")).withExposedPorts(6379);
 
-    @DynamicPropertySource
-    static void redisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
-    }
 
-    @MockitoBean
-    private KomoranCorrector komoranCorrector;  // 실제 인스턴스화 차단
 
     @Autowired
     private PointService pointService;
 
     @Autowired
-    private PointLockService pointLockService;
+    private PointOptimisticLockService pointOptimisticLockService;
 
     @Autowired
     private PointRepository pointRepository;
@@ -113,7 +90,7 @@ public class PointLockServiceTest {
         pointLogRepository.deleteAll();
         pointRepository.deleteAll();
         memberRepository.deleteAll();
-        pointUseDetailRepository.deleteAll();;
+        pointUseDetailRepository.deleteAll();
         orderIds.clear();
     }
 
@@ -146,8 +123,8 @@ public class PointLockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock - usePoint")
-    void withRedisLock_use() throws InterruptedException {
+    @DisplayName("withOptimisticLock - usePoint")
+    void withOptimisticLock_use() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -158,7 +135,7 @@ public class PointLockServiceTest {
             final Long orderId = orderIds.get(i);
             executorService.submit(() -> {
                 try {
-                    pointLockService.usePoint(memberId, orderId);
+                    pointOptimisticLockService.usePoint(memberId, orderId);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -173,7 +150,7 @@ public class PointLockServiceTest {
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
 
         assertThat(point.getBalance()).isEqualTo(failCount.get() * 100L);
-        System.out.println("레디스 락 최종 잔액: " + point.getBalance());
+        System.out.println("낙관적 락 최종 잔액: " + point.getBalance());
     }
 
     private void setupForRefund() {
@@ -212,8 +189,8 @@ public class PointLockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock - refundPoint")
-    void withRedisLock_refund() throws InterruptedException {
+    @DisplayName("withOptimisticLock - refundPoint")
+    void withOptimisticLock_refund() throws InterruptedException {
         setupForRefund();
 
         int threadCount = 100;
@@ -226,7 +203,7 @@ public class PointLockServiceTest {
             final Long orderId = orderIds.get(i);
             executorService.submit(() -> {
                 try {
-                    pointLockService.refundPoint(memberId, orderId);
+                    pointOptimisticLockService.refundPoint(memberId, orderId);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -240,7 +217,7 @@ public class PointLockServiceTest {
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
         assertThat(point.getBalance()).isEqualTo(10000L - failCount.get() * 100L);
-        System.out.println("레디스 락 최종 환불 잔액: " + point.getBalance());
+        System.out.println("낙관적 락 최종 환불 잔액: " + point.getBalance());
     }
 
     @Test
@@ -271,8 +248,8 @@ public class PointLockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock - earnPoint")
-    void withRedisLock_earn() throws InterruptedException {
+    @DisplayName("withOptimisticLock - earnPoint")
+    void withOptimisticLock_earn() throws InterruptedException {
         int threadCount = 100;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -283,7 +260,7 @@ public class PointLockServiceTest {
             final Long orderId = orderIds.get(i);
             executorService.submit(() -> {
                 try {
-                    pointLockService.earnPoint(memberId, orderId, 10000L);
+                    pointOptimisticLockService.earnPoint(memberId, orderId, 10000L);
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -297,7 +274,7 @@ public class PointLockServiceTest {
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
         assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 100L);
-        System.out.println("레디스 락 최종 적립 잔액: " + point.getBalance());
+        System.out.println("낙관적 락 최종 적립 잔액: " + point.getBalance());
     }
 
     @Test
@@ -327,8 +304,8 @@ public class PointLockServiceTest {
     }
 
     @Test
-    @DisplayName("WithRedisLock - earnEventPoint")
-    void withRedisLock_earnEvent() throws InterruptedException {
+    @DisplayName("withOptimisticLock - earnEventPoint")
+    void withOptimisticLock_earnEvent() throws InterruptedException {
         int threadCount = 10;
         AtomicInteger failCount = new AtomicInteger(0);
 
@@ -338,7 +315,7 @@ public class PointLockServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    pointLockService.earnEventPoint(memberId, 1000L, "추천인 보상");
+                    pointOptimisticLockService.earnEventPoint(memberId, 1000L, "추천인 보상");
                 } catch (Exception e) {
                     failCount.incrementAndGet();
                 } finally {
@@ -352,6 +329,6 @@ public class PointLockServiceTest {
 
         Point point = pointRepository.findByMemberId(memberId).orElseThrow();
         assertThat(point.getBalance()).isEqualTo(20000L - failCount.get() * 1000L);
-        System.out.println("레디스 락 최종 이벤트 적립 잔액: " + point.getBalance());
+        System.out.println("낙관적 락 최종 이벤트 적립 잔액: " + point.getBalance());
     }
 }

@@ -15,8 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -78,7 +77,7 @@ class FavoriteControllerTest {
                         new FavoritesGetResponse(10L, FavoritesGetResponse.FavoriteProductStatus.SALES, LocalDateTime.now())
                 ))
         );
-        given(favoriteService.getFavorites(any(), eq(null), any())).willReturn(pageResponse);
+        given(favoriteService.getFavorites(any(), eq(null), anyInt(), anyInt())).willReturn(pageResponse);
 
         // when & then
         mockMvc.perform(get("/api/favorites")

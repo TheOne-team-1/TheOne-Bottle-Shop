@@ -121,6 +121,7 @@ public class CouponQueryRepositoryImpl implements CouponQueryRepository {
                         coupon.id
                         , coupon.name
                         , coupon.useType
+                        , memberCoupon.status
                         , coupon.minPrice
                         , coupon.discountValue
                         , coupon.startAt

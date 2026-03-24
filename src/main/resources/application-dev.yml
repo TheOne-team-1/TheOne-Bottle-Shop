@@ -1,0 +1,53 @@
+spring:
+  # DB
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DEV_DB_HOST}:${DEV_DB_PORT}/${DEV_DB}?serverTimezone=Asia/Seoul
+    username: ${DEV_DB_USER}
+    password: ${DEV_DB_PASSWORD}
+
+  # Redis
+  data:
+    redis:
+      host: ${DEV_REDIS_HOST}
+      port: ${DEV_REDIS_PORT}
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+
+# JWT
+jwt:
+  secret:
+    key: ${DEV_JWT_KEY}
+    accessExpire: 1800000
+    refreshExpire: 60480000
+
+admin:
+  signup-key: ${DEV_ADMIN_SIGNUP_KEY}
+
+logging:
+  level:
+    root: info
+
+server:
+  port: 8080

@@ -29,7 +29,7 @@ public class MemberController {
     @PostMapping("/signup/admin")
     public BaseResponse<MemberResponse> joinAdmin(@RequestBody @Valid AdminJoinRequest request) {
         MemberResponse response = memberService.joinAdmin(request);
-        return BaseResponse.success("200", "관리자 회원가입이 완료되었습니다.", response);
+        return BaseResponse.success("OK", "관리자 회원가입이 완료되었습니다.", response);
     }
 
     //내 정보 조회
@@ -52,6 +52,21 @@ public class MemberController {
 
     // 공통 ID 추출 메서드
     private Long getAuthenticatedMemberId() {
-        return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+            try {
+                return Long.valueOf(userDetails.getUsername());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("인증 객체의 username이 Long 형식이 아닙니다.");
+            }
+        }
+        if (principal instanceof String stringId) {
+            return Long.valueOf(stringId);
+        }
+        if (principal instanceof Long id) {
+            return id;
+        }
+        throw new IllegalStateException("인증된 사용자 정보를 찾을 수 없거나 형식이 올바르지 않습니다.");
     }
 }

@@ -9,5 +9,7 @@ public record ReviewResponse(
         String productName,
         int rating,
         String content,
+        int likeCount,
+        int viewCount,
         LocalDateTime createdAt
 ) {}
