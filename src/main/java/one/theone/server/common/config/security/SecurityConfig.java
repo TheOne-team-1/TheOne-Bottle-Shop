@@ -37,6 +37,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -87,6 +88,13 @@ public class SecurityConfig {
 
                         //region 검색어 관련
                         .requestMatchers("/api/search/**", "/api/best/search").permitAll()
+                        //endregion
+
+                        //region 채팅 관련
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chat/rooms").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/chat/rooms/*/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/chat/rooms/*/assign").hasRole("ADMIN")
                         //endregion
 
                         .anyRequest().authenticated()

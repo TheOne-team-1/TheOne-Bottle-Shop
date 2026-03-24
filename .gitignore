@@ -168,3 +168,9 @@ gradle-app.setting
 ### mysql volume data ###
 the_one-dev-db-data/
 
+### yml ###
+application-dev.yml
+
+### html ###
+chat.html
+
