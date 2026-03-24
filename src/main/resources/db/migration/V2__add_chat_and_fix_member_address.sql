@@ -1,5 +1,5 @@
 -- chat_rooms 테이블 추가
-CREATE TABLE chat_rooms
+CREATE TABLE IF NOT EXISTS chat_rooms
 (
     id                            BIGINT AUTO_INCREMENT NOT NULL,
     created_at                    datetime     NOT NULL,
@@ -16,12 +16,12 @@ CREATE TABLE chat_rooms
     CONSTRAINT pk_chat_rooms PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_chat_room_customer_id ON chat_rooms (customer_id);
-CREATE INDEX idx_chat_room_manager_id ON chat_rooms (manager_id);
-CREATE INDEX idx_chat_room_status_last_message_at ON chat_rooms (status, last_message_at);
+CREATE INDEX IF NOT EXISTS idx_chat_room_customer_id ON chat_rooms (customer_id);
+CREATE INDEX IF NOT EXISTS idx_chat_room_manager_id ON chat_rooms (manager_id);
+CREATE INDEX IF NOT EXISTS idx_chat_room_status_last_message_at ON chat_rooms (status, last_message_at);
 
 -- chat_messages 테이블 추가
-CREATE TABLE chat_messages
+CREATE TABLE IF NOT EXISTS chat_messages
 (
     id           BIGINT AUTO_INCREMENT NOT NULL,
     created_at   datetime      NOT NULL,
@@ -35,8 +35,12 @@ CREATE TABLE chat_messages
     CONSTRAINT pk_chat_messages PRIMARY KEY (id)
 );
 
+CREATE INDEX IF NOT EXISTS idx_chat_message_room_id_id ON chat_messages (chat_room_id, id);
+CREATE INDEX IF NOT EXISTS idx_chat_message_room_id_sender_type_id ON chat_messages (chat_room_id, sender_type, id);
+CREATE INDEX IF NOT EXISTS idx_chat_message_sender_id ON chat_messages (sender_id);
+
 -- social_auth 테이블 추가 (V1 배포 이후 추가된 테이블)
-CREATE TABLE social_auth
+CREATE TABLE IF NOT EXISTS social_auth
 (
     id          BIGINT AUTO_INCREMENT NOT NULL,
     provider    VARCHAR(255)          NULL,
@@ -45,13 +49,9 @@ CREATE TABLE social_auth
     CONSTRAINT pk_socialauth PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_rating_created_at ON reviews (rating, created_at DESC);
-
-CREATE INDEX idx_chat_message_room_id_id ON chat_messages (chat_room_id, id);
-CREATE INDEX idx_chat_message_room_id_sender_type_id ON chat_messages (chat_room_id, sender_type, id);
-CREATE INDEX idx_chat_message_sender_id ON chat_messages (sender_id);
+CREATE INDEX IF NOT EXISTS idx_rating_created_at ON reviews (rating, created_at DESC);
 
 -- member_address 누락 컬럼 추가 (@SQLDelete, @SQLRestriction 에서 참조)
 ALTER TABLE member_address
-    ADD COLUMN deleted    BIT(1)   NOT NULL DEFAULT FALSE,
-    ADD COLUMN deleted_at datetime NULL;
+    ADD COLUMN IF NOT EXISTS deleted    BIT(1)   NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS deleted_at datetime NULL;

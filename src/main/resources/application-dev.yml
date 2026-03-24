@@ -12,6 +12,10 @@ spring:
       host: ${DEV_REDIS_HOST}
       port: ${DEV_REDIS_PORT}
 
+  # Flyway
+  flyway:
+    enabled: false
+
   # JPA
   jpa:
     hibernate:
