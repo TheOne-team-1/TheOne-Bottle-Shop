@@ -9,7 +9,6 @@ import one.theone.server.domain.chat.dto.response.ChatRoomResponse;
 import one.theone.server.domain.chat.entity.ChatMessage;
 import one.theone.server.domain.chat.entity.ChatRoom;
 import one.theone.server.domain.chat.entity.ChatRoomStatus;
-import one.theone.server.domain.chat.entity.MessageType;
 import one.theone.server.domain.chat.entity.SenderType;
 import one.theone.server.domain.chat.repository.ChatMessageRepository;
 import one.theone.server.domain.chat.repository.ChatRoomRepository;
@@ -20,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -29,8 +29,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
@@ -43,6 +41,9 @@ class ChatServiceTest {
 
     @Mock
     private ChatMessageRepository chatMessageRepository;
+
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
 
     @InjectMocks
     private ChatService chatService;

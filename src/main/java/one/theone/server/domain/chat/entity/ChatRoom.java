@@ -79,10 +79,6 @@ public class ChatRoom extends BaseEntity {
         this.closedAt = null;
     }
 
-    public void updateLastMessageAt(LocalDateTime time) {
-        this.lastMessageAt = time;
-    }
-
     public void updateLastMessage(Long messageId, LocalDateTime time) {
         this.lastMessageId = messageId;
         this.lastMessageAt = time;
