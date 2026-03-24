@@ -135,6 +135,198 @@ one.theone.server
 
 ---
 
+## API
+
+- `없음` -> 인증 불필요 / `JWT` = AccessToken 필요
+- `ALL` -> 누구나 / `회원` -> 로그인 사용자 / `관리자` -> ROLE_ADMIN
+
+### 인증
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/signup` | 회원가입 | 없음 | ALL |
+| POST | `/api/signup/admin` | 관리자 회원가입 | 없음 | ALL |
+| POST | `/api/login` | 로그인 (Access/Refresh Token 발급) | 없음 | ALL |
+| POST | `/api/reissue` | 토큰 재발급 | 없음 | ALL |
+| GET | `/login/oauth2/**` | Google OAuth2 소셜 로그인 | 없음 | ALL |
+
+### 회원
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/me` | 내 정보 조회 | JWT | 회원 |
+| PATCH | `/api/password` | 비밀번호 변경 | JWT | 회원 |
+
+### 배송지
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/addresses` | 배송지 등록 | JWT | 회원 |
+| GET | `/api/addresses` | 배송지 목록 조회 | JWT | 회원 |
+| PATCH | `/api/addresses/{addressId}` | 배송지 수정 | JWT | 회원 |
+| DELETE | `/api/addresses/{addressId}` | 배송지 삭제 | JWT | 회원 |
+
+### 상품
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/products` | 상품 목록 조회 | 없음 | ALL |
+| GET | `/api/products/{id}` | 상품 상세 조회 | 없음 | ALL |
+| GET | `/api/best/products` | 베스트 상품 조회 | 없음 | ALL |
+| GET | `/api/recently-viewed/products` | 최근 본 상품 조회 | JWT | 회원 |
+| POST | `/api/admin/products` | 상품 등록 | JWT | 관리자 |
+| GET | `/api/admin/products` | 관리자 상품 목록 조회 | JWT | 관리자 |
+| PATCH | `/api/admin/products/{id}` | 상품 수정 | JWT | 관리자 |
+| PATCH | `/api/admin/products/{id}/status` | 상품 상태 변경 | JWT | 관리자 |
+| DELETE | `/api/admin/products/{id}` | 상품 삭제 | JWT | 관리자 |
+
+### 카테고리
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/admin/categories` | 대분류 카테고리 생성 | JWT | 관리자 |
+| GET | `/api/admin/categories` | 카테고리 목록 조회 | JWT | 관리자 |
+| PATCH | `/api/admin/categories/{id}` | 대분류 카테고리 수정 | JWT | 관리자 |
+| DELETE | `/api/admin/categories/{id}` | 대분류 카테고리 삭제 | JWT | 관리자 |
+| POST | `/api/admin/category-details` | 소분류 카테고리 생성 | JWT | 관리자 |
+| PATCH | `/api/admin/category-details/{id}` | 소분류 카테고리 수정 | JWT | 관리자 |
+| DELETE | `/api/admin/category-details/{id}` | 소분류 카테고리 삭제 | JWT | 관리자 |
+
+### 장바구니
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/carts/items` | 장바구니 상품 추가 | JWT | 회원 |
+| GET | `/api/carts` | 장바구니 조회 | JWT | 회원 |
+| PATCH | `/api/carts/items/{productId}` | 장바구니 수량 변경 | JWT | 회원 |
+| DELETE | `/api/carts/items/{productId}` | 장바구니 상품 삭제 | JWT | 회원 |
+| DELETE | `/api/carts` | 장바구니 전체 삭제 | JWT | 회원 |
+
+### 주문
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/orders/direct` | 바로 구매 주문 생성 | JWT | 회원 |
+| POST | `/api/orders/cart` | 장바구니 주문 생성 | JWT | 회원 |
+| GET | `/api/orders` | 주문 목록 조회 | JWT | 회원 |
+| GET | `/api/orders/{orderId}` | 주문 상세 조회 | JWT | 회원 |
+| PATCH | `/api/orders/{orderId}/cancel` | 주문 취소 | JWT | 회원 |
+
+### 결제
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/payments` | 결제 생성 | JWT | 회원 |
+| PATCH | `/api/payments/{paymentId}/confirm` | 결제 확정 | JWT | 회원 |
+
+### 환불
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/refunds` | 환불 요청 | JWT | 회원 |
+| POST | `/api/admin/refunds` | 관리자 환불 처리 | JWT | 관리자 |
+
+### 쿠폰
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/coupons/me` | 내 쿠폰 목록 조회 | JWT | 회원 |
+| POST | `/api/coupons/{couponId}/issue` | 이벤트 쿠폰 발급 | JWT | 회원 |
+| POST | `/api/admin/coupons` | 쿠폰 생성 | JWT | 관리자 |
+| GET | `/api/admin/coupons` | 쿠폰 목록 조회 | JWT | 관리자 |
+| GET | `/api/admin/coupons/{couponId}` | 쿠폰 상세 조회 | JWT | 관리자 |
+| POST | `/api/admin/coupons/{couponId}/issue` | 관리자 쿠폰 발급 | JWT | 관리자 |
+| PATCH | `/api/admin/coupons/{couponId}/expire` | 쿠폰 만료 처리 | JWT | 관리자 |
+| PATCH | `/api/admin/member/{memberId}/coupons/{memberCouponId}/recall` | 쿠폰 회수 | JWT | 관리자 |
+
+### 이벤트
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/events` | 이벤트 목록 조회 | 없음 | ALL |
+| GET | `/api/events/{eventId}` | 이벤트 상세 조회 | 없음 | ALL |
+| POST | `/api/admin/events` | 이벤트 생성 | JWT | 관리자 |
+| PATCH | `/api/admin/events/{eventId}/status` | 이벤트 상태 변경 | JWT | 관리자 |
+| DELETE | `/api/admin/events/{eventId}` | 이벤트 삭제 | JWT | 관리자 |
+
+### 사은품
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/admin/freebies` | 사은품 생성 | JWT | 관리자 |
+| GET | `/api/admin/freebies` | 사은품 목록 조회 | JWT | 관리자 |
+| GET | `/api/admin/freebies/{id}` | 사은품 단건 조회 | JWT | 관리자 |
+| PATCH | `/api/admin/freebies/{id}` | 사은품 수정 | JWT | 관리자 |
+| DELETE | `/api/admin/freebies/{id}` | 사은품 삭제 | JWT | 관리자 |
+
+### 사은품 카테고리
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/admin/freebie-categories` | 사은품 카테고리 생성 | JWT | 관리자 |
+| GET | `/api/admin/freebie-categories` | 사은품 카테고리 목록 조회 | JWT | 관리자 |
+| PATCH | `/api/admin/freebie-categories/{id}` | 사은품 카테고리 수정 | JWT | 관리자 |
+| DELETE | `/api/admin/freebie-categories/{id}` | 사은품 카테고리 삭제 | JWT | 관리자 |
+| POST | `/api/admin/freebie-category-details` | 사은품 세부 카테고리 생성 | JWT | 관리자 |
+| PATCH | `/api/admin/freebie-category-details/{id}` | 사은품 세부 카테고리 수정 | JWT | 관리자 |
+| DELETE | `/api/admin/freebie-category-details/{id}` | 사은품 세부 카테고리 삭제 | JWT | 관리자 |
+
+### 포인트
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/points` | 포인트 내역 조회 | JWT | 회원 |
+| POST | `/api/admin/points/{memberId}` | 포인트 수동 조정 | JWT | 관리자 |
+
+### 리뷰
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/review` | 리뷰 작성 | JWT | 회원 |
+| GET | `/api/review` | 리뷰 목록 조회 | 없음 | ALL |
+| GET | `/api/review/{id}` | 리뷰 상세 조회 | 없음 | ALL |
+| POST | `/api/review/{id}/like` | 리뷰 좋아요 | JWT | 회원 |
+| DELETE | `/api/review/{id}` | 리뷰 삭제 | JWT | 회원/관리자 |
+
+### 검색
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| GET | `/api/search/v1` | 키워드 검색 (단순 매칭) | 없음 | ALL |
+| GET | `/api/search/v2` | 키워드 검색 (형태소 분석) | 없음 | ALL |
+| GET | `/api/best/search` | 인기 검색어 Top5 조회 | 없음 | ALL |
+
+### 즐겨찾기
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/favorites/{productId}` | 즐겨찾기 등록 | JWT | 회원 |
+| DELETE | `/api/favorites/{productId}` | 즐겨찾기 삭제 | JWT | 회원 |
+| GET | `/api/favorites` | 즐겨찾기 목록 조회 | JWT | 회원 |
+
+### 채팅
+
+| Method | URI | 설명 | 인증 | 역할 |
+|--------|-----|------|------|------|
+| POST | `/api/chat/rooms` | 채팅방 생성 | JWT | 회원 |
+| GET | `/api/chat/rooms/me` | 내 채팅방 목록 조회 | JWT | 회원 |
+| GET | `/api/chat/rooms` | 전체 채팅방 목록 조회 | JWT | 관리자 |
+| GET | `/api/chat/rooms/{roomId}` | 채팅방 상세 조회 | JWT | 회원 |
+| GET | `/api/chat/rooms/{roomId}/messages` | 메시지 목록 조회 (cursor 기반) | JWT | 회원 |
+| PUT | `/api/chat/rooms/{roomId}/assign` | 관리자 배정 | JWT | 관리자 |
+| PUT | `/api/chat/rooms/{roomId}/status` | 채팅방 상태 변경 | JWT | 관리자 |
+| PATCH | `/api/chat/rooms/{roomId}/read` | 읽음 처리 | JWT | 회원 |
+| PATCH | `/api/chat/rooms/{roomId}/messages/{messageId}/delete` | 메시지 삭제 | JWT | 회원 |
+
+### STOMP
+
+| 타입 | Destination | 설명 | 인증 | 역할 |
+|------|-------------|------|------|------|
+| PUBLISH | `/pub/chat/rooms/{roomId}` | 메시지 전송 | JWT (STOMP Header) | 회원/관리자 |
+| SUBSCRIBE | `/sub/chat/rooms/{roomId}` | 메시지 수신 구독 | JWT (STOMP Header) | 회원/관리자 |
+
+---
+
 ## 구현 쟁점
 
 ## 캐시
