@@ -49,7 +49,7 @@ public class ChatRoom extends BaseEntity {
     private Long customerLastReadMessageId;
 
     @Column(name = "manager_last_read_mesasge_id")
-    private Long managerLastReadMesasgeId;
+    private Long managerLastReadMessageId;
 
     private ChatRoom(String name, Long customerId) {
         this.name = name;
@@ -79,10 +79,6 @@ public class ChatRoom extends BaseEntity {
         this.closedAt = null;
     }
 
-    public void updateLastMessageAt(LocalDateTime time) {
-        this.lastMessageAt = time;
-    }
-
     public void updateLastMessage(Long messageId, LocalDateTime time) {
         this.lastMessageId = messageId;
         this.lastMessageAt = time;
@@ -90,12 +86,12 @@ public class ChatRoom extends BaseEntity {
 
     public void markRead(Long memberId) {
         if (this.customerId.equals(memberId)) {
-            this.customerLastReadMessageId = memberId;
+            this.customerLastReadMessageId = this.lastMessageId;
             return;
         }
 
         if (this.managerId != null && this.managerId.equals(memberId)) {
-            this.managerLastReadMesasgeId = memberId;
+            this.managerLastReadMessageId = this.lastMessageId;
         }
     }
 }

@@ -39,7 +39,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String role = authentication.getAuthorities().stream()
                 .findFirst()
                 .map(GrantedAuthority::getAuthority)
-                .orElse("ROLE_USER");
+                .map(r -> r.replace("ROLE_", ""))
+                .orElse("USER");
 
         // JwtProvider
         String accessToken = jwtProvider.createAccessToken(member.getId(), role); // (Long, String)

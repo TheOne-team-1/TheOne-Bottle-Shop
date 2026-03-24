@@ -12,6 +12,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -64,14 +65,21 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 throw new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_WS_AUTH_INFO_INVALID);
             }
 
+            String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
             List<SimpleGrantedAuthority> authorities =
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                    List.of(new SimpleGrantedAuthority(finalRole));
 
+            // String.valueOf(memberId) 대신 memberId(Long) 직접 사용
+            // 일반 HTTP 필터와 타입을 일치시켜서 권한 비교 시 오류 방지
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(String.valueOf(memberId), null, authorities);
+                    new UsernamePasswordAuthenticationToken(memberId, null, authorities);
 
             accessor.setUser(authentication);
             System.out.println("CONNECT user set = " + accessor.getUser());
+
+            // 변경된 accessor(user 정보 포함)를 메시지에 반영하여 리턴
+            // 이렇게 해야 SUBSCRIBE 단계에서 유저 정보가 유지
+            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
         }
 
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
@@ -86,12 +94,14 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             }
 
             if (destination.startsWith("/sub/chat/rooms/")) {
+                // principal.getName()을 안전하게 파싱
                 Long memberId = Long.valueOf(principal.getName());
                 Long roomId = extractRoomId(destination, "/sub/chat/rooms/");
 
                 ChatRoom room = chatRoomRepository.findById(roomId)
                         .orElseThrow(() -> new ServiceErrorException(ChatExceptionEnum.ERR_CHAT_ROOM_NOT_FOUND));
 
+                // Long vs Long 비교 (equals 사용)
                 boolean isCustomer = room.getCustomerId().equals(memberId);
                 boolean isManager = room.getManagerId() != null && room.getManagerId().equals(memberId);
 
