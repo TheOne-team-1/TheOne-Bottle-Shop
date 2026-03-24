@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Console Compact</title>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f1115;
+            --sidebar: #17191f;
+            --panel: #20232b;
+            --panel-2: #262a33;
+            --line: #303642;
+            --text: #f3f4f6;
+            --muted: #9aa3b2;
+            --primary: #4f8cff;
+            --success: #1dbf73;
+            --danger: #ef5350;
+            --bubble-me: #2f6fed;
+            --bubble-other: #2a2f39;
+            --hover: #232834;
+            --radius: 14px;
+        }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        button, input, textarea, select {
+            font: inherit;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--sidebar);
+            border-right: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .sidebar-top {
+            padding: 16px;
+            border-bottom: 1px solid var(--line);
+            display: grid;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .status {
+            font-size: 12px;
+            color: var(--muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .dot.connected {
+            background: var(--success);
+        }
+
+        .toggle-config {
+            width: 100%;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .config {
+            display: grid;
+            gap: 10px;
+        }
+
+        .config.hidden {
+            display: none;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .input, .textarea, .select {
+            width: 100%;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 12px;
+            outline: none;
+        }
+
+        .textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--panel);
+            color: var(--text);
+            border: 1px solid var(--line);
+        }
+
+        .btn-danger {
+            background: #3a2324;
+            color: #ffb4b1;
+            border: 1px solid #5a3234;
+        }
+
+        .rooms-header {
+            padding: 14px 16px 8px;
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .room-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 0 12px 12px;
+        }
+
+        .room-item {
+            border: 1px solid var(--line);
+            background: transparent;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: 0.15s ease;
+        }
+
+        .room-item:hover {
+            background: var(--hover);
+        }
+
+        .room-item.active {
+            background: #202b42;
+            border-color: #4066b1;
+        }
+
+        .room-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .room-meta {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .chat-header {
+            min-height: 64px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 18px;
+            background: #11141a;
+        }
+
+        .chat-header-left {
+            min-width: 0;
+        }
+
+        .chat-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .chat-subtitle {
+            margin-top: 3px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 18px 18px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #0f1115;
+        }
+
+        .empty {
+            margin: auto;
+            color: var(--muted);
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .message {
+            max-width: min(70%, 720px);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .message.me {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            color: var(--muted);
+            padding: 0 4px;
+        }
+
+        .bubble {
+            padding: 10px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .message.me .bubble {
+            background: var(--bubble-me);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.other .bubble {
+            background: var(--bubble-other);
+            color: var(--text);
+            border-bottom-left-radius: 6px;
+        }
+
+        .composer {
+            border-top: 1px solid var(--line);
+            padding: 12px 16px 16px;
+            background: #11141a;
+        }
+
+        .composer-form {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .composer-input {
+            flex: 1;
+            min-height: 48px;
+            max-height: 140px;
+            resize: vertical;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+            color: var(--text);
+            padding: 12px 14px;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        .composer-send {
+            height: 48px;
+            min-width: 88px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            background: #1e232d;
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 12px;
+            display: none;
+            z-index: 1000;
+            font-size: 13px;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        @media (max-width: 900px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                height: 42vh;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .main {
+                height: 58vh;
+            }
+
+            .message {
+                max-width: 88%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="brand">
+                <h1>채팅</h1>
+                <div class="status">
+                    <span class="dot" id="statusDot"></span>
+                    <span id="statusText">연결 대기중</span>
+                </div>
+            </div>
+
+            <button class="toggle-config" id="toggleConfigBtn">
+                설정 펼치기
+            </button>
+
+            <div class="config hidden" id="configBox">
+                <div class="field">
+                    <label for="roleSelect">사용자 유형</label>
+                    <select id="roleSelect" class="select">
+                        <option value="USER">일반 사용자</option>
+                        <option value="ADMIN">관리자</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="tokenInput">Access Token</label>
+                    <textarea
+                            id="tokenInput"
+                            class="textarea"
+                            placeholder="Bearer 없이 access token 입력"
+                    ></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="roomNameInput">채팅방 생성명</label>
+                    <input
+                            id="roomNameInput"
+                            class="input"
+                            type="text"
+                            placeholder="예: 주문 문의"
+                    />
+                </div>
+
+                <div class="row">
+                    <button class="btn btn-primary" id="connectBtn">Connect</button>
+                    <button class="btn btn-secondary" id="refreshRoomsBtn">
+                        목록
+                    </button>
+                    <button class="btn btn-secondary" id="createRoomBtn">
+                        방 생성
+                    </button>
+                    <button class="btn btn-danger" id="disconnectBtn">종료</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="rooms-header">
+            <span>채팅방 목록</span>
+            <span id="roomCountText">0개</span>
+        </div>
+
+        <div class="room-list" id="roomList"></div>
+    </aside>
+
+    <main class="main">
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <h2 class="chat-title" id="chatTitle">채팅방을 선택해주세요</h2>
+                <div class="chat-subtitle" id="chatSubtitle">
+                    방 선택 시 자동 구독 + 메시지 조회
+                </div>
+            </div>
+            <div class="row">
+                <button class="btn btn-secondary" id="assignRoomBtn">
+                    관리자 배정
+                </button>
+                <button class="btn btn-secondary" id="loadHistoryBtn">
+                    새로고침
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-body" id="messageList">
+            <div class="empty" id="emptyState">
+                채팅방을 선택하면 메시지가 표시됩니다.
+            </div>
+        </div>
+
+        <div class="composer">
+            <div class="hint" id="composerHint">
+                연결 후 채팅방을 선택하면 메시지를 보낼 수 있습니다.
+            </div>
+            <form class="composer-form" id="composerForm">
+            <textarea
+                    id="messageInput"
+                    class="composer-input"
+                    placeholder="메시지를 입력하세요. Enter 전송 / Shift+Enter 줄바꿈"
+                    disabled
+            ></textarea>
+                <button
+                        class="btn btn-primary composer-send"
+                        id="sendBtn"
+                        type="submit"
+                        disabled
+                >
+                    전송
+                </button>
+            </form>
+        </div>
+    </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_BASE = 'http://localhost:8080';
+    const WS_URL = 'ws://localhost:8080/ws';
+
+    const state = {
+        stompClient: null,
+        connected: false,
+        subscribed: false,
+        currentRoomId: null,
+        currentRoomName: null,
+        currentSubscription: null,
+        rooms: [],
+        roomMap: new Map(),
+        renderedMessageKeys: new Set(),
+        isComposing: false
+    };
+
+    const el = {
+        toggleConfigBtn: document.getElementById('toggleConfigBtn'),
+        configBox: document.getElementById('configBox'),
+        roleSelect: document.getElementById('roleSelect'),
+        tokenInput: document.getElementById('tokenInput'),
+        roomNameInput: document.getElementById('roomNameInput'),
+        connectBtn: document.getElementById('connectBtn'),
+        refreshRoomsBtn: document.getElementById('refreshRoomsBtn'),
+        createRoomBtn: document.getElementById('createRoomBtn'),
+        disconnectBtn: document.getElementById('disconnectBtn'),
+        assignRoomBtn: document.getElementById('assignRoomBtn'),
+        loadHistoryBtn: document.getElementById('loadHistoryBtn'),
+        roomList: document.getElementById('roomList'),
+        roomCountText: document.getElementById('roomCountText'),
+        statusDot: document.getElementById('statusDot'),
+        statusText: document.getElementById('statusText'),
+        chatTitle: document.getElementById('chatTitle'),
+        chatSubtitle: document.getElementById('chatSubtitle'),
+        messageList: document.getElementById('messageList'),
+        composerHint: document.getElementById('composerHint'),
+        composerForm: document.getElementById('composerForm'),
+        messageInput: document.getElementById('messageInput'),
+        sendBtn: document.getElementById('sendBtn'),
+        toast: document.getElementById('toast')
+    };
+
+    function showToast(message) {
+        el.toast.textContent = message;
+        el.toast.classList.add('show');
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => {
+            el.toast.classList.remove('show');
+        }, 2000);
+    }
+
+    function getRole() {
+        return el.roleSelect.value;
+    }
+
+    function getTokenOrThrow() {
+        const raw = el.tokenInput.value.trim();
+        if (!raw) throw new Error('토큰을 입력해주세요.');
+        return raw.startsWith('Bearer ') ? raw : `Bearer ${raw}`;
+    }
+
+    function unwrapResponse(json) {
+        if (json && typeof json === 'object' && 'data' in json) {
+            return json.data;
+        }
+        return json;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text ?? '';
+        return div.innerHTML;
+    }
+
+    function buildMessageKey(data) {
+        return [
+            data.messageId ?? '',
+            data.senderId ?? '',
+            data.senderType ?? '',
+            data.createdAt ?? '',
+            data.content ?? ''
+        ].join('|');
+    }
+
+    function isMyMessage(data) {
+        return (getRole() === 'USER' && data.senderType === 'CUSTOMER')
+            || (getRole() === 'ADMIN' && data.senderType === 'MANAGER');
+    }
+
+    function senderLabel(data) {
+        return data.senderType === 'MANAGER'
+            ? `상담사 #${data.senderId}`
+            : `고객 #${data.senderId}`;
+    }
+
+    function formatTime(value) {
+        if (!value) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function updateStatusUI() {
+        if (state.connected) {
+            el.statusDot.classList.add('connected');
+            el.statusText.textContent = `${getRole()} 연결됨`;
+        } else {
+            el.statusDot.classList.remove('connected');
+            el.statusText.textContent = '연결 대기중';
+        }
+
+        const enabled = state.connected && state.subscribed && !!state.currentRoomId;
+        el.messageInput.disabled = !enabled;
+        el.sendBtn.disabled = !enabled;
+
+        el.composerHint.textContent = enabled
+            ? `roomId=${state.currentRoomId} 에 전송됩니다.`
+            : '연결 후 채팅방을 선택하면 메시지를 보낼 수 있습니다.';
+    }
+
+    function updateHeader() {
+        if (!state.currentRoomId) {
+            el.chatTitle.textContent = '채팅방을 선택해주세요';
+            el.chatSubtitle.textContent = '방 선택 시 자동 구독 + 메시지 조회';
+            return;
+        }
+
+        el.chatTitle.textContent = state.currentRoomName || `room-${state.currentRoomId}`;
+        el.chatSubtitle.textContent = `roomId=${state.currentRoomId} · ${state.subscribed ? '구독중' : '미구독'}`;
+    }
+
+    function clearMessages(message = '채팅방을 선택하면 메시지가 표시됩니다.') {
+        state.renderedMessageKeys.clear();
+        el.messageList.innerHTML = `<div class="empty" id="emptyState">${escapeHtml(message)}</div>`;
+    }
+
+    function removeEmptyState() {
+        const empty = document.getElementById('emptyState');
+        if (empty) empty.remove();
+    }
+
+    function appendMessage(data) {
+        const key = buildMessageKey(data);
+        if (state.renderedMessageKeys.has(key)) return;
+        state.renderedMessageKeys.add(key);
+
+        removeEmptyState();
+
+        const mine = isMyMessage(data);
+        const div = document.createElement('div');
+        div.className = `message ${mine ? 'me' : 'other'}`;
+        div.innerHTML = `
+        <div class="message-meta">${escapeHtml(senderLabel(data))} · ${escapeHtml(formatTime(data.createdAt))}</div>
+        <div class="bubble">${escapeHtml(data.content)}</div>
+      `;
+        el.messageList.appendChild(div);
+        el.messageList.scrollTop = el.messageList.scrollHeight;
+    }
+
+    async function requestJson(url, options = {}) {
+        const token = getTokenOrThrow();
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                Authorization: token,
+                ...(options.headers || {})
+            }
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || '요청 실패');
+        }
+
+        if (response.status === 204) return null;
+        return response.json();
+    }
+
+    function renderRooms() {
+        el.roomCountText.textContent = `${state.rooms.length}개`;
+
+        if (!state.rooms.length) {
+            el.roomList.innerHTML = `
+          <div class="room-item">
+            <div class="room-title">채팅방이 없습니다</div>
+            <div class="room-meta">생성 후 목록을 새로고침하세요.</div>
+          </div>
+        `;
+            return;
+        }
+
+        el.roomList.innerHTML = state.rooms.map(room => {
+            const roomId = Number(room.roomId ?? room.id);
+            const active = roomId === Number(state.currentRoomId) ? 'active' : '';
+            return `
+          <div class="room-item ${active}" data-room-id="${roomId}">
+            <div class="room-title">${escapeHtml(room.name ?? `room-${roomId}`)}</div>
+            <div class="room-meta">
+              roomId: ${roomId}<br>
+              status: ${room.status ?? '-'}<br>
+              customerId: ${room.customerId ?? '-'} / managerId: ${room.managerId ?? '-'}
+            </div>
+          </div>
+        `;
+        }).join('');
+
+        el.roomList.querySelectorAll('.room-item[data-room-id]').forEach(node => {
+            node.addEventListener('click', async () => {
+                const roomId = Number(node.dataset.roomId);
+                const room = state.roomMap.get(roomId);
+                try {
+                    await selectRoom(room);
+                } catch (e) {
+                    showToast(e.message);
+                }
+            });
+        });
+    }
+
+    async function loadRooms() {
+        const url = getRole() === 'ADMIN'
+            ? `${API_BASE}/api/chat/rooms`
+            : `${API_BASE}/api/chat/rooms/me`;
+
+        const json = await requestJson(url, { method: 'GET' });
+        const rooms = unwrapResponse(json) || [];
+        state.rooms = rooms;
+        state.roomMap = new Map(rooms.map(room => [Number(room.roomId ?? room.id), room]));
+        renderRooms();
+    }
+
+    function disconnectSubscription() {
+        if (state.currentSubscription) {
+            try {
+                state.currentSubscription.unsubscribe();
+            } catch (_) {}
+        }
+        state.currentSubscription = null;
+        state.subscribed = false;
+        updateStatusUI();
+        updateHeader();
+    }
+
+    function connectWebSocket() {
+        if (state.connected && state.stompClient) {
+            showToast('이미 연결되어 있습니다.');
+            return;
+        }
+
+        const token = getTokenOrThrow();
+        const socket = new WebSocket(WS_URL);
+        const client = Stomp.over(socket);
+        client.debug = () => {};
+
+        client.connect(
+            { Authorization: token },
+            async () => {
+                state.stompClient = client;
+                state.connected = true;
+                updateStatusUI();
+                updateHeader();
+                showToast('연결 완료');
+
+                if (state.currentRoomId) {
+                    await subscribeToCurrentRoom();
+                }
+            },
+            () => {
+                state.connected = false;
+                state.subscribed = false;
+                state.stompClient = null;
+                updateStatusUI();
+                updateHeader();
+                showToast('연결 실패');
+            }
+        );
+    }
+
+    function disconnectWebSocket() {
+        disconnectSubscription();
+
+        if (state.stompClient) {
+            state.stompClient.disconnect(() => {
+                state.connected = false;
+                state.stompClient = null;
+                updateStatusUI();
+                updateHeader();
+                showToast('연결 종료');
+            });
+            return;
+        }
+
+        state.connected = false;
+        updateStatusUI();
+        updateHeader();
+    }
+
+    async function subscribeToCurrentRoom() {
+        if (!state.connected || !state.stompClient) {
+            throw new Error('먼저 Connect 하세요.');
+        }
+
+        if (!state.currentRoomId) {
+            throw new Error('채팅방을 먼저 선택하세요.');
+        }
+
+        disconnectSubscription();
+
+        state.currentSubscription = state.stompClient.subscribe(
+            `/sub/chat/rooms/${state.currentRoomId}`,
+            (message) => {
+                const data = JSON.parse(message.body);
+                appendMessage(data);
+            }
+        );
+
+        state.subscribed = true;
+        updateStatusUI();
+        updateHeader();
+    }
+
+    async function loadPastMessages() {
+        if (!state.currentRoomId) {
+            throw new Error('채팅방을 먼저 선택하세요.');
+        }
+
+        const json = await requestJson(`${API_BASE}/api/chat/rooms/${state.currentRoomId}/messages`, {
+            method: 'GET'
+        });
+
+        const messages = unwrapResponse(json) || [];
+        clearMessages('아직 메시지가 없습니다.');
+        [...messages].reverse().forEach(appendMessage);
+    }
+
+    async function selectRoom(room) {
+        if (!room) return;
+
+        state.currentRoomId = Number(room.roomId ?? room.id);
+        state.currentRoomName = room.name ?? `room-${state.currentRoomId}`;
+
+        renderRooms();
+        updateHeader();
+        clearMessages('메시지를 불러오는 중입니다...');
+        updateStatusUI();
+
+        if (state.connected) {
+            await subscribeToCurrentRoom();
+        }
+
+        await loadPastMessages();
+    }
+
+    async function createRoom() {
+        if (getRole() !== 'USER') {
+            throw new Error('일반 사용자만 채팅방을 생성할 수 있습니다.');
+        }
+
+        const name = el.roomNameInput.value.trim();
+        if (!name) {
+            throw new Error('채팅방 이름을 입력해주세요.');
+        }
+
+        const json = await requestJson(`${API_BASE}/api/chat/rooms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+
+        const room = unwrapResponse(json);
+        el.roomNameInput.value = '';
+
+        await loadRooms();
+        const nextRoom = state.roomMap.get(Number(room.roomId));
+        if (nextRoom) {
+            await selectRoom(nextRoom);
+        }
+    }
+
+    async function assignCurrentRoom() {
+        if (getRole() !== 'ADMIN') {
+            throw new Error('관리자만 배정할 수 있습니다.');
+        }
+
+        if (!state.currentRoomId) {
+            throw new Error('채팅방을 먼저 선택하세요.');
+        }
+
+        await requestJson(`${API_BASE}/api/chat/rooms/${state.currentRoomId}/assign`, {
+            method: 'PUT'
+        });
+
+        await loadRooms();
+        showToast('관리자 배정 완료');
+    }
+
+    function sendCurrentMessage() {
+        if (!state.connected || !state.stompClient) {
+            showToast('먼저 Connect 하세요.');
+            return;
+        }
+
+        if (!state.subscribed || !state.currentRoomId) {
+            showToast('채팅방을 먼저 선택하세요.');
+            return;
+        }
+
+        const content = el.messageInput.value.trim();
+        if (!content) return;
+
+        state.stompClient.send(
+            `/pub/chat/rooms/${state.currentRoomId}`,
+            {},
+            JSON.stringify({ content })
+        );
+
+        el.messageInput.value = '';
+        el.messageInput.style.height = '48px';
+        el.messageInput.focus();
+    }
+
+    function bindEvents() {
+        el.toggleConfigBtn.addEventListener('click', () => {
+            const hidden = el.configBox.classList.toggle('hidden');
+            el.toggleConfigBtn.textContent = hidden ? '설정 펼치기' : '설정 접기';
+        });
+
+        el.connectBtn.addEventListener('click', () => {
+            try {
+                connectWebSocket();
+            } catch (e) {
+                showToast(e.message);
+            }
+        });
+
+        el.disconnectBtn.addEventListener('click', () => {
+            disconnectWebSocket();
+        });
+
+        el.refreshRoomsBtn.addEventListener('click', async () => {
+            try {
+                await loadRooms();
+            } catch (e) {
+                showToast(e.message);
+            }
+        });
+
+        el.createRoomBtn.addEventListener('click', async () => {
+            try {
+                await createRoom();
+            } catch (e) {
+                showToast(e.message);
+            }
+        });
+
+        el.assignRoomBtn.addEventListener('click', async () => {
+            try {
+                await assignCurrentRoom();
+            } catch (e) {
+                showToast(e.message);
+            }
+        });
+
+        el.loadHistoryBtn.addEventListener('click', async () => {
+            try {
+                await loadPastMessages();
+            } catch (e) {
+                showToast(e.message);
+            }
+        });
+
+        el.messageInput.addEventListener('compositionstart', () => {
+            state.isComposing = true;
+        });
+
+        el.messageInput.addEventListener('compositionend', () => {
+            state.isComposing = false;
+        });
+
+        el.messageInput.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            if (e.shiftKey) return;
+
+            if (state.isComposing || e.isComposing) {
+                return;
+            }
+
+            e.preventDefault();
+            el.composerForm.requestSubmit();
+        });
+
+        el.composerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendCurrentMessage();
+        });
+
+        el.messageInput.addEventListener('input', () => {
+            el.messageInput.style.height = '48px';
+            el.messageInput.style.height = Math.min(el.messageInput.scrollHeight, 140) + 'px';
+        });
+    }
+
+    function init() {
+        bindEvents();
+        clearMessages();
+        updateStatusUI();
+        updateHeader();
+    }
+
+    init();
+</script>
+</body>
+</html>
