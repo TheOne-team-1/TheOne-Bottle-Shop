@@ -597,7 +597,7 @@ public class RedissonConfig {
 ```
 ### 재고 감소 동시성 처리 테스트
 - 100개의 상품재고가 100개의 스레드 동시 차감 진행
-- 사진
+<img width="1179" height="260" alt="image" src="https://github.com/user-attachments/assets/a8a3efff-5240-4977-95ac-57cc5a7cfc59" />
 
 ## 인덱싱
 - index 설정 대상 대표 쿼리
